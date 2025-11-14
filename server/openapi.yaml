@@ -1,0 +1,337 @@
+openapi: 3.0.3
+info:
+  title: HRMS API
+  version: 0.1.0
+servers:
+  - url: http://localhost:4000
+paths:
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 12 }
+                roles:
+                  type: array
+                  items: { $ref: '#/components/schemas/Role' }
+      responses:
+        '201':
+          description: Created
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200': { description: OK }
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      responses:
+        '204': { description: No Content }
+  /api/auth/refresh:
+    post:
+      tags: [Auth]
+      responses:
+        '200': { description: OK }
+  /api/users/me:
+    get:
+      security: [{ bearerAuth: [] }]
+      tags: [Users]
+      responses:
+        '200': { description: OK }
+    patch:
+      security: [{ bearerAuth: [] }]
+      tags: [Users]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200': { description: OK }
+  /api/users/{id}/roles:
+    patch:
+      security: [{ bearerAuth: [] }]
+      tags: [Users]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                roles:
+                  type: array
+                  items: { $ref: '#/components/schemas/Role' }
+      responses:
+        '200': { description: OK }
+  /api/leaves:
+    post:
+      security: [{ bearerAuth: [] }]
+      tags: [Leaves]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employeeId, type, startDate, endDate]
+              properties:
+                employeeId: { type: string }
+                type: { type: string }
+                startDate: { type: string, format: date }
+                endDate: { type: string, format: date }
+                reason: { type: string }
+      responses:
+        '201': { description: Created }
+  /api/leaves/mine:
+    get:
+      security: [{ bearerAuth: [] }]
+      tags: [Leaves]
+      parameters:
+        - in: query
+          name: employeeId
+          required: false
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /api/leaves/pending:
+    get:
+      security: [{ bearerAuth: [] }]
+      tags: [Leaves]
+      responses:
+        '200': { description: OK }
+  /api/leaves/{id}/status:
+    patch:
+      security: [{ bearerAuth: [] }]
+      tags: [Leaves]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [approved, rejected]
+      responses:
+        '200': { description: OK }
+  /api/leaves/balance:
+    get:
+      security: [{ bearerAuth: [] }]
+      tags: [Leaves]
+      parameters:
+        - in: query
+          name: employeeId
+          schema: { type: string }
+        - in: query
+          name: year
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+  /api/attendance/check-in:
+    post:
+      security: [{ bearerAuth: [] }]
+      tags: [Attendance]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                employeeId: { type: string }
+                date: { type: string, format: date }
+      responses:
+        '200': { description: OK }
+  /api/attendance/check-out:
+    post:
+      security: [{ bearerAuth: [] }]
+      tags: [Attendance]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                employeeId: { type: string }
+                date: { type: string, format: date }
+      responses:
+        '200': { description: OK }
+  /api/attendance/summary:
+    get:
+      security: [{ bearerAuth: [] }]
+      tags: [Attendance]
+      parameters:
+        - in: query
+          name: date
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        '200': { description: OK }
+  /api/payroll:
+    post:
+      security: [{ bearerAuth: [] }]
+      tags: [Payroll]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employeeId, salary, payDate]
+              properties:
+                employeeId: { type: string }
+                salary: { type: number }
+                allowances: { type: number }
+                deductions: { type: number }
+                payDate: { type: string, format: date }
+      responses:
+        '200': { description: OK }
+  /api/payroll/employee/{employeeId}:
+    get:
+      security: [{ bearerAuth: [] }]
+      tags: [Payroll]
+      parameters:
+        - in: path
+          name: employeeId
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /api/payroll/{id}/payslip:
+    get:
+      security: [{ bearerAuth: [] }]
+      tags: [Payroll]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /api/employees:
+    get:
+      security: [{ bearerAuth: [] }]
+      tags: [Employees]
+      responses:
+        '200': { description: OK }
+    post:
+      security: [{ bearerAuth: [] }]
+      tags: [Employees]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeCreate'
+      responses:
+        '201': { description: Created }
+  /api/employees/{id}:
+    get:
+      security: [{ bearerAuth: [] }]
+      tags: [Employees]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+    patch:
+      security: [{ bearerAuth: [] }]
+      tags: [Employees]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeUpdate'
+      responses:
+        '200': { description: OK }
+    delete:
+      security: [{ bearerAuth: [] }]
+      tags: [Employees]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '204': { description: No Content }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: refresh_token
+  schemas:
+    Role:
+      type: string
+      enum: [SUPER_ADMIN, ADMIN, HR, MANAGER, EMPLOYEE]
+    Employee:
+      type: object
+      properties:
+        id: { type: string }
+        employeeId: { type: string }
+        name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+        status: { type: string, enum: [active, inactive, terminated] }
+    EmployeeCreate:
+      type: object
+      required: [employeeId, name, email]
+      properties:
+        employeeId: { type: string }
+        name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+        dateOfBirth: { type: string, format: date }
+        departmentId: { type: string }
+        jobRoleId: { type: string }
+        hireDate: { type: string, format: date }
+    EmployeeUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+        status: { type: string, enum: [active, inactive, terminated] }
+
+

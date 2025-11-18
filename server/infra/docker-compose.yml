@@ -1,22 +1,28 @@
-version: "3.1"
-
 services:
-  mongo:
-    image: mongo:7
+  db:
+    image: "mysql:8.0"
     restart: always
-    container_name: mongo
-    ports:
-      - "27017:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: 
-      MONGO_INITDB_ROOT_PASSWORD: 
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: hrms-client
+    ports:
+      - "3306:3306"
     volumes:
-      - mongo_data:/data/db
+      - "mysql_data:/var/lib/mysql"
     healthcheck:
-      test: ["CMD", "mongosh", "--username=", "--password=", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-ppassword"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  adminer:
+    image: adminer
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
 volumes:
-  mongo_data:
+  mysql_data:

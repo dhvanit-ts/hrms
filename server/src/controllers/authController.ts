@@ -21,7 +21,6 @@ export const registerSchema = z.object({
 });
 
 export async function register(req: Request, res: Response) {
-  console.log('register', req.body);
   const env = loadEnv();
   const { email, password, roles } = req.body;
   const result = await registerUser(email, password, roles);

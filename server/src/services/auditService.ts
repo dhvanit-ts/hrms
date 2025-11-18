@@ -1,4 +1,5 @@
-import { AuditLog } from '../models/AuditLog.js';
+import prisma from "@/config/db.js";
+import { Prisma } from "@prisma/client";
 
 export async function writeAuditLog(params: {
   action: string;
@@ -7,13 +8,13 @@ export async function writeAuditLog(params: {
   performedBy?: string;
   metadata?: Record<string, unknown>;
 }) {
-  await AuditLog.create({
-    action: params.action,
-    entity: params.entity,
-    entityId: params.entityId,
-    performedBy: params.performedBy,
-    metadata: params.metadata
+  await prisma.auditLog.create({
+    data: {
+      action: params.action,
+      entity: params.entity,
+      entityId: params.entityId,
+      performedBy: params.performedBy || null,
+      metadata: (params.metadata || {}) as Prisma.JsonValue,
+    },
   });
 }
-
-

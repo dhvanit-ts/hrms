@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  action      String
+  entity      String
+  entityId    String
+  performedBy String?
+  timestamp   DateTime @default(now())
+  metadata    Json?
+
+  @@map("audit_logs")
+}
+
+model Attendance {
+  id         Int       @id @default(autoincrement())
+  employeeId Int
+  date       DateTime
+  checkIn    DateTime?
+  checkOut   DateTime?
+  duration   Int?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  employee   Employee  @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, date])
+  @@index([employeeId])
+  @@index([date])
+}
+
+model Department {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  managerId Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  manager   Employee? @relation("DepartmentManager",fields: [managerId],references: [id],onDelete: NoAction,onUpdate: NoAction)
+
+  employees Employee[]
+
+  @@index([managerId])
+}
+
+model Employee {
+  id                 Int             @id @default(autoincrement())
+  employeeId         String          @unique
+  name               String
+  email              String          @unique
+  phone              String?
+  dateOfBirth        DateTime?
+  departmentId       Int?
+  jobRoleId          Int?
+  hireDate           DateTime?
+  status             EmployeeStatus  @default(active)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+department Department? @relation(fields: [departmentId], references: [id])
+  managedDepartments Department[] @relation("DepartmentManager")
+  jobRole            JobRole?        @relation(fields: [jobRoleId], references: [id])
+
+  payrolls           Payroll[]
+  attendances        Attendance[]
+  leaveRequests      LeaveRequest[]  @relation("EmployeeLeaveRequests")
+  approvals          LeaveRequest[]  @relation("EmployeeApprovals")
+
+  @@index([departmentId])
+  @@index([jobRoleId])
+}
+
+model JobRole {
+  id          Int       @id @default(autoincrement())
+  title       String
+  level       Int
+  permissions Json  @default("[]")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  employees Employee[]
+}
+
+model LeaveRequest {
+  id         Int         @id @default(autoincrement())
+  employeeId Int
+  type       String
+  startDate  DateTime
+  endDate    DateTime
+  status     LeaveStatus @default(pending)
+  approverId Int?
+  reason     String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  employee Employee  @relation("EmployeeLeaveRequests", fields: [employeeId], references: [id])
+  approver Employee? @relation("EmployeeApprovals", fields: [approverId], references: [id])
+
+  @@index([employeeId])
+  @@index([approverId])
+}
+
+model Payroll {
+  id         Int      @id @default(autoincrement())
+  employeeId Int
+  salary     Decimal  @db.Decimal(10,2)
+  allowances Decimal? @db.Decimal(10,2)
+  deductions Decimal? @db.Decimal(10,2)
+  payDate    DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([employeeId])
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  email        String         @unique
+  passwordHash String
+  roles        Json           @default("[]")
+  isActive     Boolean        @default(true)
+  lastLogin    DateTime?
+  profileRef   Int?           @unique
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  profile       Profile?        @relation(fields: [profileRef], references: [id])
+  refreshTokens RefreshToken[]
+
+  @@index([email])
+  @@index([isActive])
+}
+
+model Profile {
+  id Int @id @default(autoincrement())
+
+  user User?
+}
+
+model RefreshToken {
+  id        Int       @id @default(autoincrement())
+  jti       String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  userId    Int
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+enum AppRole {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum LeaveStatus {
+  pending
+  approved
+  rejected
+}
+
+enum EmployeeStatus {
+  active
+  inactive
+  terminated
+}

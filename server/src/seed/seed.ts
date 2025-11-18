@@ -1,127 +1,126 @@
 import "dotenv/config";
-import mongoose, { Types } from "mongoose";
-import { User } from "../models/User.js";
 import { hashPassword } from "../utils/password.js";
-import { loadEnv } from "../config/env.js";
-import { Employee } from "../models/Employee.js";
+import { logger } from "../config/logger.js";
+import prisma from "@/config/db.js";
 
 async function run() {
-  const env = loadEnv();
-  await mongoose.connect(env.MONGO_URI);
   const gloablPassword = "ChangeMeNow!123";
+
+  const data: { role: string; email: string; password: string }[] = [];
+
   const superAdminEmail = "superadmin@hrms.local";
-  const existingSuperAdmin = await User.findOne({ email: superAdminEmail });
+  const existingSuperAdmin = await prisma.user.findUnique({
+    where: { email: superAdminEmail },
+  });
   if (!existingSuperAdmin) {
     const passwordHash = await hashPassword(gloablPassword);
-    await User.create({
-      email: superAdminEmail,
-      passwordHash,
-      roles: ["SUPER_ADMIN"],
-      isActive: true,
+    await prisma.user.create({
+      data: {
+        email: superAdminEmail,
+        passwordHash,
+        roles: ["SUPER_ADMIN"],
+        isActive: true,
+      },
     });
-    console.log(
-      "Seeded SUPER_ADMIN:",
-      superAdminEmail,
-      "password: ",
-      gloablPassword
-    );
-  } else {
-    console.log(
-      "SUPER_ADMIN already exists with creds:",
-      superAdminEmail,
-      "password: ",
-      gloablPassword
-    );
   }
+  data.push({
+    email: superAdminEmail,
+    password: gloablPassword,
+    role: "SUPER_ADMIN",
+  });
   const employeeEmail1 = "employee1@hrms.local";
-  const existingEmployee1 = await Employee.findOne({ email: employeeEmail1 });
+  const existingEmployee1 = await prisma.employee.findUnique({
+    where: { email: employeeEmail1 },
+  });
   if (!existingEmployee1) {
-    const emoloyeeCount = await Employee.countDocuments();
-    await Employee.create({
-      employeeId: "E-" + emoloyeeCount + 1,
-      name: "Nikul",
-      email: employeeEmail1,
-      phone: "+915656565656",
-      status: "active",
+    const emoloyeeCount = await prisma.employee.count();
+    await prisma.employee.create({
+      data: {
+        employeeId: "E-" + emoloyeeCount.toFixed() + 1,
+        name: "Nikul",
+        email: employeeEmail1,
+        phone: "+915656565656",
+        status: "active",
+      },
     });
-    console.log(
-      "Seeded EMPLOYEE:",
-      employeeEmail1,
-      "password: ",
-      gloablPassword
-    );
-  } else {
-    console.log(
-      "EMPLOYEE already exists with creds:",
-      employeeEmail1,
-      "password: ",
-      gloablPassword
-    );
   }
+  data.push({
+    email: employeeEmail1,
+    password: gloablPassword,
+    role: "EMPLOYEE",
+  });
   const employeeEmail2 = "employee2@hrms.local";
-  const existingEmployee2 = await Employee.findOne({ email: employeeEmail2 });
+  const existingEmployee2 = await prisma.employee.findUnique({
+    where: { email: employeeEmail2 },
+  });
   if (!existingEmployee2) {
-    const emoloyeeCount = await Employee.countDocuments();
-    await Employee.create({
-      employeeId: "E-" + emoloyeeCount + 1,
-      name: "Nikul",
-      email: employeeEmail2,
-      phone: "+915656565656",
-      status: "active",
+    const emoloyeeCount = await prisma.employee.count();
+    await prisma.employee.create({
+      data: {
+        employeeId: "E-" + emoloyeeCount + 1,
+        name: "Nikul",
+        email: employeeEmail2,
+        phone: "+915656565656",
+        status: "active",
+      },
     });
-    console.log(
-      "Seeded EMPLOYEE:",
-      employeeEmail2,
-      "password: ",
-      gloablPassword
-    );
-  } else {
-    console.log(
-      "EMPLOYEE already exists with creds:",
-      employeeEmail2,
-      "password: ",
-      gloablPassword
-    );
   }
+  data.push({
+    email: employeeEmail2,
+    password: gloablPassword,
+    role: "EMPLOYEE",
+  });
   const managerEmail = "manager@hrms.local";
-  const existingManager = await User.findOne({ email: managerEmail });
+  const existingManager = await prisma.user.findUnique({
+    where: { email: managerEmail },
+  });
   if (!existingManager) {
     const passwordHash = await hashPassword(gloablPassword);
-    await User.create({
-      email: managerEmail,
-      passwordHash,
-      roles: ["MANAGER"],
-      isActive: true,
+    await prisma.user.create({
+      data: {
+        email: managerEmail,
+        passwordHash,
+        roles: ["MANAGER"],
+        isActive: true,
+      },
     });
-    console.log("Seeded MANAGER:", managerEmail, "password: ", gloablPassword);
-  } else {
-    console.log(
-      "MANAGER already exists with creds:",
-      managerEmail,
-      "password: ",
-      gloablPassword
-    );
   }
+  data.push({
+    email: managerEmail,
+    password: gloablPassword,
+    role: "MANAGER",
+  });
   const hrEmail = "hr@hrms.local";
-  const existingHr = await User.findOne({ email: hrEmail });
+  const existingHr = await prisma.user.findUnique({
+    where: { email: hrEmail },
+  });
   if (!existingHr) {
     const passwordHash = await hashPassword(gloablPassword);
-    await User.create({
-      email: hrEmail,
-      passwordHash,
-      roles: ["HR"],
-      isActive: true,
+    await prisma.user.create({
+      data: { email: hrEmail, passwordHash, roles: ["HR"], isActive: true },
     });
-    console.log("Seeded HR:", hrEmail, "password: ", gloablPassword);
-  } else {
-    console.log(
-      "HR already exists with creds:",
-      hrEmail,
-      "password: ",
-      gloablPassword
-    );
   }
-  await mongoose.disconnect();
+  data.push({
+    email: hrEmail,
+    password: gloablPassword,
+    role: "HR",
+  });
+
+  const formattedData = data
+    .map((d) => `${credsRow(d.role, d.email, d.password)}`)
+    .join("\n");
+  logger.info(
+    "\n" +
+      "\n" +
+      "ROLE         | EMAIL                     | PASSWORD\n" +
+      "-----------------------------------------------------\n" +
+      formattedData +
+      "\n"
+  );
+}
+
+function credsRow(role: string, email: string, password: string) {
+  return `${role.padEnd(12)} | ${email.padEnd(25)} | ${password}`;
 }
 
 run().catch((e) => {

@@ -1,10 +1,17 @@
-import type { Request, Response } from 'express';
-import { z } from 'zod';
-import { loadEnv } from '../config/env.js';
-import { loginUser, registerUser, logoutUser } from '../services/authService.js';
-import { buildRefreshCookie, rotateRefreshToken, issueAccessToken } from '../services/tokenService.js';
-import jwt from 'jsonwebtoken';
-import { User } from '../models/User.js';
+import type { Request, Response } from "express";
+import { z } from "zod";
+import { loadEnv } from "../config/env.js";
+import {
+  loginUser,
+  registerUser,
+  logoutUser,
+} from "../services/authService.js";
+import {
+  buildRefreshCookie,
+  rotateRefreshToken,
+  issueAccessToken,
+} from "../services/tokenService.js";
+import jwt from "jsonwebtoken";
 
 export const registerSchema = z.object({
   body: z.object({
@@ -16,8 +23,10 @@ export const registerSchema = z.object({
       .regex(/[A-Z]/)
       .regex(/[0-9]/)
       .regex(/[^A-Za-z0-9]/),
-    roles: z.array(z.enum(['SUPER_ADMIN', 'ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'])).optional()
-  })
+    roles: z
+      .array(z.enum(["SUPER_ADMIN", "ADMIN", "HR", "MANAGER", "EMPLOYEE"]))
+      .optional(),
+  }),
 });
 
 export async function register(req: Request, res: Response) {
@@ -40,8 +49,8 @@ export async function register(req: Request, res: Response) {
 export const loginSchema = z.object({
   body: z.object({
     email: z.email(),
-    password: z.string().min(8)
-  })
+    password: z.string().min(8),
+  }),
 });
 
 export async function login(req: Request, res: Response) {
@@ -63,7 +72,7 @@ export async function login(req: Request, res: Response) {
 export async function logout(req: Request, res: Response) {
   const env = loadEnv();
   const auth = req.headers.authorization;
-  if (auth?.startsWith('Bearer ')) {
+  if (auth?.startsWith("Bearer ")) {
     try {
       const token = auth.slice(7);
       const payload = jwt.decode(token) as any;
@@ -72,19 +81,26 @@ export async function logout(req: Request, res: Response) {
       }
     } catch {}
   }
-  res.clearCookie('refresh_token', { path: '/api/auth/refresh', domain: env.COOKIE_DOMAIN });
+  res.clearCookie("refresh_token", {
+    path: "/api/auth/refresh",
+    domain: env.COOKIE_DOMAIN,
+  });
   res.status(204).send();
 }
 
 export async function refresh(req: Request, res: Response) {
   const env = loadEnv();
   const cookie = req.cookies?.refresh_token as string | undefined;
-  if (!cookie) return res.status(401).json({ error: 'Unauthorized' });
+  if (!cookie) return res.status(401).json({ error: "Unauthorized" });
   try {
     const { userId, newToken } = await rotateRefreshToken(cookie);
-    const user = await User.findById(userId).lean();
-    if (!user) return res.status(401).json({ error: 'Unauthorized' });
-    const accessToken = issueAccessToken({ sub: userId, email: user.email, roles: user.roles });
+    const user = await prisma.user.findUnique({ where: { id: parseInt(userId) } });
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    const accessToken = issueAccessToken({
+      sub: userId,
+      email: user.email,
+      roles: user.roles as string[],
+    });
     const refreshCookie = buildRefreshCookie(
       newToken,
       7 * 24 * 60 * 60 * 1000,
@@ -96,8 +112,6 @@ export async function refresh(req: Request, res: Response) {
       .cookie(refreshCookie.name, refreshCookie.value, refreshCookie.options)
       .json({ accessToken });
   } catch {
-    res.status(401).json({ error: 'Unauthorized' });
+    res.status(401).json({ error: "Unauthorized" });
   }
 }
-
-

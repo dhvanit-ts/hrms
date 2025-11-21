@@ -1,87 +1,271 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { http } from '../services/api/http';
+import {
+  Calendar,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Plus
+} from 'lucide-react';
 
-export const Leaves: React.FC = () => {
+// UI Components
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+
+/* ----------------------------------------------------------------------------------
+ * MOCKS (To replace missing external dependencies in this preview)
+ * ---------------------------------------------------------------------------------- */
+
+// Mock User Interface
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+// Mock useAuth hook
+const useAuth = () => {
+  const [user] = useState<User>({ id: 'emp-123', name: 'John Doe', email: 'john@company.com' });
+  const accessToken = 'mock-token-xyz';
+  return { user, accessToken };
+};
+
+// Mock HTTP Service
+const mockLeaves = [
+  { _id: '1', type: 'annual', startDate: '2024-08-12', endDate: '2024-08-15', status: 'Approved' },
+  { _id: '2', type: 'sick', startDate: '2024-07-01', endDate: '2024-07-02', status: 'Rejected' },
+];
+
+const http = {
+  get: async (url: string, config?: any) => {
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
+    if (url === '/leaves/mine') return { data: { leaves: mockLeaves } };
+    if (url === '/leaves/balance') return { data: { balance: { year: 2024, remaining: 12, allowance: 20 } } };
+    return { data: {} };
+  },
+  post: async (url: string, data: any, config?: any) => {
+    await new Promise(resolve => setTimeout(resolve, 800)); // Simulate delay
+    console.log(`POST to ${url}:`, data);
+    // Simulate adding the new leave to the local mock list for demo purposes
+    if (url === '/leaves') {
+      mockLeaves.unshift({
+        _id: Math.random().toString(),
+        type: data.type,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        status: 'Pending'
+      });
+    }
+    return { data: { success: true } };
+  }
+};
+
+/* ----------------------------------------------------------------------------------
+ * MAIN COMPONENT
+ * ---------------------------------------------------------------------------------- */
+
+// Helper to map status to badge variant
+const getStatusBadge = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'approved':
+      return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-transparent shadow-none"><CheckCircle className="w-3 h-3 mr-1" /> Approved</Badge>;
+    case 'rejected':
+      return <Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-200 border-transparent shadow-none"><XCircle className="w-3 h-3 mr-1" /> Rejected</Badge>;
+    case 'pending':
+    default:
+      return <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-transparent shadow-none"><Clock className="w-3 h-3 mr-1" /> Pending</Badge>;
+  }
+};
+
+export const LeavesPage: React.FC = () => {
   const { accessToken, user } = useAuth();
   const [leaves, setLeaves] = useState<any[]>([]);
   const [type, setType] = useState('annual');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [balance, setBalance] = useState<any | null>(null);
-  const headers = { Authorization: `Bearer ${accessToken}` };
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Memoize headers to prevent useEffect loop if not using axios interceptors
+  const headers = React.useMemo(() => ({ Authorization: `Bearer ${accessToken}` }), [accessToken]);
 
   async function load() {
-    const res = await http.get('/leaves/mine', { headers });
-    setLeaves(res.data.leaves);
-    const bal = await http.get('/leaves/balance', { headers });
-    setBalance(bal.data.balance);
+    try {
+      const res = await http.get('/leaves/mine', { headers });
+      if (!res.data.leaves) return;
+      setLeaves([...res.data.leaves]); // Create new array reference
+      const bal = await http.get('/leaves/balance', { headers });
+      setBalance(bal.data.balance);
+    } catch (error) {
+      console.error("Failed to load leave data", error);
+    }
   }
 
   useEffect(() => {
-    load();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken]);
+    if (accessToken) load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken, headers]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await http.post('/leaves', { employeeId: user?.id, type, startDate, endDate }, { headers });
-    setStartDate('');
-    setEndDate('');
-    await load();
+    setIsLoading(true);
+    try {
+      await http.post('/leaves', { employeeId: user?.id, type, startDate, endDate }, { headers });
+      setStartDate('');
+      setEndDate('');
+      await load();
+    } catch (error) {
+      console.error("Failed to submit leave request", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <h2 className="text-xl font-semibold">My Leaves</h2>
-      <form onSubmit={submit} className="flex gap-3 items-end">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Header Section */}
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <label className="text-sm">Type</label>
-          <select className="border rounded px-2 py-2 block" value={type} onChange={(e) => setType(e.target.value)}>
-            <option value="annual">Annual</option>
-            <option value="sick">Sick</option>
-            <option value="unpaid">Unpaid</option>
-          </select>
+          <h2 className="text-xl font-semibold text-zinc-900">My Leaves</h2>
+          <p className="text-sm text-zinc-500">Manage your leave requests and view balance.</p>
         </div>
-        <div>
-          <label className="text-sm">Start</label>
-          <input className="border rounded px-2 py-2 block" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
-        </div>
-        <div>
-          <label className="text-sm">End</label>
-          <input className="border rounded px-2 py-2 block" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
-        </div>
-        <button className="px-3 py-2 border rounded" type="submit">Apply</button>
-      </form>
+      </div>
+
+      {/* Balance Cards */}
       {balance && (
-        <div className="text-sm text-gray-700">
-          Balance {balance.year}: {balance.remaining}/{balance.allowance} days remaining
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="bg-linear-to-br from-zinc-900 to-zinc-800 text-white border-zinc-800">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-zinc-200">
+                Remaining Balance ({balance.year})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold">{balance.remaining}</span>
+                <span className="text-sm text-zinc-400">/ {balance.allowance} days</span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
-      <div className="overflow-auto border rounded">
-        <table className="min-w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="text-left px-3 py-2">Type</th>
-              <th className="text-left px-3 py-2">Start</th>
-              <th className="text-left px-3 py-2">End</th>
-              <th className="text-left px-3 py-2">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {leaves.map((l) => (
-              <tr key={l._id} className="border-t">
-                <td className="px-3 py-2">{l.type}</td>
-                <td className="px-3 py-2">{new Date(l.startDate).toLocaleDateString()}</td>
-                <td className="px-3 py-2">{new Date(l.endDate).toLocaleDateString()}</td>
-                <td className="px-3 py-2">{l.status}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Application Form */}
+        <Card className="lg:col-span-1 h-fit">
+          <CardHeader>
+            <CardTitle>New Request</CardTitle>
+            <CardDescription>Submit a new leave application</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={submit} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-700">Leave Type</label>
+                <select
+                  className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                >
+                  <option value="annual">Annual Leave</option>
+                  <option value="sick">Sick Leave</option>
+                  <option value="unpaid">Unpaid Leave</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-zinc-700">Start Date</label>
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-zinc-700">End Date</label>
+                  <Input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <span className="flex items-center gap-2">Processing...</span>
+                ) : (
+                  <span className="flex items-center gap-2"><Plus className="w-4 h-4" /> Apply Request</span>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* History Table */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Request History</CardTitle>
+            <CardDescription>A list of your recent leave applications</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="relative w-full overflow-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-zinc-50/50 text-zinc-500">
+                  <tr>
+                    <th className="h-10 px-6 py-3 font-medium">Type</th>
+                    <th className="h-10 px-6 py-3 font-medium">Duration</th>
+                    <th className="h-10 px-6 py-3 font-medium">Dates</th>
+                    <th className="h-10 px-6 py-3 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-200">
+                  {leaves.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-8 text-center text-zinc-500">
+                        No leave requests found.
+                      </td>
+                    </tr>
+                  ) : (
+                    leaves.map((l) => (
+                      <tr key={l._id} className="hover:bg-zinc-50/50 transition-colors">
+                        <td className="px-6 py-4 font-medium capitalize text-zinc-900">
+                          {l.type}
+                        </td>
+                        <td className="px-6 py-4 text-zinc-600">
+                          {Math.ceil((new Date(l.endDate).getTime() - new Date(l.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1} days
+                        </td>
+                        <td className="px-6 py-4 text-zinc-600">
+                          <div className="flex flex-col text-xs">
+                            <span>{new Date(l.startDate).toLocaleDateString()}</span>
+                            <span className="text-zinc-400">to</span>
+                            <span>{new Date(l.endDate).toLocaleDateString()}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          {getStatusBadge(l.status)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
 };
 
-
+export default LeavesPage;

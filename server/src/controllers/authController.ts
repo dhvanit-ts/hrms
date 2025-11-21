@@ -94,7 +94,9 @@ export async function refresh(req: Request, res: Response) {
   if (!cookie) return res.status(401).json({ error: "Unauthorized" });
   try {
     const { userId, newToken } = await rotateRefreshToken(cookie);
-    const user = await prisma.user.findUnique({ where: { id: parseInt(userId) } });
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId) },
+    });
     if (!user) return res.status(401).json({ error: "Unauthorized" });
     const accessToken = issueAccessToken({
       sub: userId,

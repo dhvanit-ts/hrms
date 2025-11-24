@@ -9,6 +9,7 @@ import cookieParser from "cookie-parser";
 import errorMiddleware from "@/common/middlewares/error.middleware";
 import { swaggerSpec } from "@/docs/swagger";
 import { registerRoutes } from "@/routes/index";
+import applySecurity from "./common/config/security";
 
 const socketService = new SocketService();
 
@@ -22,17 +23,16 @@ const io = new Server(server, {
   transports: ["websocket"],
 });
 
-app.use(cookieParser());
+app.use(express.json({ limit: "16kb" }));
+app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
+app.use(cookieParser());
+
+applySecurity(app);
 // app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 // move these middlewares in route file after file upload middleware if you are using multer for file uploads
-app.use(express.urlencoded({ extended: true, limit: "16kb" }));
-app.use(express.json({ limit: "16kb" }));
 
-io.on("connection", (socket) => {
-  socketService.listenSocket(socket);
-});
-
+socketService.listenSocket(io);
 registerRoutes(app);
 
 if (env.NODE_ENV !== "production") {

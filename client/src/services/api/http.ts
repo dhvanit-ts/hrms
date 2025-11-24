@@ -1,8 +1,8 @@
-import axios from 'axios';
+import axios from "axios";
 
 export const http = axios.create({
-  baseURL: '/api',
-  withCredentials: true
+  baseURL: "/api",
+  withCredentials: true,
 });
 
 http.interceptors.response.use(
@@ -12,7 +12,7 @@ http.interceptors.response.use(
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true;
       try {
-        await http.post('/auth/refresh');
+        await http.post("/auth/refresh");
         return http(original);
       } catch {
         // fallthrough
@@ -21,5 +21,3 @@ http.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-

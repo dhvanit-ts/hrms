@@ -72,13 +72,16 @@ export async function setLeaveStatus(params: {
 }
 
 // Get leave balance
-export async function getLeaveBalance(employeeId: number, year: number = new Date().getFullYear()) {
+export async function getLeaveBalance(
+  employeeId: number,
+  year: number = new Date().getFullYear()
+) {
   const start = new Date(`${year}-01-01T00:00:00.000Z`);
   const end = new Date(`${year}-12-31T23:59:59.999Z`);
 
   const approved = await prisma.leaveRequest.findMany({
     where: {
-      employeeId,
+      employeeId: parseInt(employeeId.toString()),
       status: "approved",
       startDate: { gte: start },
       endDate: { lte: end },
@@ -86,10 +89,18 @@ export async function getLeaveBalance(employeeId: number, year: number = new Dat
   });
 
   const usedDays = approved.reduce((sum, r) => {
-    const diff = Math.ceil((r.endDate.getTime() - r.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const diff =
+      Math.ceil(
+        (r.endDate.getTime() - r.startDate.getTime()) / (1000 * 60 * 60 * 24)
+      ) + 1;
     return sum + Math.max(0, diff);
   }, 0);
 
   const allowance = 20;
-  return { year, allowance, usedDays, remaining: Math.max(0, allowance - usedDays) };
+  return {
+    year,
+    allowance,
+    usedDays,
+    remaining: Math.max(0, allowance - usedDays),
+  };
 }

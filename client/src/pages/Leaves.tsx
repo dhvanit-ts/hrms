@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Calendar,
   Clock,
   CheckCircle,
   XCircle,
-  AlertCircle,
   Plus
 } from 'lucide-react';
 
@@ -19,58 +17,8 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card';
-
-/* ----------------------------------------------------------------------------------
- * MOCKS (To replace missing external dependencies in this preview)
- * ---------------------------------------------------------------------------------- */
-
-// Mock User Interface
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
-
-// Mock useAuth hook
-const useAuth = () => {
-  const [user] = useState<User>({ id: 'emp-123', name: 'John Doe', email: 'john@company.com' });
-  const accessToken = 'mock-token-xyz';
-  return { user, accessToken };
-};
-
-// Mock HTTP Service
-const mockLeaves = [
-  { _id: '1', type: 'annual', startDate: '2024-08-12', endDate: '2024-08-15', status: 'Approved' },
-  { _id: '2', type: 'sick', startDate: '2024-07-01', endDate: '2024-07-02', status: 'Rejected' },
-];
-
-const http = {
-  get: async (url: string, config?: any) => {
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
-    if (url === '/leaves/mine') return { data: { leaves: mockLeaves } };
-    if (url === '/leaves/balance') return { data: { balance: { year: 2024, remaining: 12, allowance: 20 } } };
-    return { data: {} };
-  },
-  post: async (url: string, data: any, config?: any) => {
-    await new Promise(resolve => setTimeout(resolve, 800)); // Simulate delay
-    console.log(`POST to ${url}:`, data);
-    // Simulate adding the new leave to the local mock list for demo purposes
-    if (url === '/leaves') {
-      mockLeaves.unshift({
-        _id: Math.random().toString(),
-        type: data.type,
-        startDate: data.startDate,
-        endDate: data.endDate,
-        status: 'Pending'
-      });
-    }
-    return { data: { success: true } };
-  }
-};
-
-/* ----------------------------------------------------------------------------------
- * MAIN COMPONENT
- * ---------------------------------------------------------------------------------- */
+import { http } from '@/services/api/http';
+import { useAuth } from '@/context/AuthContext';
 
 // Helper to map status to badge variant
 const getStatusBadge = (status: string) => {
@@ -94,15 +42,17 @@ export const LeavesPage: React.FC = () => {
   const [balance, setBalance] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Memoize headers to prevent useEffect loop if not using axios interceptors
-  const headers = React.useMemo(() => ({ Authorization: `Bearer ${accessToken}` }), [accessToken]);
-
   async function load() {
+    if (!accessToken) return;
     try {
-      const res = await http.get('/leaves/mine', { headers });
+      const res = await http.get('/leaves/mine', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
       if (!res.data.leaves) return;
-      setLeaves([...res.data.leaves]); // Create new array reference
-      const bal = await http.get('/leaves/balance', { headers });
+      setLeaves(res.data.leaves);
+      const bal = await http.get('/leaves/balance', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
       setBalance(bal.data.balance);
     } catch (error) {
       console.error("Failed to load leave data", error);
@@ -110,15 +60,19 @@ export const LeavesPage: React.FC = () => {
   }
 
   useEffect(() => {
-    if (accessToken) load();
+    load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, headers]);
+  }, [accessToken]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!accessToken) return;
     setIsLoading(true);
     try {
-      await http.post('/leaves', { employeeId: user?.id, type, startDate, endDate }, { headers });
+      await http.post('/leaves',
+        { employeeId: parseInt(user?.id!), type, startDate, endDate },
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
       setStartDate('');
       setEndDate('');
       await load();

@@ -24,6 +24,29 @@ services:
         condition: service_healthy
     ports:
       - "8080:8080"
+      
+  redis:
+    image: redis:7-alpine        # latest major 7.x, Alpine version for size
+    container_name: redis
+    restart: unless-stopped       # more appropriate than always for many setups
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes", "--save", "60 10000"]
+    volumes:
+      - redis-data:/data          # persistent data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf  # optional if you have custom config
+    healthcheck:                  # ensure it’s healthy before other services rely on it
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      # Example: protect with password if you need
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+    # If you set requirepass via config file or environment, use it in clients
+    # networks: can define a custom network if you have multiple services
 
 volumes:
+  redis-data:
+    driver: local
   postgres_data:

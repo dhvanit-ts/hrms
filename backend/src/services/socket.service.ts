@@ -1,26 +1,29 @@
-import { DefaultEventsMap, Server, Socket } from "socket.io";
-
-type SocketType = Socket<
-  DefaultEventsMap,
-  DefaultEventsMap,
-  DefaultEventsMap,
-  unknown
->;
+import { Server as SocketServer, Socket } from "socket.io";
+import { Server as HttpServer } from "node:http";
+import { env } from "@/common/config/env";
 
 class SocketService {
-  private handleSocketError = (socket: SocketType, error: unknown) => {
+  private handleSocketError = (socket: Socket, error: unknown) => {
     console.error(`Socket ${socket.id} error:`, error);
     if (error instanceof Error && "code" in error) {
       socket.emit("operation-error", {
-        code: error.code || "GENERIC_ERROR",
+        code: error?.code || "GENERIC_ERROR",
         message: error.message,
       });
     }
   };
 
-  listenSocket = (
-    io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>
-  ) => {
+  createServer = (server: HttpServer) => {
+    return new SocketServer(server, {
+      cors: {
+        origin: env.ACCESS_CONTROL_ORIGIN,
+        methods: ["GET", "POST"],
+      },
+      transports: ["websocket"],
+    });
+  };
+
+  listenSocket = (io: SocketServer) => {
     io.on("connection", (socket) => {
       // your socket logic here
 
@@ -33,6 +36,12 @@ class SocketService {
         }
       });
     });
+  };
+
+  createAndListenSocket = (server: HttpServer) => {
+    const io = this.createServer(server);
+    this.listenSocket(io);
+    return io;
   };
 }
 

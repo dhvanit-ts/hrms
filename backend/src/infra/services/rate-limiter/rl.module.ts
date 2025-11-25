@@ -1,8 +1,8 @@
-import { createLimiter } from "./rl.module";
+import { createLimiter } from "./rl.factory";
 
 export const limiters = {
-  api: createLimiter("rl_api", 100),
-  auth: createLimiter("rl_auth", 20),
+  api: createLimiter("rl_api", 100, 5 * 60),
+  auth: createLimiter("rl_auth", 20, 15 * 60),
 };
 
 export type LimiterType = keyof typeof limiters;

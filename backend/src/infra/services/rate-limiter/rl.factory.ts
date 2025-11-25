@@ -27,6 +27,7 @@ export class RedisLimiter implements IRateLimiter {
 export const createLimiter = (
   keyPrefix: string,
   points: number,
+  blockDuration = 5 * 60,
   duration = 60
 ) =>
   new RedisLimiter(
@@ -35,5 +36,6 @@ export const createLimiter = (
       keyPrefix,
       points,
       duration,
+      blockDuration,
     })
   );

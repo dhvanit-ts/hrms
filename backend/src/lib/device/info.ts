@@ -1,3 +1,5 @@
+import { UAParser } from "ua-parser-js";
+
 export const getDeviceName = (userAgent: string): string => {
   const parser = new UAParser(userAgent);
   const result = parser.getResult();

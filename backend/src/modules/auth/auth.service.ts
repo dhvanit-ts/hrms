@@ -4,7 +4,7 @@ import { env } from "@/config/env";
 import ApiError from "@/core/http/ApiError";
 import cache from "@/infra/services/cache/index";
 import * as authRepo from "@/modules/auth/auth.repo";
-import { hashPassword, verifyPassword } from "@/lib/password";
+import { hashPassword, verifyPassword } from "@/lib/crypto";
 import oauthService from "@/modules/auth/oauth/oauth.service";
 import tokenService from "@/modules/auth/tokens/token.service";
 import otpService from "@/modules/auth/otp/otp.service";

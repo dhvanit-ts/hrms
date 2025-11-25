@@ -1,5 +1,5 @@
 import ApiResponse from "@/core/http/ApiResponse";
-import { AsyncHandler } from "@/common/utils/asyncHandler";
+import { AsyncHandler } from "@/core/http/asyncHandler";
 import userService from "@/modules/user/user.service";
 import authService from "@/modules/auth/auth.service";
 import { Request, Response } from "express";

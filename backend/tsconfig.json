@@ -4,7 +4,7 @@
 		"module": "ESNext",
 		"moduleResolution": "Node",
 		"outDir": "dist",
-		"rootDir": "src",
+		"rootDir": "./",
 		"baseUrl": "./src",
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
@@ -20,6 +20,8 @@
 		"skipLibCheck": true
 	},
 	"include": [
-		"src/**/*"
+		"src/**/*",
+		"docs/**/*",
+		"scripts/**/*"
 	]
 }

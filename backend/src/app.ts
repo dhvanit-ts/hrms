@@ -1,14 +1,14 @@
-import { env } from "@/common/config/env";
+import { env } from "@/config/env";
 import express from "express";
 import swaggerUi from "swagger-ui-express";
-import { SocketService } from "@/infa/services/socket.service";
+import { SocketService } from "@/infra/services/socket.service";
 import http from "node:http";
 // import path from "node:path";
 import cookieParser from "cookie-parser";
-import errorMiddleware from "@/common/middlewares/error.middleware";
-import { swaggerSpec } from "@/docs/swagger";
+import errorMiddleware from "@/core/middlewares/error.middleware";
+import { swaggerSpec } from "../docs/swagger";
 import { registerRoutes } from "@/routes/index";
-import applySecurity from "./common/config/security";
+import applySecurity from "./config/security";
 
 const socketService = new SocketService();
 

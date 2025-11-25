@@ -1,10 +1,9 @@
-import { env } from "@/common/config/env";
+import { env } from "@/config/env";
 import { server } from "@/app";
 
 const port = env.PORT || 8000;
 
 const main = async () => {
-
   const serverInstance = server.listen(port, () => {
     console.log(`Server is listening on port ${port}`);
   });

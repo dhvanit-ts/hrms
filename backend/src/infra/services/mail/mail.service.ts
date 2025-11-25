@@ -1,138 +1,13 @@
 import crypto from "node:crypto";
-import { render } from "@react-email/render";
-import nodemailer, {
-  SentMessageInfo,
-  Transporter,
-  TransportOptions,
-} from "nodemailer";
-import { env } from "@/config/env";
-import FeedbackReceivedEmail from "@/emails/FeedbackReceivedEmail";
-import FeedbackSentEmail from "@/emails/FeedbackSent";
-import NewDeviceLoginEmail from "@/emails/NewDeviceLogin";
-import OtpVerificationEmail from "@/emails/OtpVerificationEmail";
-import WelcomeEmail from "@/emails/WelcomeEmail";
+import nodemailer, { Transporter, SentMessageInfo } from "nodemailer";
 import { Address } from "nodemailer/lib/mailer";
 
-type MailType =
-  | "OTP"
-  | "WELCOME"
-  | "FEEDBACK-RECEIVED"
-  | "FEEDBACK-SENT"
-  | "NEW-DEVICE-LOGIN";
-
-interface MailDetails {
-  [key: string]: unknown;
-}
-
-export interface MailConfig {
-  projectName?: string;
-  defaultFrom?: string;
-  transport?: TransportOptions;
-}
-
-const defaultTransport = {
-  ...(env.NODE_ENV === "development" || env.NODE_ENV === "test"
-    ? {
-        host: env.MAILTRAP_HOST,
-        port: env.MAILTRAP_PORT,
-        auth: {
-          user: env.MAILTRAP_USER,
-          pass: env.MAILTRAP_PASS,
-        },
-      }
-    : {
-        service: "gmail",
-        port: 465,
-        secure: true,
-        auth: {
-          user: env.GMAIL_APP_USER,
-          pass: env.GMAIL_APP_PASS,
-        },
-        tls: {
-          rejectUnauthorized: false,
-        },
-      }),
-} as TransportOptions;
-
-const mailTemplates: Record<
-  MailType,
-  (
-    details?: MailDetails
-  ) => Promise<{ subject: string; html: string; text: string }>
-> = {
-  OTP: async (d) => {
-    const otp = d?.otp ?? "000000";
-    const html = await render(
-      OtpVerificationEmail({
-        username: d?.username as string,
-        projectName: d?.projectName as string,
-        otp: otp as string,
-      })
-    );
-    return {
-      subject: "Your OTP Code",
-      html,
-      text: `Your OTP code is: ${otp}. It expires in 1 minute.`,
-    };
-  },
-  WELCOME: async (d) => {
-    const html = await render(
-      WelcomeEmail({
-        username: d?.username as string,
-        projectName: d?.projectName as string,
-      })
-    );
-    return {
-      subject: "Welcome to MyApp!",
-      html,
-      text: `Welcome ${d?.username ?? "User"} to MyApp!`,
-    };
-  },
-  "FEEDBACK-RECEIVED": async (_d) => {
-    const html = await render(
-      FeedbackReceivedEmail({
-        projectName: "MyApp",
-      })
-    );
-    return {
-      subject: "Feedback Received",
-      html,
-      text: "Thanks for your feedback!",
-    };
-  },
-  "FEEDBACK-SENT": async (d) => {
-    const html = await render(
-      FeedbackSentEmail({
-        title: d?.title as string,
-        description: d?.description as string,
-        sendBy: d?.sendBy as string,
-        projectName: "MyApp",
-      })
-    );
-    return {
-      subject: `Feedback from ${d?.sendBy}`,
-      html,
-      text: `${d?.title}\n${d?.description}\n— ${d?.sendBy}`,
-    };
-  },
-  "NEW-DEVICE-LOGIN": async (d) => {
-    const html = await render(
-      NewDeviceLoginEmail({
-        deviceName: d?.deviceName as string,
-        location: d?.location as string,
-        projectName: "MyApp",
-      })
-    );
-    return {
-      subject: "New Device Login Detected",
-      html,
-      text: `Device: ${d?.deviceName}\nLocation: ${d?.location}`,
-    };
-  },
-};
+import { MailConfig, MailDetails, MailType } from "./mail.types";
+import { defaultTransport } from "@/config/mail";
+import { mailTemplates } from "./templates";
 
 export class MailService {
-  private transporter: Transporter<SentMessageInfo, TransportOptions>;
+  private transporter: Transporter<SentMessageInfo>;
   private projectName: string;
   private defaultFrom: string;
 
@@ -140,6 +15,7 @@ export class MailService {
     this.transporter = nodemailer.createTransport(
       config.transport ?? defaultTransport
     );
+
     this.projectName = config.projectName ?? "Ascedium";
     this.defaultFrom =
       config.defaultFrom ?? `"${this.projectName}" <no-reply@ascedium.com>`;
@@ -157,7 +33,9 @@ export class MailService {
       throw new Error("Invalid email address");
     }
 
-    if (type === "OTP" && !details.otp) details.otp = this.generateOtp();
+    if (type === "OTP" && !details.otp) {
+      details.otp = this.generateOtp();
+    }
 
     const tpl = await mailTemplates[type](details);
 
@@ -182,6 +60,3 @@ export class MailService {
     }
   }
 }
-
-const mailService = new MailService();
-export default mailService;

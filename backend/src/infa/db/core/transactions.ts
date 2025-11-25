@@ -1,4 +1,4 @@
-import db from "@/common/config/db";
+import db from "@/infa/db/core";
 import type { DB } from "./types";
 
 export async function runTransaction<T>(

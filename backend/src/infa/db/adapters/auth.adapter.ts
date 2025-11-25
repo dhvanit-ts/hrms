@@ -1,13 +1,10 @@
 import { IUser } from "@/common/types/IUser";
-import { DB } from "@/common/config/db/types";
+import { DB } from "@/infa/db/core/types";
 import { eq, or, sql } from "drizzle-orm";
-import db from "@/common/config/db";
+import db from "@/infa/db/core";
 import { UserTable } from "@/features/user/user.table";
 
-export const findById = async (
-  userId: string, 
-  dbTx?: DB
-) => {
+export const findById = async (userId: string, dbTx?: DB) => {
   const client = dbTx ?? db;
   const user = await client.query.users.findFirst({
     where: eq(UserTable.id, userId),
@@ -17,21 +14,18 @@ export const findById = async (
 };
 
 export const updateRefreshToken = async (
-  id: string, 
-  refreshToken: string, 
+  id: string,
+  refreshToken: string,
   dbTx?: DB
 ) => {
   const client = dbTx ?? db;
   await client
     .update(UserTable)
     .set({ refreshToken })
-    .where(eq(UserTable.id, id))
+    .where(eq(UserTable.id, id));
 };
 
-export const findByEmail = async (
-  email: string, 
-  dbTx?: DB
-) => {
+export const findByEmail = async (email: string, dbTx?: DB) => {
   const client = dbTx ?? db;
   const user = await client.query.users.findFirst({
     where: eq(UserTable.email, email.toLowerCase()),
@@ -40,24 +34,18 @@ export const findByEmail = async (
   return user;
 };
 
-export const create = async (
-  user: IUser, 
-  dbTx?: DB
-) => {
+export const create = async (user: IUser, dbTx?: DB) => {
   const client = dbTx ?? db;
   const createdUser = await client
     .insert(UserTable)
     .values(user)
     .returning()
-    .then(r => r?.[0] ?? null);
+    .then((r) => r?.[0] ?? null);
 
   return createdUser;
 };
 
-export const findByUsername = async (
-  username: string, 
-  dbTx?: DB
-) => {
+export const findByUsername = async (username: string, dbTx?: DB) => {
   const client = dbTx ?? db;
   const user = await client.query.users.findFirst({
     where: eq(UserTable.username, username),
@@ -66,10 +54,7 @@ export const findByUsername = async (
   return user;
 };
 
-export const searchUsers = async (
-  query: string, 
-  dbTx?: DB
-) => {
+export const searchUsers = async (query: string, dbTx?: DB) => {
   const client = dbTx ?? db;
   const users = await client.query.users.findMany({
     where: or(

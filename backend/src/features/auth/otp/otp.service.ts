@@ -1,5 +1,5 @@
-import cache from "@/services/cache/index";
-import mailService from "@/services/mail.service";
+import cache from "@/infa/services/cache/index";
+import mailService from "@/infa/services/mail.service";
 import { hashOTP } from "@/common/utils/cryptographer";
 import ApiError from "@/common/utils/ApiError";
 

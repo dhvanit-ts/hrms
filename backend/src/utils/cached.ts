@@ -1,5 +1,5 @@
 import logger from "@/common/utils/logger";
-import cache from "@/services/cache/index";
+import cache from "@/infa/services/cache/index";
 
 export const cached = async <T>(key: string, fetcher: () => Promise<T>) => {
   const hit = cache.get<T>(key);

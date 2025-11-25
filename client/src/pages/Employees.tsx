@@ -73,11 +73,10 @@ export const EmployeesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    let isMounted = true;
     (async () => {
       try {
         const res = await http.get('/employees', { headers: { Authorization: `Bearer ${accessToken}` } });
-        if (isMounted && res.data.employees) {
+        if (res.data.employees) {
           setRows(res.data.employees);
           setIsLoading(false);
         }
@@ -86,7 +85,6 @@ export const EmployeesPage: React.FC = () => {
         setIsLoading(false);
       }
     })();
-    return () => { isMounted = false; };
   }, [accessToken]);
 
   // Simple client-side filter for the demo

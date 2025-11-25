@@ -3,8 +3,8 @@ import { Request } from "express";
 import { env } from "@/common/config/env";
 import { randomUUID } from "node:crypto";
 import * as authRepo from "@/features/auth/core/auth.repo";
-import { runTransaction } from "@/common/config/db/transactions";
-import { DB } from "@/common/config/db/types";
+import { runTransaction } from "@/infa/db/transactions";
+import { DB } from "@/infa/db/core/types";
 
 class TokenService {
   accessTokenExpiryMs = 1000 * 60 * parseInt(env.ACCESS_TOKEN_TTL || "0", 10);

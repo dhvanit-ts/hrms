@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import db from "@/common/config/db/index";
+import db from "@/infa/db/core/index";
 import { UserTable } from "@/features/user/user.schema";
 import { hashPassword } from "@/utils/password";
 

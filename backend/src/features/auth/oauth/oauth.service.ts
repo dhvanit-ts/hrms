@@ -1,11 +1,10 @@
 import axios from "axios";
 import { Request } from "express";
 import { env } from "@/common/config/env";
-import cache from "@/services/cache/index";
+import cache from "@/infa/services/cache/index";
 import * as authRepo from "@/features/auth/core/auth.repo";
 import tokenService from "@/features/auth/tokens/token.service";
 import ApiError from "@/common/utils/ApiError";
-
 
 class OAuthService {
   handleGoogleOAuth = async (code: string, req: Request) => {
@@ -63,12 +62,16 @@ class OAuthService {
     return { redirectUrl };
   };
 
-  createUserFromOAuth = async (email: string, username: string, req: Request) => {
-    const createdUser = await authRepo.create({ 
-      email, 
-      username, 
-      authType: "oauth", 
-      password: null
+  createUserFromOAuth = async (
+    email: string,
+    username: string,
+    req: Request
+  ) => {
+    const createdUser = await authRepo.create({
+      email,
+      username,
+      authType: "oauth",
+      password: null,
     });
 
     if (!createdUser)

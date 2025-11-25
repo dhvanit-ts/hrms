@@ -1,7 +1,5 @@
 import { pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { AuthTypeEnum } from "@/common/config/db/enums";
-
-export const RoleEnum = pgEnum("role", ["user", "admin", "superadmin"]);
+import { AuthTypeEnum, RoleEnum } from "@/infa/db/core/enums";
 
 export const UserTable = pgTable("user", {
   id: uuid("id").primaryKey().defaultRandom(),

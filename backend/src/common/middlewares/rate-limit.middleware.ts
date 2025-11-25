@@ -1,6 +1,6 @@
 import { RateLimiterRedis, RateLimiterRes } from "rate-limiter-flexible";
 import { Request, Response, NextFunction } from "express";
-import cache from "@/services/cache";
+import cache from "@/infa/services/cache";
 
 const apiLimiter = new RateLimiterRedis({
   storeClient: cache,

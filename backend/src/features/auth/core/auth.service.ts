@@ -2,14 +2,13 @@ import { CookieOptions, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { env } from "@/common/config/env";
 import ApiError from "@/common/utils/ApiError";
-import cache from "@/services/cache/index";
+import cache from "@/infa/services/cache/index";
 import * as authRepo from "@/features/auth/core/auth.repo";
 import { hashPassword, verifyPassword } from "@/utils/password";
 import oauthService from "@/features/auth/oauth/oauth.service";
 import tokenService from "@/features/auth/tokens/token.service";
 import otpService from "@/features/auth/otp/otp.service";
-import { runTransaction } from "@/common/config/db/transactions";
-
+import { runTransaction } from "@/infa/db/transactions";
 
 class AuthService {
   options: CookieOptions = {
@@ -23,7 +22,6 @@ class AuthService {
     res: Response,
     accessToken: string,
     refreshToken: string
-    
   ) => {
     res
       .cookie("accessToken", accessToken, {
@@ -57,7 +55,6 @@ class AuthService {
     email: string,
     username: string,
     password: string
-    
   ) => {
     const existingUser = await authRepo.findByEmail(email);
 
@@ -68,7 +65,7 @@ class AuthService {
         data: { service: "authService.initializeAuthService" },
       });
 
-    const usernameTaken = await authRepo.findByUsername(username);    
+    const usernameTaken = await authRepo.findByUsername(username);
     if (usernameTaken)
       throw new ApiError({
         statusCode: 400,
@@ -131,7 +128,7 @@ class AuthService {
             message: "Failed to generate access and refresh token",
             data: { service: "authService.registerAuthService" },
           });
-          
+
         // Cleanup cache
         await cache.del(`pending:${email}`);
         await cache.del(`otp:${email}`);
@@ -168,11 +165,7 @@ class AuthService {
       });
 
     const { accessToken, refreshToken } =
-      await tokenService.generateAndPersistTokens(
-        user.id,
-        user.username,
-        req
-      );
+      await tokenService.generateAndPersistTokens(user.id, user.username, req);
 
     return { user, accessToken, refreshToken };
   };
@@ -192,7 +185,6 @@ class AuthService {
   refreshAccessTokenService = async (
     incomingRefreshToken: string,
     req: Request
-    
   ) => {
     if (!incomingRefreshToken)
       throw new ApiError({
@@ -229,11 +221,7 @@ class AuthService {
       });
 
     const { accessToken, refreshToken } =
-      await tokenService.generateAndPersistTokens(
-        user.id,
-        user.username,
-        req
-      );
+      await tokenService.generateAndPersistTokens(user.id, user.username, req);
 
     return { accessToken, refreshToken };
   };

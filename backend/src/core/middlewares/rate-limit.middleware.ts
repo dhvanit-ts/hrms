@@ -23,7 +23,9 @@ const limiterMap = {
   api: apiLimiter,
 };
 
-const applyRateLimiter = (limiterType: "auth" | "api" = "api") => {
+type LimiterType = keyof typeof limiterMap;
+
+const applyRateLimiter = (limiterType: LimiterType = "api") => {
   return async (
     req: Request,
     res: Response,

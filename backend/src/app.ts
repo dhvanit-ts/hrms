@@ -1,7 +1,7 @@
 import { env } from "@/config/env";
 import express from "express";
 import swaggerUi from "swagger-ui-express";
-import { SocketService } from "@/infra/services/socket.service";
+import { SocketService } from "@/infra/services/socket/socket.service";
 import http from "node:http";
 // import path from "node:path";
 import cookieParser from "cookie-parser";

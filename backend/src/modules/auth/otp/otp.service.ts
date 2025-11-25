@@ -1,6 +1,6 @@
 import cache from "@/infra/services/cache/index";
-import mailService from "@/infra/services/mail.service";
-import { hashOTP } from "@/shared/utils/cryptographer";
+import mailService from "@/infra/services/mail/mail.service";
+import { hashOTP } from "@/lib/crypto";
 import ApiError from "@/core/http/ApiError";
 
 class OtpService {

@@ -1,9 +1,9 @@
-import registerConnectionEvents from "./connection.events";
-import registerChatEvents from "./chat.events";
-import registerUserEvents from "./user.events";
+import chatEvents from "./chat.events";
+import userEvents from "./user.events";
+import connectionEvents from "./connection.events";
 
 export default {
-  registerConnectionEvents,
-  registerChatEvents,
-  registerUserEvents,
+  chat: chatEvents,
+  user: userEvents,
+  connection: connectionEvents,
 };

@@ -1,10 +1,10 @@
-import { pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { AuthTypeEnum, RoleEnum } from "@/infra/db/enums";
 
 export const UserTable = pgTable("user", {
   id: uuid("id").primaryKey().defaultRandom(),
-  username: text("username").notNull(),
-  email: text("email").notNull(),
+  username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
   password: text("password"),
   authType: AuthTypeEnum("authType").notNull().default("manual"),
   refreshToken: text("refreshToken"),

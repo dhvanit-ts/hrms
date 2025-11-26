@@ -8,77 +8,45 @@ import type { AuthenticatedRequest } from "@/core/middlewares/auth.middleware";
 
 class AdminController {
   @AsyncHandler()
-  async getAdminById(req: Request, _res: Response) {
-    const { userId } = req.params;
-
-    const user = await userService.getUserByIdService(userId);
-
-    return ApiResponse.ok(user, "Admin fetched successfully");
+  async getAdmin(req: Request) {
+    const admin = await adminService.getAdmin(req.params.adminId);
+    return ApiResponse.ok(admin);
   }
 
   @AsyncHandler()
-  async searchAdmins(req: Request, _res: Response) {
-    const { query } = req.params;
-
-    const users = await userService.searchUsersService(query);
-
-    return ApiResponse.ok(users, "Users fetched successfully");
+  async listAdmins() {
+    const admins = await adminService.listAdmins();
+    return ApiResponse.ok(admins);
   }
 
   @AsyncHandler()
-  async initializeAdmin(req: Request, _res: Response) {
-    const { email, username, password } = req.body;
+  async createAdmin(req: AuthenticatedRequest, res: Response) {
+    // Only super-admin can create admins
+    // permissionService.assert(req.user, "ADMIN_CREATE");
 
-    const savedEmail = await authService.initializeAuthService(
-      email,
-      username,
-      password
-    );
+    const { email, username } = req.body;
 
-    return ApiResponse.created(
-      {
-        email: savedEmail,
-      },
-      "User initialized successfully and OTP sent"
-    );
+    const admin = await adminService.createAdmin({ email, username });
+
+    return ApiResponse.created(admin, "Admin created");
   }
 
   @AsyncHandler()
-  async registerAdmin(req: Request, res: Response) {
-    const { email } = req.body;
+  async promoteUser(req: AuthenticatedRequest) {
+    permissionService.assert(req.user, "ADMIN_MANAGE_ROLES");
 
-    const { createdUser, accessToken, refreshToken } =
-      await authService.registerAuthService(email, req);
+    const updated = await adminService.promoteToAdmin(req.body.userId);
 
-    authService.setAuthCookies(res, accessToken, refreshToken);
-    return ApiResponse.created(
-      {
-        ...createdUser,
-        refreshToken: null,
-        password: null,
-        email: null,
-      },
-      "Admin registered successfully!"
-    );
+    return ApiResponse.ok(updated, "User promoted to admin");
   }
 
   @AsyncHandler()
-  async getAdminData(req: AuthenticatedRequest, _res: Response) {
-    if (!req.user || !req.user.id) {
-      throw new ApiError({
-        statusCode: 404,
-        message: "Admin not found",
-        data: { service: "authService.getAdminDataService" },
-      });
-    }
+  async revokeAdmin(req: AuthenticatedRequest) {
+    permissionService.assert(req.user, "ADMIN_MANAGE_ROLES");
 
-    const admin = {
-      ...req.user,
-      password: null,
-      refreshToken: null,
-    };
+    const updated = await adminService.demoteFromAdmin(req.body.adminId);
 
-    return ApiResponse.ok(admin, "Admin fetched successfully!");
+    return ApiResponse.ok(updated, "Admin role revoked");
   }
 }
 

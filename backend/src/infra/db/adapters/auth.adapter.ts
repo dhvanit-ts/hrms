@@ -2,7 +2,7 @@ import { IUser } from "@/shared/types/IUser";
 import { DB } from "@/infra/db/types";
 import { eq, or, sql } from "drizzle-orm";
 import db from "@/infra/db";
-import { UserTable } from "@/modules/user/user.table";
+import { UserTable } from "@/infra/db/tables/user.table";
 
 export const findById = async (userId: string, dbTx?: DB) => {
   const client = dbTx ?? db;

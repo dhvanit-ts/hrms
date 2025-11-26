@@ -4,7 +4,8 @@ import { env } from "@/config/env";
 import ApiError from "@/core/http/ApiError";
 import cache from "@/infra/services/cache/index";
 import * as authRepo from "@/modules/auth/auth.repo";
-import { hashPassword, verifyPassword } from "@/lib/crypto";
+import * as refreshTokenRepo from "@/modules/auth/tokens/refresh-token.repo";
+import { hashPassword, hashString, verifyPassword } from "@/lib/crypto";
 import oauthService from "@/modules/auth/oauth/oauth.service";
 import tokenService from "@/modules/auth/tokens/token.service";
 import otpService from "@/modules/auth/otp/otp.service";
@@ -224,6 +225,86 @@ class AuthService {
       await tokenService.generateAndPersistTokens(user.id, user.username, req);
 
     return { accessToken, refreshToken };
+  };
+
+  refreshAccessTokenService = async (incomingToken: string, req: Request) => {
+    if (!incomingToken) {
+      throw new ApiError({
+        statusCode: 401,
+        message: "Missing refresh token",
+        data: { service: "authService.refreshAccessTokenService" },
+      });
+    }
+
+    let decoded: string | jwt.JwtPayload | undefined;
+    try {
+      decoded = jwt.verify(incomingToken, env.REFRESH_TOKEN_SECRET);
+    } catch (err: any) {
+      if (err.name === "TokenExpiredError") {
+        throw new ApiError({
+          statusCode: 401,
+          message: "Refresh token expired",
+          data: { service: "authService.refreshAccessTokenService" },
+        });
+      }
+
+      throw new ApiError({
+        statusCode: 401,
+        message: "Invalid refresh token",
+        data: { service: "authService.refreshAccessTokenService" },
+      });
+    }
+
+    if (!decoded || typeof decoded === "string") {
+      throw new ApiError({
+        statusCode: 401,
+        message: "Malformed refresh token",
+        data: { service: "authService.refreshAccessTokenService" },
+      });
+    }
+
+    const { id: userId, jti } = decoded;
+
+    const session = await refreshTokenRepo.findRefreshToken(userId, jti);
+
+    const hashedIncoming = await hashString(incomingToken);
+
+    // reuse detection
+    if (!session || session.revokedAt || session.tokenHash !== hashedIncoming) {
+      await refreshTokenRepo.revokeAllRefreshTokens(userId);
+      throw new ApiError({
+        statusCode: 401,
+        message: "Refresh token reuse detected",
+        data: { service: "authService.refreshAccessTokenService" },
+      });
+    }
+
+    // rotation
+    const { token: newRefreshToken, jti: newJti } =
+      tokenService.generateRefreshToken(userId, user.username);
+    const newHashed = await hashString(newRefreshToken);
+
+    await runTransaction(async (tx) => {
+      // revoke old + mark replaced
+      await refreshTokenRepo.revokeRefreshToken(jti, newJti, tx);
+
+      // save new one
+      await refreshTokenRepo.saveRefreshToken(
+        {
+          userId,
+          jti: newJti,
+          tokenHash: newHashed,
+          expiresAt: new Date(Date.now() + env.REFRESH_EXPIRES_MS),
+          userAgent: req.headers["user-agent"],
+          ip: req.ip,
+        },
+        tx
+      );
+    });
+
+    const accessToken = tokenService.generateAccessToken(userId);
+
+    return { accessToken, newRefreshToken };
   };
 
   sendOtpService = async (email: string) => {

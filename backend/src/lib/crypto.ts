@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 
-export async function hashOTP(otp: string) {
+export async function hashString(otp: string) {
   return crypto.createHash("sha256").update(otp).digest("hex");
 }
 

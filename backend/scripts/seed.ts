@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import db from "@/infra/db/index";
-import { UserTable } from "../src/modules/user/user.table";
+import { UserTable } from "../src/infra/db/tables/user.table";
 import { hashPassword } from "../src/lib/crypto";
 
 async function run() {

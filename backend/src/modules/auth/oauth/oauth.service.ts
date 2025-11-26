@@ -72,6 +72,7 @@ class OAuthService {
       username,
       authType: "oauth",
       password: null,
+      roles: ["user"],
     });
 
     if (!createdUser)

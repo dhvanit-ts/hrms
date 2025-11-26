@@ -5,6 +5,7 @@ import type { Request, Response } from "express";
 import ApiError from "@/core/http/ApiError";
 import type { AuthenticatedRequest } from "@/core/middlewares/auth.middleware";
 import { AsyncHandler } from "@/core/http/asyncHandler";
+import { toUserSafe } from "./user.dto";
 
 class UserController {
   @AsyncHandler()
@@ -13,7 +14,7 @@ class UserController {
 
     const user = await userService.getUserByIdService(userId);
 
-    return ApiResponse.ok(user, "User fetched successfully");
+    return ApiResponse.ok(toUserSafe(user), "User fetched successfully");
   }
 
   @AsyncHandler()
@@ -43,13 +44,8 @@ class UserController {
 
     authService.setAuthCookies(res, accessToken, refreshToken);
     return ApiResponse.created(
-      {
-        ...createdUser,
-        refreshToken: null,
-        password: null,
-        email: null,
-      },
-      "Form submitted successfully!"
+      toUserSafe(createdUser),
+      "User created successfully!"
     );
   }
 
@@ -86,9 +82,7 @@ class UserController {
     );
 
     return ApiResponse.created(
-      {
-        email: savedEmail,
-      },
+      { email: savedEmail },
       "User initialized successfully and OTP sent"
     );
   }
@@ -102,12 +96,7 @@ class UserController {
 
     authService.setAuthCookies(res, accessToken, refreshToken);
     return ApiResponse.created(
-      {
-        ...createdUser,
-        refreshToken: null,
-        password: null,
-        email: null,
-      },
+      toUserSafe(createdUser),
       "Form submitted successfully!"
     );
   }
@@ -122,13 +111,7 @@ class UserController {
       });
     }
 
-    const user = {
-      ...req.user,
-      password: null,
-      refreshToken: null,
-    };
-
-    return ApiResponse.ok(user, "User fetched successfully!");
+    return ApiResponse.ok(req.user, "User fetched successfully!");
   }
 }
 

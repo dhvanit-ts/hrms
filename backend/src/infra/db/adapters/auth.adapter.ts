@@ -1,4 +1,4 @@
-import { IUser } from "@/shared/types/IUser";
+import { IUser, IUserCreate } from "@/shared/types/IUser";
 import { DB } from "@/infra/db/types";
 import { eq, or, sql } from "drizzle-orm";
 import db from "@/infra/db";
@@ -34,7 +34,7 @@ export const findByEmail = async (email: string, dbTx?: DB) => {
   return user;
 };
 
-export const create = async (user: IUser, dbTx?: DB) => {
+export const create = async (user: IUserCreate, dbTx?: DB) => {
   const client = dbTx ?? db;
   const createdUser = await client
     .insert(UserTable)

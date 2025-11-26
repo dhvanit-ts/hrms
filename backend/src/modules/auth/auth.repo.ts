@@ -1,5 +1,5 @@
 import * as authAdapter from "@/infra/db/adapters/auth.adapter";
-import { IUser } from "@/shared/types/IUser";
+import { IUser, IUserCreate } from "@/shared/types/IUser";
 import logger from "@/core/logger/logger";
 import { cached } from "@/lib/cached";
 
@@ -35,7 +35,7 @@ export const updateRefreshToken = async (
   return authAdapter.updateRefreshToken(id, refreshToken, dbTx);
 };
 
-export const create = async (user: IUser, dbTx?: DB) => {
+export const create = async (user: IUserCreate, dbTx?: DB) => {
   logger.info(`Creating new user ${user.email}`);
   return authAdapter.create(user, dbTx);
 };

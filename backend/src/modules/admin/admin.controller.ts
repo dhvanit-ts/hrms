@@ -1,7 +1,7 @@
 import ApiResponse from "@/core/http/ApiResponse";
 import { AsyncHandler } from "@/core/http/asyncHandler";
 import userService from "@/modules/user/user.service";
-import authService from "@/modules/auth/auth.service";
+import adminService from "@/modules/admin/admin.service";
 import type { Request, Response } from "express";
 import ApiError from "@/core/http/ApiError";
 import type { AuthenticatedRequest } from "@/core/middlewares/auth.middleware";

@@ -46,18 +46,14 @@ services:
     # If you set requirepass via config file or environment, use it in clients
     # networks: can define a custom network if you have multiple services
 
-  valkey:
-    image: valkey/valkey:latest
-    container_name: valkey
-    ports:
-      - "6379:6379"
-    volumes:
-      - valkey_data:/data
-    command: ["valkey-server", "/etc/valkey.conf"]
-
-volumes:
-  valkey_data:
-
+  # valkey:
+  #   image: valkey/valkey:latest
+  #   container_name: valkey
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - valkey_data:/data
+  #   command: ["valkey-server", "/etc/valkey.conf"]
 
 volumes:
   redis-data:

@@ -1,6 +1,6 @@
-import { Response, NextFunction } from "express";
+import type { Response, NextFunction } from "express";
 import { getUserPermissions } from "../security/rbac";
-import { AuthenticatedRequest } from "./auth.middleware";
+import type { AuthenticatedRequest } from "./auth.middleware";
 import { Permission } from "../../config/roles";
 
 export const requirePermission =

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Request } from "express";
+import type { Request } from "express";
 
 export const getLocationFromIP = async (req: Request): Promise<string> => {
   const ip =

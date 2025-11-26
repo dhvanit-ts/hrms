@@ -16,6 +16,7 @@ const envSchema = z.object({
   REFRESH_TOKEN_SECRET: z.string().min(32),
   GOOGLE_OAUTH_CLIENT_ID: z.string(),
   GOOGLE_OAUTH_CLIENT_SECRET: z.string(),
+  RESEND_API_KEY: z.string(),
   MAILTRAP_HOST: z.string(),
   MAILTRAP_PORT: z.string(),
   MAILTRAP_USER: z.string(),

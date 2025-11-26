@@ -1,4 +1,4 @@
-import { CookieOptions, Request, Response } from "express";
+import type { CookieOptions, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { env } from "@/config/env";
 import ApiError from "@/core/http/ApiError";

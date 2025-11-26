@@ -1,8 +1,8 @@
 import { AsyncHandler } from "@/core/http/asyncHandler";
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import authService from "./auth.service";
 import ApiResponse from "@/core/http/ApiResponse";
-import { AuthenticatedRequest } from "@/core/middlewares/auth.middleware";
+import type { AuthenticatedRequest } from "@/core/middlewares/auth.middleware";
 import ApiError from "@/core/http/ApiError";
 
 class AuthController {

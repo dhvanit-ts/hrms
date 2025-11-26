@@ -1,6 +1,6 @@
 import { Response, NextFunction } from "express";
 import { Role } from "../../config/roles";
-import { AuthenticatedRequest } from "./auth.middleware";
+import type { AuthenticatedRequest } from "./auth.middleware";
 
 export const requireRole =
   (...allowed: Role[]) =>

@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { Request } from "express";
+import type { Request } from "express";
 
 export async function generateDeviceFingerprint(req: Request) {
   const userAgent = req.headers["user-agent"] || "";

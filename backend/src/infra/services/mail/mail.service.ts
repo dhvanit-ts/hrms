@@ -1,10 +1,33 @@
 import crypto from "node:crypto";
 import nodemailer, { Transporter, SentMessageInfo } from "nodemailer";
-import { Address } from "nodemailer/lib/mailer";
+import Mail, { Address } from "nodemailer/lib/mailer";
 
 import { MailConfig, MailDetails, MailType } from "./mail.types";
 import { defaultTransport } from "@/config/mail";
 import { mailTemplates } from "./templates";
+
+import { Resend } from "resend";
+import { env } from "@/config/env";
+import logger from "@/core/logger/logger";
+
+const resend = new Resend(env.RESEND_API_KEY);
+
+try {
+  const { data, error } = await resend.emails.send({
+    from: "onboarding@resend.dev",
+    to: "monparadhvanit@gmail.com",
+    subject: "Hello World",
+    html: "<p>Congrats on sending your <strong>first email</strong>!</p>",
+  });
+  if (error) {
+    logger.error("Error sending email:", error);
+  } else {
+    logger.info("Email sent successfully");
+    console.log(data);
+  }
+} catch (error) {
+  logger.error("Error sending email:", error);
+}
 
 export class MailService {
   private transporter: Transporter<SentMessageInfo>;
@@ -60,3 +83,5 @@ export class MailService {
     }
   }
 }
+
+export default new MailService();

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Request } from "express";
+import type { Request } from "express";
 import { env } from "@/config/env";
 import cache from "@/infra/services/cache/index";
 import * as authRepo from "@/modules/auth/auth.repo";

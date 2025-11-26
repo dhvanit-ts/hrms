@@ -2,9 +2,9 @@ import ApiResponse from "@/core/http/ApiResponse";
 import { AsyncHandler } from "@/core/http/asyncHandler";
 import userService from "@/modules/user/user.service";
 import authService from "@/modules/auth/auth.service";
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import ApiError from "@/core/http/ApiError";
-import { AuthenticatedRequest } from "@/core/middlewares/auth.middleware";
+import type { AuthenticatedRequest } from "@/core/middlewares/auth.middleware";
 
 class AdminController {
   @AsyncHandler()
@@ -13,7 +13,7 @@ class AdminController {
 
     const user = await userService.getUserByIdService(userId);
 
-    return ApiResponse.ok(user, "User fetched successfully");
+    return ApiResponse.ok(user, "Admin fetched successfully");
   }
 
   @AsyncHandler()

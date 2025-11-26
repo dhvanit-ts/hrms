@@ -1,9 +1,9 @@
 import jwt from "jsonwebtoken";
-import { Request } from "express";
+import type { Request } from "express";
 import { env } from "@/config/env";
 import { randomUUID } from "node:crypto";
 import * as authRepo from "@/modules/auth/auth.repo";
-import { runTransaction } from "@/infa/db/transactions";
+import { runTransaction } from "@/infra/db/transactions";
 import { DB } from "@/infra/db/types";
 
 class TokenService {

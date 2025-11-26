@@ -1,47 +1,21 @@
 import crypto from "node:crypto";
-import nodemailer, { Transporter, SentMessageInfo } from "nodemailer";
-import Mail, { Address } from "nodemailer/lib/mailer";
+import { Resend } from "resend";
 
 import { MailConfig, MailDetails, MailType } from "./mail.types";
-import { defaultTransport } from "@/config/mail";
 import { mailTemplates } from "./templates";
-
-import { Resend } from "resend";
 import { env } from "@/config/env";
 import logger from "@/core/logger/logger";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
-try {
-  const { data, error } = await resend.emails.send({
-    from: "onboarding@resend.dev",
-    to: "monparadhvanit@gmail.com",
-    subject: "Hello World",
-    html: "<p>Congrats on sending your <strong>first email</strong>!</p>",
-  });
-  if (error) {
-    logger.error("Error sending email:", error);
-  } else {
-    logger.info("Email sent successfully");
-    console.log(data);
-  }
-} catch (error) {
-  logger.error("Error sending email:", error);
-}
-
 export class MailService {
-  private transporter: Transporter<SentMessageInfo>;
   private projectName: string;
   private defaultFrom: string;
 
   constructor(config: MailConfig = {}) {
-    this.transporter = nodemailer.createTransport(
-      config.transport ?? defaultTransport
-    );
-
-    this.projectName = config.projectName ?? "Ascedium";
+    this.projectName = config.projectName ?? "MyApp";
     this.defaultFrom =
-      config.defaultFrom ?? `"${this.projectName}" <no-reply@ascedium.com>`;
+      config.defaultFrom ?? `"${this.projectName}" <no-reply@myapp.com>`;
   }
 
   private generateOtp = () => crypto.randomInt(100000, 999999).toString();
@@ -63,18 +37,22 @@ export class MailService {
     const tpl = await mailTemplates[type](details);
 
     try {
-      const info = await this.transporter.sendMail({
-        from: (options.from as string | Address) || this.defaultFrom,
+      const { data, error } = await resend.emails.send({
+        from: (options.from as string) || this.defaultFrom,
         to,
         subject: tpl.subject,
-        text: tpl.text,
         html: tpl.html,
-        ...options,
+        text: tpl.text,
       });
 
-      return { success: true, messageId: info.messageId, type, details };
+      if (error) {
+        logger.error("Error sending email:", error);
+        return { success: false, error, type };
+      }
+
+      return { success: true, messageId: data?.id, type, details };
     } catch (err) {
-      console.error("Mail send error:", err);
+      logger.error("Mail send error:", err);
       return {
         success: false,
         error: err instanceof Error ? err.message : "Unknown error",

@@ -23,7 +23,7 @@ const createApp = () => {
   registerRoutes(app);
 
   if (env.NODE_ENV !== "production") {
-    app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+    app.use("/api/v1/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   }
 
   app.use(errorMiddleware.notFoundErrorHandler);

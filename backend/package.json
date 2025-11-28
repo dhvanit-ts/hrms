@@ -9,6 +9,7 @@
     "start": "bun dist/server.js",
     "dev": "bun --watch src/server.ts",
     "seed": "bun scripts/seed.ts",
+    "openapi": "bun scripts/generate-openapi.ts",
     "predev": "bun run lint-format",
     "prebuild": "bun run lint-format && bun run db:migrate",
     "db:up": "docker compose -f infra/docker-compose.yml up -d",
@@ -33,6 +34,7 @@
     "multer": "^2.0.2",
     "node-cache": "^5.1.2",
     "nodemailer": "^7.0.10",
+    "openapi3-ts": "^4.5.0",
     "pg": "^8.16.3",
     "rate-limiter-flexible": "^8.3.0",
     "resend": "^6.5.2",
@@ -40,7 +42,9 @@
     "typescript": "^5.9.3",
     "ua-parser-js": "^2.0.6",
     "winston": "^3.18.3",
-    "zod": "^4.1.13"
+    "yamljs": "^0.3.0",
+    "zod": "^4.1.13",
+    "zod-openapi": "^5.4.5"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
@@ -55,6 +59,7 @@
     "@types/react": "^19.2.6",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
+    "@types/yamljs": "^0.2.34",
     "react-email": "^5.0.5",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"

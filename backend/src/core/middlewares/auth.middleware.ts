@@ -1,8 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { env } from "@/config/env";
-import ApiError from "@/core/http/ApiError";
-import asyncHandler from "@/core/http/asyncHandler";
+import { asyncHandlerCb as asyncHandler, ApiError } from "@/core/http";
 import * as authRepo from "@/modules/auth/auth.repo";
 import { Role } from "@/config/roles";
 import { jwtPayloadSchema } from "@/shared/validators/authSchema";

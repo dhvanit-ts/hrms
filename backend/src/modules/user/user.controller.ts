@@ -1,11 +1,9 @@
-import ApiResponse from "@/core/http/ApiResponse";
-import userService from "@/modules/user/user.service";
+import { userService } from "@/modules/user";
 import authService from "@/modules/auth/auth.service";
 import type { Request, Response } from "express";
-import ApiError from "@/core/http/ApiError";
 import type { AuthenticatedRequest } from "@/core/middlewares/auth.middleware";
-import { AsyncHandler } from "@/core/http/asyncHandler";
 import { toUserSafe } from "./user.dto";
+import { ApiError, ApiResponse, AsyncHandler } from "@/core/http";
 
 class UserController {
   @AsyncHandler()

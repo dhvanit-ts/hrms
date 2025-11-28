@@ -8,3 +8,5 @@ export const toUserSafe = (user: IUser) => ({
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
+
+export type UserSafe = ReturnType<typeof toUserSafe>;

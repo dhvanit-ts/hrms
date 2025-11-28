@@ -1,23 +1,8 @@
-import swaggerJsdoc from "swagger-jsdoc";
-import { env } from "../src/config/env";
+import YAML from "yamljs";
+import path from "path";
 
-const options = {
-  definition: {
-    openapi: "3.0.0",
-    info: {
-      title: ".",
-      version: "1.0.0",
-      description: "Production-ready API documentation",
-    },
-    servers: [
-      {
-        url: env.SERVER_BASE_URI || "http://localhost:8000",
-        description: "Development server",
-      },
-    ],
-  },
-  // 👇 look inside ALL feature folders
-  apis: ["./src/features/**/*.route.ts"],
-};
+const swaggerDocument = YAML.load(
+  path.join(process.cwd(), "docs", "openapi.yml")
+);
 
-export const swaggerSpec = swaggerJsdoc(options);
+export const swaggerSpec = swaggerDocument;

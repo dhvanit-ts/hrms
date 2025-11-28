@@ -3,11 +3,10 @@ import express from "express";
 import swaggerUi from "swagger-ui-express";
 import socketService from "@/infra/services/socket";
 import http from "node:http";
-// import path from "node:path";
 import cookieParser from "cookie-parser";
 import errorMiddleware from "@/core/middlewares/error.middleware";
 import { swaggerSpec } from "../docs/swagger";
-import { registerRoutes } from "@/routes/index";
+import { registerRoutes } from "@/routes";
 import applySecurity from "./config/security";
 
 const createApp = () => {
@@ -21,9 +20,6 @@ const createApp = () => {
   app.use(cookieParser());
 
   applySecurity(app);
-  // app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-  // move these middlewares in route file after file upload middleware if you are using multer for file uploads
-
   registerRoutes(app);
 
   if (env.NODE_ENV !== "production") {

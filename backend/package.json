@@ -7,7 +7,7 @@
   "scripts": {
     "build": "bun run build.ts",
     "start": "bun dist/server.js",
-    "dev": "bun src/server.ts",
+    "dev": "bun --watch src/server.ts",
     "seed": "bun scripts/seed.ts",
     "predev": "bun run lint-format",
     "prebuild": "bun run lint-format && bun run db:migrate",

@@ -3,7 +3,7 @@ import fs from "node:fs";
 import multer from "multer";
 
 // ensure directory exists
-const uploadDir = path.join(process.cwd(), "uploads");
+const uploadDir = path.join(process.cwd(), "public/uploads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 // Multer storage config

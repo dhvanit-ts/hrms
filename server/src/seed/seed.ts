@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { hashPassword } from "../utils/password.js";
+import { hashPassword } from "../lib/password.js";
 import { logger } from "../config/logger.js";
 import prisma from "../config/db.js";
 

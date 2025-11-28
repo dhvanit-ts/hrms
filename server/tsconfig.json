@@ -4,16 +4,24 @@
 		"module": "ESNext",
 		"moduleResolution": "Node",
 		"outDir": "dist",
-		"rootDir": "src",
+		"rootDir": "./",
 		"baseUrl": "./src",
-    "paths": {
-      "@/*": ["*"]
-    },
-    "jsx": "react",
-	"esModuleInterop": true,
-	"resolveJsonModule": true,
-	"declaration": false,
-	"skipLibCheck": true
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		"paths": {
+			"@/*": [
+				"*"
+			]
+		},
+		"jsx": "react",
+		"esModuleInterop": true,
+		"resolveJsonModule": true,
+		"declaration": false,
+		"skipLibCheck": true
 	},
-	"include": ["src/**/*"]
+	"include": [
+		"src/**/*",
+		"docs/**/*",
+		"scripts/**/*"
+	]
 }

@@ -1,0 +1,68 @@
+services:
+  db:
+    image: "postgres:17"
+    restart: always
+    environment:
+      POSTGRES_USER: {{dbUser}}
+      POSTGRES_PASSWORD: {{dbPassword}}
+      POSTGRES_DB: {{dbName}}
+    ports:
+      - "5432:5432"
+    volumes:
+      - "postgres_data:/var/lib/postgresql/data"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U {{dbUser}}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  adminer:
+    image: adminer
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    environment:
+      REDIS_PASSWORD: {{redisPassword}}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "{{redisPassword}}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  valkey:
+    image: valkey/valkey:latest
+    restart: always
+    environment:
+      VALKEY_PASSWORD: {{valkeyPassword}}
+    ports:
+      - "6380:6379"
+    volumes:
+      - valkey_data:/data
+      - ./valkey.conf:/etc/valkey.conf
+    command: ["valkey-server", "/etc/valkey.conf"]
+    healthcheck:
+      test: ["CMD", "valkey-cli", "-a", "{{valkeyPassword}}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  redis-data:
+    driver: local
+  valkey_data:
+    driver: local
+  postgres_data:
+    driver: local

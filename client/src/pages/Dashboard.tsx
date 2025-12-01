@@ -26,16 +26,15 @@ import {
 } from 'lucide-react';
 
 // UI Components Imports
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/shared/components/ui/button';
+import { Badge } from '@/shared/components/ui/badge';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+} from '@/shared/components/ui/card';
 
 const DashboardPage: React.FC = () => (
   <div className="space-y-6 animate-in fade-in duration-500">

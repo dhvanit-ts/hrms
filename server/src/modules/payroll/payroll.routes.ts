@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { authenticate } from "../core/middlewares/auth.js";
-import { requireRoles } from "../core/middlewares/rbac.js";
+import { authenticate } from "@/core/middlewares/auth";
+import { requireRoles } from "@/core/middlewares/rbac";
 import {
   listEmpPayrollSchema,
   listEmployeePayroll,
@@ -8,8 +8,8 @@ import {
   payslipSchema,
   upsertPayrollHandler,
   upsertPayrollSchema,
-} from "../controllers/payrollController.js";
-import { validate } from "../core/middlewares/validate.js";
+} from "./payroll.controller";
+import { validate } from "@/core/middlewares/validate";
 
 const router = Router();
 router.use(authenticate);

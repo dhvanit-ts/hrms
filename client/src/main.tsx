@@ -5,11 +5,11 @@ import './index.css';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { DashboardPage } from './pages/Dashboard';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './shared/context/AuthContext';
 import { AuthGuard } from './routes/AuthGuard';
 import { EmployeesPage } from './pages/Employees';
 import { LeavesPage } from './pages/Leaves';
-import DashboardLayout from './layouts/DashboardLayout';
+import DashboardLayout from './shared/layouts/DashboardLayout';
 
 const router = createBrowserRouter([
   { path: '/login', element: <Login /> },

@@ -12,16 +12,17 @@ import {
 } from 'lucide-react';
 
 // UI Components
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/shared/components/ui/button';
+import { Input } from '@/shared/components/ui/input';
+import { Badge } from '@/shared/components/ui/badge';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle
-} from '@/components/ui/card';
+} from '@/shared/components/ui/card';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/shared/components/ui/sheet';
 
 /* ----------------------------------------------------------------------------------
  * MOCKS (To replace missing external dependencies in this preview)
@@ -101,10 +102,23 @@ export const EmployeesPage: React.FC = () => {
           <h2 className="text-xl font-semibold text-zinc-900">Employees</h2>
           <p className="text-sm text-zinc-500">Manage your team members and permissions.</p>
         </div>
-        <Button className="shadow-sm">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Employee
-        </Button>
+        <Sheet>
+          <SheetTrigger asChild>
+
+            <Button className="shadow-sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Employee
+            </Button>
+          </SheetTrigger>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Add Employee</SheetTitle>
+            </SheetHeader>
+            <SheetDescription>
+              Add a new employee to your organization.
+            </SheetDescription>
+          </SheetContent>
+        </Sheet>
       </div>
 
       {/* Filters & Actions */}

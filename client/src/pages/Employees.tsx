@@ -18,11 +18,115 @@ import { Badge } from '@/shared/components/ui/badge';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
 } from '@/shared/components/ui/card';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/shared/components/ui/sheet';
+import { Spinner } from '@/components/ui/spinner';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { http } from '@/services/api/http';
+
+const employeeSchema = z.object({
+  name: z.string().min(1, "Full name is required"),
+  email: z.string().email("Invalid email address"),
+  role: z.string().min(1, "Role is required"),
+  department: z.string().min(1, "Department is required"),
+})
+
+const EmployeeForm = ({ onSuccess }: { onSuccess: () => void }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const form = useForm({
+    resolver: zodResolver(employeeSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      role: "",
+      department: "",
+    },
+  });
+
+  const onSubmit = async (values: z.infer<typeof employeeSchema>) => {
+    setIsSubmitting(true);
+    try {
+      await http.post('/employees', values);
+      form.reset();
+      onSuccess();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4 px-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Full Name</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. Jane Doe" {...field} />
+              </FormControl>
+              {form.formState.errors.name && <p className="text-sm font-medium text-red-500">{form.formState.errors.name.message}</p>}
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input placeholder="jane@company.com" {...field} />
+              </FormControl>
+              {form.formState.errors.email && <p className="text-sm font-medium text-red-500">{form.formState.errors.email.message}</p>}
+            </FormItem>
+          )}
+        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Role</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. Developer" {...field} />
+                </FormControl>
+                {form.formState.errors.role && <p className="text-sm font-medium text-red-500">{form.formState.errors.role.message}</p>}
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="department"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Department</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. Engineering" {...field} />
+                </FormControl>
+                {form.formState.errors.department && <p className="text-sm font-medium text-red-500">{form.formState.errors.department.message}</p>}
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="flex justify-end gap-2 pt-4">
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting && <Spinner className="mr-2 h-4 w-4 animate-spin" />}
+            Create Employee
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+};
 
 /* ----------------------------------------------------------------------------------
  * MOCKS (To replace missing external dependencies in this preview)
@@ -42,15 +146,6 @@ const mockEmployees = [
   { _id: '3', employeeId: 'EMP-003', name: 'Charlie Brown', email: 'charlie@origin.com', status: 'On Leave', role: 'UI Designer', department: 'Design', avatar: 'https://i.pravatar.cc/150?u=charlie' },
   { _id: '4', employeeId: 'EMP-004', name: 'Diana Prince', email: 'diana@origin.com', status: 'Inactive', role: 'Marketing Lead', department: 'Marketing', avatar: 'https://i.pravatar.cc/150?u=diana' },
 ];
-
-// Mock HTTP Service
-const http = {
-  get: async (url: string, config?: any) => {
-    await new Promise(resolve => setTimeout(resolve, 600)); // Simulate network delay
-    if (url === '/employees') return { data: { employees: mockEmployees } };
-    return { data: {} };
-  }
-};
 
 /* ----------------------------------------------------------------------------------
  * MAIN COMPONENT
@@ -104,7 +199,6 @@ export const EmployeesPage: React.FC = () => {
         </div>
         <Sheet>
           <SheetTrigger asChild>
-
             <Button className="shadow-sm">
               <Plus className="mr-2 h-4 w-4" />
               Add Employee
@@ -113,10 +207,11 @@ export const EmployeesPage: React.FC = () => {
           <SheetContent>
             <SheetHeader>
               <SheetTitle>Add Employee</SheetTitle>
+              <SheetDescription>
+                Add a new employee to your organization.
+              </SheetDescription>
             </SheetHeader>
-            <SheetDescription>
-              Add a new employee to your organization.
-            </SheetDescription>
+            <EmployeeForm onSuccess={() => { }} />
           </SheetContent>
         </Sheet>
       </div>

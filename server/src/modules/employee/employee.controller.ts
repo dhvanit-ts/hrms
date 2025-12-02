@@ -57,3 +57,15 @@ export async function removeEmp(req: AuthenticatedRequest, res: Response) {
   await removeEmployee(Number(req.params.id));
   res.status(204).send();
 }
+
+export async function getMe(req: AuthenticatedRequest, res: Response) {
+  const employeeId = req.user?.id;
+  if (!employeeId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  const employee = await getEmployee(Number(employeeId));
+  if (!employee) {
+    return res.status(404).json({ error: "Employee not found" });
+  }
+  res.json({ employee });
+}

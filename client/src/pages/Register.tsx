@@ -21,7 +21,7 @@ export const Register: React.FC = () => {
     setLoading(true);
     try {
       await register(email, password);
-      nav('/');
+      nav('/dashboard');
     } catch (err: any) {
       setError(err?.response?.data?.error || 'Registration failed');
     } finally {
@@ -79,7 +79,7 @@ export const Register: React.FC = () => {
         </button>
         <div className="text-sm text-center">
           Already have an account?{' '}
-          <Link className="text-blue-600 underline" to="/login">
+          <Link className="text-blue-600 underline" to="/admin/login">
             Sign in
           </Link>
         </div>

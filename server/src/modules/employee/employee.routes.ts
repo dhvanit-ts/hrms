@@ -5,6 +5,7 @@ import {
   createEmp,
   createEmployeeSchema,
   getEmp,
+  getMe,
   listEmp,
   removeEmp,
   updateEmp,
@@ -16,6 +17,7 @@ const router = Router();
 
 router.use(authenticate);
 
+router.get("/me", getMe);
 router.get("/", requireRoles("HR", "ADMIN", "SUPER_ADMIN", "MANAGER"), listEmp);
 router.get(
   "/:id",

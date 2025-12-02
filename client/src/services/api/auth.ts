@@ -26,3 +26,8 @@ export async function me(accessToken: string) {
   });
   return res.data as { user: any };
 }
+
+export async function refresh() {
+  const res = await http.post("http://localhost:4000/api/auth/refresh");
+  return res.data as { accessToken: string };
+}

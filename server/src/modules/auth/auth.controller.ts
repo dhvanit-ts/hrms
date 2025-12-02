@@ -8,24 +8,27 @@ import {
   issueAccessToken,
 } from "@/modules/auth/tokens/token.service";
 import jwt from "jsonwebtoken";
+import prisma from "@/config/db.js";
+import asyncHandler from "@/core/http/asyncHandler.js";
+import ApiError from "@/core/http/ApiError.js";
 
 export const registerSchema = z.object({
   body: z.object({
-    email: z.email(),
+    email: z.string().email("Invalid email format"),
     password: z
       .string()
-      .min(12)
-      .regex(/[a-z]/)
-      .regex(/[A-Z]/)
-      .regex(/[0-9]/)
-      .regex(/[^A-Za-z0-9]/),
+      .min(12, "Password must be at least 12 characters long")
+      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[0-9]/, "Password must contain at least one digit")
+      .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
     roles: z
       .array(z.enum(["SUPER_ADMIN", "ADMIN", "HR", "MANAGER", "EMPLOYEE"]))
       .optional(),
   }),
 });
 
-export async function register(req: Request, res: Response) {
+export const register = asyncHandler(async (req: Request, res: Response) => {
   const env = loadEnv();
   const { email, password, roles } = req.body;
   const result = await registerUser(email, password, roles);
@@ -40,7 +43,7 @@ export async function register(req: Request, res: Response) {
     .cookie(refreshCookie.name, refreshCookie.value, refreshCookie.options)
     .status(201)
     .json({ user: result.user, accessToken: result.accessToken });
-}
+});
 
 export const loginSchema = z.object({
   body: z.object({
@@ -49,7 +52,13 @@ export const loginSchema = z.object({
   }),
 });
 
-export async function login(req: Request, res: Response) {
+export const refreshSchema = z.object({
+  body: z.object({}).optional(),
+  params: z.object({}).optional(),
+  query: z.object({}).optional(),
+});
+
+export const login = asyncHandler(async (req: Request, res: Response) => {
   const env = loadEnv();
   const { email, password } = req.body;
   const result = await loginUser(email, password);
@@ -63,9 +72,9 @@ export async function login(req: Request, res: Response) {
   res
     .cookie(refreshCookie.name, refreshCookie.value, refreshCookie.options)
     .json({ user: result.user, accessToken: result.accessToken });
-}
+});
 
-export async function logout(req: Request, res: Response) {
+export const logout = asyncHandler(async (req: Request, res: Response) => {
   const env = loadEnv();
   const auth = req.headers.authorization;
   if (auth?.startsWith("Bearer ")) {
@@ -82,34 +91,43 @@ export async function logout(req: Request, res: Response) {
     domain: env.COOKIE_DOMAIN,
   });
   res.status(204).send();
-}
+});
 
-export async function refresh(req: Request, res: Response) {
+export const refresh = asyncHandler(async (req: Request, res: Response) => {
   const env = loadEnv();
   const cookie = req.cookies?.refresh_token as string | undefined;
-  if (!cookie) return res.status(401).json({ error: "Unauthorized" });
-  try {
-    const { userId, newToken } = await rotateRefreshToken(cookie);
-    const user = await prisma.user.findUnique({
-      where: { id: parseInt(userId) },
+  if (!cookie) {
+    throw new ApiError({
+      statusCode: 401,
+      message: "Unauthorized",
+      code: "MISSING_REFRESH_TOKEN",
     });
-    if (!user) return res.status(401).json({ error: "Unauthorized" });
-    const accessToken = issueAccessToken({
-      sub: userId,
-      email: user.email,
-      roles: user.roles as string[],
-    });
-    const refreshCookie = buildRefreshCookie(
-      newToken,
-      7 * 24 * 60 * 60 * 1000,
-      env.COOKIE_DOMAIN,
-      env.COOKIE_SECURE,
-      env.COOKIE_SAMESITE as any
-    );
-    res
-      .cookie(refreshCookie.name, refreshCookie.value, refreshCookie.options)
-      .json({ accessToken });
-  } catch {
-    res.status(401).json({ error: "Unauthorized" });
   }
-}
+  
+  const { userId, newToken } = await rotateRefreshToken(cookie);
+  const user = await prisma.user.findUnique({
+    where: { id: parseInt(userId) },
+  });
+  if (!user) {
+    throw new ApiError({
+      statusCode: 401,
+      message: "Unauthorized",
+      code: "USER_NOT_FOUND",
+    });
+  }
+  const accessToken = issueAccessToken({
+    sub: userId,
+    email: user.email,
+    roles: user.roles as string[],
+  });
+  const refreshCookie = buildRefreshCookie(
+    newToken,
+    7 * 24 * 60 * 60 * 1000,
+    env.COOKIE_DOMAIN,
+    env.COOKIE_SECURE,
+    env.COOKIE_SAMESITE as any
+  );
+  res
+    .cookie(refreshCookie.name, refreshCookie.value, refreshCookie.options)
+    .json({ accessToken });
+});

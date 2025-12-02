@@ -2,6 +2,8 @@ import prisma from "@/config/db.js";
 import { hashPassword, verifyPassword } from "@/lib/password.js";
 import { issueAccessToken, issueRefreshToken } from "./tokens/token.service.js";
 import { type AppRole } from "@/config/constants.js";
+import ApiError from "@/core/http/ApiError.js";
+import { logger } from "@/config/logger.js";
 
 export interface AuthResult {
   user: Omit<any, "passwordHash">;
@@ -18,7 +20,13 @@ export async function registerUser(
     where: { email },
   });
 
-  if (existing) throw new Error("Email already registered");
+  if (existing) {
+    throw new ApiError({
+      statusCode: 400,
+      message: "Email already registered",
+      code: "EMAIL_ALREADY_EXISTS",
+    });
+  }
 
   const passwordHash = await hashPassword(password);
 
@@ -52,11 +60,22 @@ export async function loginUser(email: string, password: string) {
   });
 
   if (!user || !user.isActive) {
-    throw new Error("Invalid credentials");
+    logger.info(`\n\n---\nCredits were: \nEmail: ${email}\nPassword: ${password}\n---`)
+    throw new ApiError({
+      statusCode: 401,
+      message: "Invalid credentials",
+      code: "INVALID_CREDENTIALS",
+    });
   }
 
   const ok = await verifyPassword(password, user.passwordHash);
-  if (!ok) throw new Error("Invalid credentials");
+  if (!ok) {
+    throw new ApiError({
+      statusCode: 401,
+      message: "Invalid credentials",
+      code: "INVALID_CREDENTIALS",
+    });
+  }
 
   const accessToken = issueAccessToken({
     sub: user.id.toString(),

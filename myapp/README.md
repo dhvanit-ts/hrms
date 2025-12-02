@@ -1,3 +1,0 @@
-# myapp
-
-project description here

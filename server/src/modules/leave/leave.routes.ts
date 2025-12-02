@@ -4,8 +4,10 @@ import { requireRoles } from "../../core/middlewares/rbac.js";
 import {
   applyLeaveHandler,
   applyLeaveSchema,
-  approveRejectHandler,
-  approveRejectSchema,
+  approveLeaveHandler,
+  approveLeaveSchema,
+  rejectLeaveHandler,
+  rejectLeaveSchema,
   leaveBalanceHandler,
   myLeavesHandler,
   pendingLeavesHandler,
@@ -13,24 +15,42 @@ import {
 import { validate } from "../../core/middlewares/validate.js";
 
 const router = Router();
+
+// All routes require authentication
 router.use(authenticate);
 
-// employee self/apply and listing own leaves
+// Employee endpoints - accessible by all authenticated employees
+// POST /api/leaves - Apply for leave with validation
 router.post("/", validate(applyLeaveSchema), applyLeaveHandler);
-router.get("/mine", myLeavesHandler);
+
+// GET /api/leaves/my-leaves - Get employee's leave history with status filtering
+router.get("/my-leaves", myLeavesHandler);
+
+// GET /api/leaves/balance - Get employee's leave balance
 router.get("/balance", leaveBalanceHandler);
 
-// approvals: HR, MANAGER, ADMIN, SUPER_ADMIN
+// Admin endpoints - require HR, MANAGER, ADMIN, or SUPER_ADMIN roles
+// GET /api/leaves/pending - Get all pending leave requests (admin only)
 router.get(
   "/pending",
   requireRoles("HR", "MANAGER", "ADMIN", "SUPER_ADMIN"),
   pendingLeavesHandler
 );
+
+// PATCH /api/leaves/:id/approve - Approve leave request (admin only)
 router.patch(
-  "/:id/status",
+  "/:id/approve",
   requireRoles("HR", "MANAGER", "ADMIN", "SUPER_ADMIN"),
-  validate(approveRejectSchema),
-  approveRejectHandler
+  validate(approveLeaveSchema),
+  approveLeaveHandler
+);
+
+// PATCH /api/leaves/:id/reject - Reject leave request (admin only)
+router.patch(
+  "/:id/reject",
+  requireRoles("HR", "MANAGER", "ADMIN", "SUPER_ADMIN"),
+  validate(rejectLeaveSchema),
+  rejectLeaveHandler
 );
 
 export default router;

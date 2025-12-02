@@ -23,7 +23,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 
 // Hooks
-// import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/shared/context/AuthContext';
 
 /* ----------------------------------------------------------------------------------
  * SIDEBAR COMPONENTS
@@ -66,18 +66,37 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
-    // const { user, logout } = useAuth();
-    // Mock user for layout display since auth is commented out
-    const user = { name: 'User', email: 'user@example.com', avatar: '' };
-    const logout = () => console.log('Logout');
+    const { user, employee, isAdmin, isEmployee, logout, employeeLogout } = useAuth();
 
+    // Determine display name and email
+    const displayName = isEmployee ? employee?.name : user?.email?.split('@')[0];
+    const displayEmail = isEmployee ? employee?.email : user?.email;
+
+    // Check if user has admin/HR/manager roles
+    const hasAdminAccess = isAdmin && user?.roles.some(role =>
+        ['SUPER_ADMIN', 'ADMIN', 'HR', 'MANAGER'].includes(role)
+    );
+
+    // Build navigation items based on user type
     const items = [
         { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { path: '/employees', label: 'Employees', icon: Users },
-        { path: '/leaves', label: 'Leaves', icon: Calendar },
-        { path: '/reports', label: 'Reports', icon: FileText },
-        { path: '/settings', label: 'Settings', icon: Settings },
+        ...(hasAdminAccess ? [
+            { path: '/dashboard/employees', label: 'Employees', icon: Users },
+        ] : []),
+        { path: '/dashboard/leaves', label: 'Leaves', icon: Calendar },
+        ...(hasAdminAccess ? [
+            { path: '/dashboard/reports', label: 'Reports', icon: FileText },
+            { path: '/dashboard/settings', label: 'Settings', icon: Settings },
+        ] : []),
     ];
+
+    const handleLogout = async () => {
+        if (isEmployee) {
+            await employeeLogout();
+        } else {
+            await logout();
+        }
+    };
 
     return (
         <>
@@ -122,16 +141,14 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
                     {/* User Profile Bottom */}
                     <div className="border-t border-zinc-200 p-4">
                         <div className="flex items-center gap-3 rounded-lg bg-zinc-50 p-3 hover:bg-zinc-100 transition-colors cursor-pointer group">
-                            <img
-                                src={user?.avatar || "https://i.pravatar.cc/150"}
-                                alt="User"
-                                className="h-8 w-8 rounded-full bg-zinc-200"
-                            />
-                            <div className="flex-1 overflow-hidden">
-                                <p className="truncate text-sm font-medium text-zinc-900">{user?.name || 'User'}</p>
-                                <p className="truncate text-xs text-zinc-500">{user?.email || 'user@example.com'}</p>
+                            <div className="h-8 w-8 rounded-full bg-zinc-200 flex items-center justify-center text-zinc-600 font-medium text-sm">
+                                {displayName?.charAt(0).toUpperCase()}
                             </div>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={logout}>
+                            <div className="flex-1 overflow-hidden">
+                                <p className="truncate text-sm font-medium text-zinc-900">{displayName || 'User'}</p>
+                                <p className="truncate text-xs text-zinc-500">{displayEmail || 'user@example.com'}</p>
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={handleLogout}>
                                 <LogOut className="h-3.5 w-3.5 text-zinc-500" />
                             </Button>
                         </div>

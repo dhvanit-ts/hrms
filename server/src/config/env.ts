@@ -15,7 +15,12 @@ const envSchema = z.object({
     .transform((v) => !!v),
   COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default('lax'),
   CORS_ORIGINS: z.string().default('http://localhost:3000'),
-  SENTRY_DSN: z.string().optional()
+  SENTRY_DSN: z.string().optional(),
+  OFFICE_IP_RANGES: z.string().default(''),
+  MAILTRAP_TOKEN: z.string(),
+  MAIL_PROVIDER: z.string(),
+  GMAIL_APP_USER: z.string(),
+  GMAIL_APP_PASS: z.string()
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import './index.css';
 import { Login } from './pages/Login';
+import { AdminLogin } from './pages/AdminLogin';
 import { Register } from './pages/Register';
 import { DashboardPage } from './pages/Dashboard';
 import { AuthProvider } from './shared/context/AuthContext';
@@ -12,65 +13,51 @@ import { LeavesPage } from './pages/Leaves';
 import DashboardLayout from './shared/layouts/DashboardLayout';
 
 const router = createBrowserRouter([
-  { path: '/login', element: <Login /> },
-  { path: '/register', element: <Register /> },
   {
-    path: '',
-    element: (
-      <AuthGuard>
-        <DashboardLayout />
-      </AuthGuard>
-    ),
+    path: "/",
+    element: <AuthProvider />,
     children: [
+      // Employee routes (at root)
+      { index: true, element: <Login /> },
+      { path: "login", element: <Login /> },
+
+      // Admin routes (under /admin)
+      { path: "admin/login", element: <AdminLogin /> },
+      { path: "admin/register", element: <Register /> },
+
+      // Protected dashboard (unified for both admin and employee)
       {
-        path: '/dashboard',
+        path: "dashboard",
         element: (
           <AuthGuard>
-            <DashboardPage />
+            <DashboardLayout />
           </AuthGuard>
-        )
+        ),
+        children: [
+          { index: true, element: <DashboardPage /> },
+          { path: "leaves", element: <LeavesPage /> },
+          { path: "employees", element: <EmployeesPage /> },
+          { path: "employees/:id", element: <div>Employee details coming soon</div> },
+        ]
       },
+
+      // Admin-specific routes (legacy support)
       {
-        path: '/leaves',
+        path: "admin",
         element: (
-          <AuthGuard>
-            <LeavesPage />
-          </AuthGuard>
-        )
-      },
-      {
-        path: '/employees',
-        element: (
-          <AuthGuard>
-            <EmployeesPage />
-          </AuthGuard>
-        )
-      },
-      {
-        path: '/employees/:id',
-        element: (
-          <AuthGuard>
-            <div className="p-6">Employee details coming soon</div>
-          </AuthGuard>
-        )
+          <AuthGuard requireAdmin />
+        ),
+        children: [
+          { path: "dashboard", element: <DashboardLayout />, children: [{ index: true, element: <DashboardPage /> }] },
+        ]
       }
     ]
-  },
-  {
-    path: '/',
-    element: (
-      <AuthGuard>
-        <DashboardPage />
-      </AuthGuard>
-    )
-  },
+  }
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <RouterProvider router={router} />
   </React.StrictMode>
 );
 

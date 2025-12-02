@@ -1,31 +1,138 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { login as apiLogin, logout as apiLogout, me, register as apiRegister } from '@/services/api/auth';
+import { Outlet, useNavigate } from 'react-router-dom';
+import { login as apiLogin, logout as apiLogout, me, register as apiRegister, refresh as apiRefresh } from '@/services/api/auth';
+import { setAuthCallbacks } from '@/services/api/http';
+import {
+  employeeLogin as apiEmployeeLogin,
+  employeeLogout as apiEmployeeLogout,
+  employeeMe,
+  employeeRefresh as apiEmployeeRefresh,
+  employeeSetupPassword as apiEmployeeSetupPassword,
+} from '@/services/api/employee-auth';
+import { setEmployeeAuthCallbacks } from '@/services/api/employee-http';
 
-type User = { email: string; roles: string[]; id?: string };
+type AdminUser = { email: string; roles: string[]; id?: string };
+type Employee = {
+  id: number;
+  employeeId: string;
+  name: string;
+  email: string;
+  departmentId: number | null;
+  jobRoleId: number | null;
+};
 
 type AuthContextValue = {
-  user: User | null;
+  // Admin auth
+  user: AdminUser | null;
   accessToken: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+
+  // Employee auth
+  employee: Employee | null;
+  employeeAccessToken: string | null;
+  employeeLogin: (identifier: string, password: string) => Promise<void>;
+  employeeSetupPassword: (employeeId: string, password: string) => Promise<void>;
+  employeeLogout: () => Promise<void>;
+
+  // Utility
+  isAdmin: boolean;
+  isEmployee: boolean;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+  // Admin state
+  const [user, setUser] = useState<AdminUser | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
+  // Employee state
+  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [employeeAccessToken, setEmployeeAccessToken] = useState<string | null>(null);
+
+  const navigate = useNavigate();
+
+  // Set up callbacks for admin HTTP interceptor
   useEffect(() => {
-    // Best-effort restore using cookie-based refresh
+    const handleRefreshSuccess = (newAccessToken: string) => {
+      setAccessToken(newAccessToken);
+    };
+
+    const handleRefreshFailure = () => {
+      setUser(null);
+      setAccessToken(null);
+      navigate('/admin/login');
+    };
+
+    setAuthCallbacks(handleRefreshSuccess, handleRefreshFailure);
+  }, [navigate]);
+
+  // Set up callbacks for employee HTTP interceptor
+  useEffect(() => {
+    const handleRefreshSuccess = (newAccessToken: string) => {
+      setEmployeeAccessToken(newAccessToken);
+    };
+
+    const handleRefreshFailure = () => {
+      setEmployee(null);
+      setEmployeeAccessToken(null);
+      navigate('/login');
+    };
+
+    setEmployeeAuthCallbacks(handleRefreshSuccess, handleRefreshFailure);
+  }, [navigate]);
+
+  // Security check: Ensure access token is never persisted to storage
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      const localStorageKeys = Object.keys(localStorage);
+      const sessionStorageKeys = Object.keys(sessionStorage);
+
+      const suspiciousKeys = [...localStorageKeys, ...sessionStorageKeys].filter(
+        key => key.toLowerCase().includes('token') || key.toLowerCase().includes('access')
+      );
+
+      if (suspiciousKeys.length > 0) {
+        console.warn(
+          'WARNING: Potential security issue detected! Found token-related keys in storage:',
+          suspiciousKeys
+        );
+        console.warn('Access tokens should only be stored in memory, not in localStorage or sessionStorage');
+      }
+    }
+  }, []);
+
+  // Best-effort restore admin session on mount
+  useEffect(() => {
     (async () => {
       try {
-        // attempt refresh implicitly via 401 logic by hitting /users/me without token will fail; skip
-      } catch { }
+        const refreshResult = await apiRefresh();
+        setAccessToken(refreshResult.accessToken);
+        const profile = await me(refreshResult.accessToken);
+        setUser(profile.user);
+      } catch {
+        // Silently fail
+      }
     })();
   }, []);
 
+  // Best-effort restore employee session on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const refreshResult = await apiEmployeeRefresh();
+        setEmployeeAccessToken(refreshResult.accessToken);
+        const profile = await employeeMe(refreshResult.accessToken);
+        setEmployee(profile.employee);
+      } catch {
+        // Silently fail
+      }
+    })();
+  }, []);
+
+  // Admin auth methods
   const doLogin = async (email: string, password: string) => {
     const res = await apiLogin(email, password);
     setAccessToken(res.accessToken);
@@ -36,6 +143,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const doLogout = async () => {
     try {
       await apiLogout();
+    } catch (error) {
+      console.error('Logout API call failed, but clearing local state:', error);
     } finally {
       setUser(null);
       setAccessToken(null);
@@ -49,12 +158,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(profile.user);
   };
 
+  // Employee auth methods
+  const doEmployeeLogin = async (identifier: string, password: string) => {
+    const res = await apiEmployeeLogin(identifier, password);
+    setEmployeeAccessToken(res.accessToken);
+    const profile = await employeeMe(res.accessToken);
+    setEmployee(profile.employee);
+  };
+
+  const doEmployeeSetupPassword = async (employeeId: string, password: string) => {
+    const res = await apiEmployeeSetupPassword(employeeId, password);
+    setEmployeeAccessToken(res.accessToken);
+    const profile = await employeeMe(res.accessToken);
+    setEmployee(profile.employee);
+  };
+
+  const doEmployeeLogout = async () => {
+    try {
+      await apiEmployeeLogout();
+    } catch (error) {
+      console.error('Employee logout API call failed, but clearing local state:', error);
+    } finally {
+      setEmployee(null);
+      setEmployeeAccessToken(null);
+    }
+  };
+
   const value = useMemo<AuthContextValue>(
-    () => ({ user, accessToken, login: doLogin, register: doRegister, logout: doLogout }),
-    [user, accessToken]
+    () => ({
+      user,
+      accessToken,
+      login: doLogin,
+      register: doRegister,
+      logout: doLogout,
+      employee,
+      employeeAccessToken,
+      employeeLogin: doEmployeeLogin,
+      employeeSetupPassword: doEmployeeSetupPassword,
+      employeeLogout: doEmployeeLogout,
+      isAdmin: !!user,
+      isEmployee: !!employee,
+    }),
+    [user, accessToken, employee, employeeAccessToken]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children || <Outlet />}</AuthContext.Provider>;
 };
 
 export function useAuth() {
@@ -62,5 +210,3 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 }
-
-

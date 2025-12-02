@@ -2,6 +2,7 @@ import prisma from "@/config/db.js";
 import jwt from "jsonwebtoken";
 import { loadEnv } from "@/config/env.js";
 import { createJti } from "@/lib/crypto.js";
+import ApiError from "@/core/http/ApiError.js";
 
 const env = loadEnv();
 const secret = env.JWT_ACCESS_SECRET;
@@ -72,7 +73,7 @@ export async function rotateRefreshToken(oldToken: string) {
   const payload = jwt.verify(
     oldToken,
     env.JWT_REFRESH_SECRET
-  ) as JwtUserPayload;
+  ) as RefreshPayload;
 
   const userId = payload.sub;
   const oldJti = payload.jti;
@@ -86,7 +87,11 @@ export async function rotateRefreshToken(oldToken: string) {
     await prisma.refreshToken.deleteMany({
       where: { userId: parseInt(userId) },
     });
-    throw new Error("Refresh token reuse detected");
+    throw new ApiError({
+      statusCode: 401,
+      message: "Unauthorized",
+      code: "TOKEN_REUSE_DETECTED",
+    });
   }
 
   // Mark old token as revoked

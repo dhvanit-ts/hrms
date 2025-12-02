@@ -1,16 +1,10 @@
 "use client"
 
 import React, { useState } from 'react';
-import {
-  Link,
-} from 'react-router-dom';
-import {
-  Users,
-  Calendar,
-  User as UserIcon,
-  Briefcase,
-} from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Users, Calendar, User as UserIcon, Briefcase } from 'lucide-react';
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useAuth } from '@/shared/context/AuthContext';
 
 // UI Components Imports
 import { Button } from '@/shared/components/ui/button';
@@ -129,57 +123,123 @@ const EmployeeForm = ({ onSuccess }: { onSuccess: () => void }) => {
   );
 };
 
-const DashboardPage: React.FC = () => (
-  <div className="space-y-6 animate-in fade-in duration-500">
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {[
-        { label: 'Total Employees', value: '124', change: '+4%', icon: Users },
-        { label: 'On Leave', value: '8', change: 'Active now', icon: Calendar },
-        { label: 'New Hires', value: '12', change: 'This month', icon: UserIcon },
-        { label: 'Open Roles', value: '3', change: 'Urgent', icon: Briefcase },
-      ].map((stat, i) => (
-        <Card key={i}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between space-y-0 pb-2">
-              <p className="text-sm font-medium text-zinc-500">{stat.label}</p>
-              <stat.icon className="h-4 w-4 text-zinc-400" />
-            </div>
-            <div className="flex items-baseline gap-2 mt-2">
-              <h3 className="text-2xl font-bold text-zinc-900">{stat.value}</h3>
-              <span className="text-xs font-medium text-emerald-600">{stat.change}</span>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+const DashboardPage: React.FC = () => {
+  const { isAdmin, isEmployee, user, employee } = useAuth();
 
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-      <div className="lg:col-span-4 space-y-6">
-        <Card className="h-full">
-          <CardHeader>
-            <CardTitle>Department Overview</CardTitle>
-            <CardDescription>Employee distribution across departments</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <EmployeeForm onSuccess={() => { }} />
-          </CardContent>
-        </Card>
+  // Check if user has admin/HR/manager roles
+  const hasAdminAccess = isAdmin && user?.roles.some(role =>
+    ['SUPER_ADMIN', 'ADMIN', 'HR', 'MANAGER'].includes(role)
+  );
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Welcome Section */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-2xl font-bold mb-2">
+          Welcome, {isEmployee ? employee?.name : user?.email}!
+        </h2>
+        {isEmployee && (
+          <div className="space-y-2 text-sm text-gray-600">
+            <p><span className="font-medium">Employee ID:</span> {employee?.employeeId}</p>
+            <p><span className="font-medium">Email:</span> {employee?.email}</p>
+          </div>
+        )}
+        {isAdmin && (
+          <div className="space-y-2 text-sm text-gray-600">
+            <p><span className="font-medium">Roles:</span> {user?.roles.join(', ')}</p>
+          </div>
+        )}
       </div>
-      <div className="lg:col-span-3 space-y-6">
-        <Card>
-          <CardHeader><CardTitle>Quick Actions</CardTitle></CardHeader>
-          <CardContent className="grid gap-2">
-            <Button variant="outline" className="justify-start" asChild>
-              <Link to="/employees"><Users className="mr-2 h-4 w-4" /> View Directory</Link>
-            </Button>
-            <Button variant="outline" className="justify-start" asChild>
-              <Link to="/leaves"><Calendar className="mr-2 h-4 w-4" /> Request Time Off</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+
+      {/* Admin/HR/Manager Stats - Only show for admin users */}
+      {hasAdminAccess && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { label: 'Total Employees', value: '124', change: '+4%', icon: Users },
+            { label: 'On Leave', value: '8', change: 'Active now', icon: Calendar },
+            { label: 'New Hires', value: '12', change: 'This month', icon: UserIcon },
+            { label: 'Open Roles', value: '3', change: 'Urgent', icon: Briefcase },
+          ].map((stat, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between space-y-0 pb-2">
+                  <p className="text-sm font-medium text-zinc-500">{stat.label}</p>
+                  <stat.icon className="h-4 w-4 text-zinc-400" />
+                </div>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <h3 className="text-2xl font-bold text-zinc-900">{stat.value}</h3>
+                  <span className="text-xs font-medium text-emerald-600">{stat.change}</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Employee Quick Actions - Show for all employees */}
+      {isEmployee && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="hover:shadow-md transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Attendance
+              </CardTitle>
+              <CardDescription>View and manage your attendance records</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full">Coming Soon</Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Leave Requests
+              </CardTitle>
+              <CardDescription>Apply for leave and check status</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full" asChild>
+                <Link to="/dashboard/leaves">View Leaves</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Admin Management Section */}
+      {hasAdminAccess && (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+          <div className="lg:col-span-4 space-y-6">
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle>Add New Employee</CardTitle>
+                <CardDescription>Create employee records in the system</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <EmployeeForm onSuccess={() => { }} />
+              </CardContent>
+            </Card>
+          </div>
+          <div className="lg:col-span-3 space-y-6">
+            <Card>
+              <CardHeader><CardTitle>Quick Actions</CardTitle></CardHeader>
+              <CardContent className="grid gap-2">
+                <Button variant="outline" className="justify-start" asChild>
+                  <Link to="/dashboard/employees"><Users className="mr-2 h-4 w-4" /> View Directory</Link>
+                </Button>
+                <Button variant="outline" className="justify-start" asChild>
+                  <Link to="/dashboard/leaves"><Calendar className="mr-2 h-4 w-4" /> Manage Leaves</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 export { DashboardPage };

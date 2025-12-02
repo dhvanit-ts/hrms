@@ -4,7 +4,7 @@ import { logger } from "../config/logger.js";
 import prisma from "../config/db.js";
 
 async function run() {
-  const gloablPassword = "ChangeMeNow!123";
+  const globalPassword = "ChangeMeNow!123";
 
   const data: { role: string; email: string; password: string }[] = [];
 
@@ -13,7 +13,7 @@ async function run() {
     where: { email: superAdminEmail },
   });
   if (!existingSuperAdmin) {
-    const passwordHash = await hashPassword(gloablPassword);
+    const passwordHash = await hashPassword(globalPassword);
     await prisma.user.create({
       data: {
         email: superAdminEmail,
@@ -25,7 +25,7 @@ async function run() {
   }
   data.push({
     email: superAdminEmail,
-    password: gloablPassword,
+    password: globalPassword,
     role: "SUPER_ADMIN",
   });
   const employeeEmail1 = "employee1@hrms.local";
@@ -34,6 +34,7 @@ async function run() {
   });
   if (!existingEmployee1) {
     const emoloyeeCount = await prisma.employee.count();
+    const passwordHash = await hashPassword(globalPassword)
     await prisma.employee.create({
       data: {
         employeeId: "E-" + emoloyeeCount.toFixed() + 1,
@@ -41,12 +42,13 @@ async function run() {
         email: employeeEmail1,
         phone: "+915656565656",
         status: "active",
+        passwordHash
       },
     });
   }
   data.push({
     email: employeeEmail1,
-    password: gloablPassword,
+    password: globalPassword,
     role: "EMPLOYEE",
   });
   const employeeEmail2 = "employee2@hrms.local";
@@ -55,6 +57,7 @@ async function run() {
   });
   if (!existingEmployee2) {
     const emoloyeeCount = await prisma.employee.count();
+    const passwordHash = await hashPassword(globalPassword)
     await prisma.employee.create({
       data: {
         employeeId: "E-" + emoloyeeCount + 1,
@@ -62,12 +65,13 @@ async function run() {
         email: employeeEmail2,
         phone: "+915656565656",
         status: "active",
+        passwordHash
       },
     });
   }
   data.push({
     email: employeeEmail2,
-    password: gloablPassword,
+    password: globalPassword,
     role: "EMPLOYEE",
   });
   const managerEmail = "manager@hrms.local";
@@ -75,7 +79,7 @@ async function run() {
     where: { email: managerEmail },
   });
   if (!existingManager) {
-    const passwordHash = await hashPassword(gloablPassword);
+    const passwordHash = await hashPassword(globalPassword);
     await prisma.user.create({
       data: {
         email: managerEmail,
@@ -87,7 +91,7 @@ async function run() {
   }
   data.push({
     email: managerEmail,
-    password: gloablPassword,
+    password: globalPassword,
     role: "MANAGER",
   });
   const hrEmail = "hr@hrms.local";
@@ -95,14 +99,14 @@ async function run() {
     where: { email: hrEmail },
   });
   if (!existingHr) {
-    const passwordHash = await hashPassword(gloablPassword);
+    const passwordHash = await hashPassword(globalPassword);
     await prisma.user.create({
       data: { email: hrEmail, passwordHash, roles: ["HR"], isActive: true },
     });
   }
   data.push({
     email: hrEmail,
-    password: gloablPassword,
+    password: globalPassword,
     role: "HR",
   });
 
@@ -111,11 +115,11 @@ async function run() {
     .join("\n");
   logger.info(
     "\n" +
-      "\n" +
-      "ROLE         | EMAIL                     | PASSWORD\n" +
-      "-----------------------------------------------------\n" +
-      formattedData +
-      "\n"
+    "\n" +
+    "ROLE         | EMAIL                     | PASSWORD\n" +
+    "-----------------------------------------------------\n" +
+    formattedData +
+    "\n"
   );
 }
 

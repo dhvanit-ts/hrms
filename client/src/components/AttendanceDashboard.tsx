@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useEmployeeAuth } from '@/shared/context/EmployeeAuthContext';
+import { useAuth } from '@/shared/context/AuthContext';
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
@@ -19,9 +19,11 @@ import {
     type Attendance,
     type AttendanceStatus,
 } from '@/services/api/attendance';
+import { ErrorAlert } from './ui/error-alert';
+import { extractErrorMessage } from '@/lib/utils';
 
 export function AttendanceDashboard() {
-    const { accessToken } = useEmployeeAuth();
+    const { employeeAccessToken: accessToken } = useAuth();
     const [todayStatus, setTodayStatus] = useState<AttendanceStatus | null>(null);
     const [history, setHistory] = useState<Attendance[]>([]);
     const [loading, setLoading] = useState(false);
@@ -49,7 +51,9 @@ export function AttendanceDashboard() {
             setTodayStatus(statusData);
             setHistory(historyData.attendances);
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to load attendance data');
+            const errorMessage = extractErrorMessage(err);
+            console.error('Failed to load attendance data:', err);
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -65,7 +69,9 @@ export function AttendanceDashboard() {
             await punchIn(accessToken);
             await loadData();
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to punch in');
+            const errorMessage = extractErrorMessage(err);
+            console.error('Failed to punch in:', err);
+            setError(errorMessage);
         } finally {
             setActionLoading(null);
         }
@@ -81,7 +87,9 @@ export function AttendanceDashboard() {
             await punchOut(accessToken);
             await loadData();
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to punch out');
+            const errorMessage = extractErrorMessage(err);
+            console.error('Failed to punch out:', err);
+            setError(errorMessage);
         } finally {
             setActionLoading(null);
         }
@@ -121,9 +129,12 @@ export function AttendanceDashboard() {
     return (
         <div className="space-y-6">
             {error && (
-                <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg">
-                    {error}
-                </div>
+                <ErrorAlert
+                    message={error}
+                    onDismiss={() => setError(null)}
+                    autoDismiss={true}
+                    dismissAfter={5000}
+                />
             )}
 
             <Card>

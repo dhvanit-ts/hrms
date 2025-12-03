@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useEmployeeAuth } from "@/shared/context/EmployeeAuthContext";
+import { useAuth } from "@/shared/context/AuthContext";
 import {
     applyLeave,
     getMyLeaves,
@@ -20,9 +20,11 @@ import {
     TableRow,
 } from "@/shared/components/ui/table";
 import { Spinner } from "@/components/ui/spinner";
+import { ErrorAlert } from "@/components/ui/error-alert";
+import { extractErrorMessage } from "@/lib/utils";
 
 export const LeaveManagement: React.FC = () => {
-    const { accessToken } = useEmployeeAuth();
+    const { employeeAccessToken: accessToken } = useAuth();
     const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
     const [balance, setBalance] = useState<LeaveBalance | null>(null);
     const [loading, setLoading] = useState(false);
@@ -40,6 +42,7 @@ export const LeaveManagement: React.FC = () => {
     });
     const [submitting, setSubmitting] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     useEffect(() => {
         if (accessToken) {
@@ -47,6 +50,15 @@ export const LeaveManagement: React.FC = () => {
             fetchBalance();
         }
     }, [accessToken, filterStatus]);
+
+    useEffect(() => {
+        if (successMessage) {
+            const timer = setTimeout(() => {
+                setSuccessMessage(null);
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [successMessage]);
 
     const fetchLeaves = async () => {
         if (!accessToken) return;
@@ -59,7 +71,9 @@ export const LeaveManagement: React.FC = () => {
             const data = await getMyLeaves(accessToken, params);
             setLeaves(data.leaves);
         } catch (err: any) {
-            setError(err.message || "Failed to load leave history");
+            const errorMessage = extractErrorMessage(err);
+            console.error("Failed to load leave history:", err);
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -80,8 +94,20 @@ export const LeaveManagement: React.FC = () => {
         e.preventDefault();
         if (!accessToken) return;
 
+        // Client-side date validation
+        if (formData.startDate && formData.endDate) {
+            const startDate = new Date(formData.startDate);
+            const endDate = new Date(formData.endDate);
+
+            if (endDate < startDate) {
+                setFormError("End date cannot be before start date");
+                return;
+            }
+        }
+
         setSubmitting(true);
         setFormError(null);
+        setSuccessMessage(null);
 
         try {
             await applyLeave(accessToken, formData);
@@ -92,11 +118,15 @@ export const LeaveManagement: React.FC = () => {
                 endDate: "",
                 reason: "",
             });
+            // Show success message
+            setSuccessMessage("Leave application submitted successfully!");
             // Refresh data
             await fetchLeaves();
             await fetchBalance();
         } catch (err: any) {
-            setFormError(err.message || "Failed to submit leave application");
+            const errorMessage = extractErrorMessage(err);
+            console.error("Failed to submit leave application:", err);
+            setFormError(errorMessage);
         } finally {
             setSubmitting(false);
         }
@@ -136,7 +166,9 @@ export const LeaveManagement: React.FC = () => {
             {/* Leave Balance Card */}
             {balance && (
                 <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-lg font-semibold mb-4">Leave Balance</h3>
+                    <h3 className="text-lg font-semibold mb-4">
+                        Leave Balance ({balance.year})
+                    </h3>
                     <div className="grid grid-cols-3 gap-4">
                         <div>
                             <p className="text-sm text-gray-600">Total Allowance</p>
@@ -224,8 +256,24 @@ export const LeaveManagement: React.FC = () => {
                     </div>
 
                     {formError && (
-                        <div className="text-sm text-red-600 bg-red-50 p-3 rounded">
-                            {formError}
+                        <ErrorAlert
+                            message={formError}
+                            onDismiss={() => setFormError(null)}
+                            autoDismiss={true}
+                            dismissAfter={5000}
+                        />
+                    )}
+
+                    {successMessage && (
+                        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded relative">
+                            <span className="block sm:inline">{successMessage}</span>
+                            <button
+                                type="button"
+                                className="absolute top-0 bottom-0 right-0 px-4 py-3"
+                                onClick={() => setSuccessMessage(null)}
+                            >
+                                <span className="text-green-500 text-xl">&times;</span>
+                            </button>
                         </div>
                     )}
 
@@ -283,9 +331,12 @@ export const LeaveManagement: React.FC = () => {
                         <Spinner />
                     </div>
                 ) : error ? (
-                    <div className="text-sm text-red-600 bg-red-50 p-3 rounded">
-                        {error}
-                    </div>
+                    <ErrorAlert
+                        message={error}
+                        onDismiss={() => setError(null)}
+                        autoDismiss={true}
+                        dismissAfter={5000}
+                    />
                 ) : leaves.length === 0 ? (
                     <p className="text-center text-gray-500 py-8">
                         No leave applications found

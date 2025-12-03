@@ -5,6 +5,8 @@ import { Link } from 'react-router-dom';
 import { Users, Calendar, User as UserIcon, Briefcase } from 'lucide-react';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useAuth } from '@/shared/context/AuthContext';
+import { AttendanceDashboard } from '@/components/AttendanceDashboard';
+import { LeaveManagement } from '@/components/LeaveManagement';
 
 // UI Components Imports
 import { Button } from '@/shared/components/ui/button';
@@ -176,36 +178,11 @@ const DashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* Employee Quick Actions - Show for all employees */}
+      {/* Employee Dashboard - Show attendance and leave management */}
       {isEmployee && (
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Attendance
-              </CardTitle>
-              <CardDescription>View and manage your attendance records</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full">Coming Soon</Button>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Leave Requests
-              </CardTitle>
-              <CardDescription>Apply for leave and check status</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full" asChild>
-                <Link to="/dashboard/leaves">View Leaves</Link>
-              </Button>
-            </CardContent>
-          </Card>
+        <div className="space-y-6">
+          <AttendanceDashboard />
+          <LeaveManagement />
         </div>
       )}
 

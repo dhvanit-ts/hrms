@@ -134,6 +134,10 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
 
   // Admin auth methods
   const doLogin = async (email: string, password: string) => {
+    // Clear employee state when admin logs in
+    setEmployee(null);
+    setEmployeeAccessToken(null);
+
     const res = await apiLogin(email, password);
     setAccessToken(res.accessToken);
     const profile = await me(res.accessToken);
@@ -152,6 +156,10 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   };
 
   const doRegister = async (email: string, password: string) => {
+    // Clear employee state when admin registers
+    setEmployee(null);
+    setEmployeeAccessToken(null);
+
     const res = await apiRegister({ email, password });
     setAccessToken(res.accessToken);
     const profile = await me(res.accessToken);
@@ -160,6 +168,10 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
 
   // Employee auth methods
   const doEmployeeLogin = async (identifier: string, password: string) => {
+    // Clear admin state when employee logs in
+    setUser(null);
+    setAccessToken(null);
+
     const res = await apiEmployeeLogin(identifier, password);
     setEmployeeAccessToken(res.accessToken);
     const profile = await employeeMe(res.accessToken);
@@ -167,6 +179,10 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   };
 
   const doEmployeeSetupPassword = async (employeeId: string, password: string) => {
+    // Clear admin state when employee sets up password
+    setUser(null);
+    setAccessToken(null);
+
     const res = await apiEmployeeSetupPassword(employeeId, password);
     setEmployeeAccessToken(res.accessToken);
     const profile = await employeeMe(res.accessToken);

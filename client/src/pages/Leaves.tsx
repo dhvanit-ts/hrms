@@ -21,6 +21,8 @@ import { http } from '@/services/api/http';
 import { useAuth } from '@/shared/context/AuthContext';
 import { PendingLeavesTable, type PendingLeave } from '@/components/PendingLeavesTable';
 import * as leavesApi from '@/services/api/leaves';
+import { ErrorAlert } from '@/components/ui/error-alert';
+import { extractErrorMessage } from '@/lib/utils';
 
 // Helper to map status to badge variant
 const getStatusBadge = (status: string) => {
@@ -68,8 +70,10 @@ export const LeavesPage: React.FC = () => {
         headers: { Authorization: `Bearer ${accessToken}` }
       });
       setBalance(bal.data.balance);
-    } catch (error) {
-      console.error("Failed to load leave data", error);
+    } catch (error: any) {
+      const errorMessage = extractErrorMessage(error);
+      console.error("Failed to load leave data:", error);
+      setErrorMessage(errorMessage);
     }
   }
 
@@ -80,8 +84,9 @@ export const LeavesPage: React.FC = () => {
       const result = await leavesApi.getPendingLeaves(accessToken, filters);
       setPendingLeaves(result.leaves);
     } catch (error: any) {
-      console.error("Failed to load pending leaves", error);
-      setErrorMessage(error.message || "Failed to load pending leaves");
+      const errorMessage = extractErrorMessage(error);
+      console.error("Failed to load pending leaves:", error);
+      setErrorMessage(errorMessage);
     } finally {
       setIsPendingLoading(false);
     }
@@ -116,8 +121,10 @@ export const LeavesPage: React.FC = () => {
       setStartDate('');
       setEndDate('');
       await load();
-    } catch (error) {
-      console.error("Failed to submit leave request", error);
+    } catch (error: any) {
+      const errorMessage = extractErrorMessage(error);
+      console.error("Failed to submit leave request:", error);
+      setErrorMessage(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -138,8 +145,9 @@ export const LeavesPage: React.FC = () => {
       // Refresh the list
       await loadPendingLeaves();
     } catch (error: any) {
-      console.error("Failed to approve leave", error);
-      setErrorMessage(error.message || "Failed to approve leave");
+      const errorMessage = extractErrorMessage(error);
+      console.error("Failed to approve leave:", error);
+      setErrorMessage(errorMessage);
       setTimeout(() => setErrorMessage(null), 5000);
     }
   };
@@ -159,8 +167,9 @@ export const LeavesPage: React.FC = () => {
       // Refresh the list
       await loadPendingLeaves();
     } catch (error: any) {
-      console.error("Failed to reject leave", error);
-      setErrorMessage(error.message || "Failed to reject leave");
+      const errorMessage = extractErrorMessage(error);
+      console.error("Failed to reject leave:", error);
+      setErrorMessage(errorMessage);
       setTimeout(() => setErrorMessage(null), 5000);
     }
   };
@@ -178,9 +187,12 @@ export const LeavesPage: React.FC = () => {
         </div>
       )}
       {errorMessage && (
-        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md">
-          {errorMessage}
-        </div>
+        <ErrorAlert
+          message={errorMessage}
+          onDismiss={() => setErrorMessage(null)}
+          autoDismiss={true}
+          dismissAfter={5000}
+        />
       )}
 
       {/* Header Section */}

@@ -57,31 +57,6 @@
 
 ## PHASE 2 — Attendance & Leave Workflow
 
-## Frontend
-
-### Attendance UI
-
-* Clean dashboard showing:
-
-  * Today's status (present/absent).
-  * Punch-in/punch-out time.
-  * Buttons for:
-
-    * **Punch In — Office**
-    * **Punch In — Work From Home**
-* Must hit real APIs and show real timestamps.
-
-### Leave UI
-
-* Page with:
-
-  * Leave history (API-driven).
-  * Leave application form.
-  * Leave status indicators (pending/approved/rejected).
-* Trigger email notification when backend approves leave.
-
----
-
 ## Backend
 
 ### Attendance APIs
@@ -103,3 +78,32 @@
   * Overlaps.
   * Future dates only.
 * Send email on approval/rejection.
+
+---
+
+## PHASE 3 - Attendence & Leave Frontend workflow
+
+## Frontend
+
+### Attendance UI
+
+* Clean dashboard showing (Implement this into existing dashboard):
+
+  * Today's status (present/absent).
+  * Punch-in/punch-out time.
+  * Buttons for:
+
+    * **Punch In — Office**
+    * **Punch In — Work From Home**
+* Must hit real APIs and show real timestamps.
+
+### Leave UI
+
+* Page with:
+
+  * Leave history (API-driven).
+  * Leave application form.
+  * Leave status indicators (pending/approved/rejected).
+* Trigger email notification when backend approves leave.
+
+---

@@ -16,7 +16,7 @@ export interface JwtUserPayload {
 }
 
 interface RefreshPayload {
-  sub: string;
+  sub: string | number;
   jti: string;
 }
 
@@ -75,7 +75,7 @@ export async function rotateRefreshToken(oldToken: string) {
     env.JWT_REFRESH_SECRET
   ) as RefreshPayload;
 
-  const userId = payload.sub;
+  const userId = typeof payload.sub === "string" ? parseInt(payload.sub) : payload.sub;
   const oldJti = payload.jti;
 
   const existing = await prisma.refreshToken.findUnique({
@@ -85,7 +85,7 @@ export async function rotateRefreshToken(oldToken: string) {
   // Token reuse or not found
   if (!existing || existing.revokedAt) {
     await prisma.refreshToken.deleteMany({
-      where: { userId: parseInt(userId) },
+      where: { userId },
     });
     throw new ApiError({
       statusCode: 401,
@@ -101,9 +101,7 @@ export async function rotateRefreshToken(oldToken: string) {
   });
 
   // Issue new one
-  const { token: newToken, jti: newJti } = await issueRefreshToken(
-    parseInt(userId)
-  );
+  const { token: newToken, jti: newJti } = await issueRefreshToken(userId);
 
   return { userId, newToken, newJti };
 }

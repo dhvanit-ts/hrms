@@ -1,0 +1,4 @@
+cd client && npm run lint
+cd ..
+cd server && npm run lint
+cd ..

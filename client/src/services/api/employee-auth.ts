@@ -1,7 +1,7 @@
 import { employeeHttp } from "./employee-http";
 
 export async function employeeLogin(identifier: string, password: string) {
-  const res = await employeeHttp.post("http://localhost:4000/api/auth/employee/login", {
+  const res = await employeeHttp.post("/auth/employee/login", {
     identifier,
     password,
   });
@@ -9,7 +9,7 @@ export async function employeeLogin(identifier: string, password: string) {
 }
 
 export async function employeeSetupPassword(employeeId: string, password: string) {
-  const res = await employeeHttp.post("http://localhost:4000/api/auth/employee/setup-password", {
+  const res = await employeeHttp.post("/auth/employee/setup-password", {
     employeeId,
     password,
   });
@@ -17,7 +17,7 @@ export async function employeeSetupPassword(employeeId: string, password: string
 }
 
 export async function employeeLogout() {
-  await employeeHttp.post("http://localhost:4000/api/auth/employee/logout");
+  await employeeHttp.post("/auth/employee/logout");
 }
 
 export async function employeeMe(accessToken: string) {
@@ -28,6 +28,6 @@ export async function employeeMe(accessToken: string) {
 }
 
 export async function employeeRefresh() {
-  const res = await employeeHttp.post("http://localhost:4000/api/auth/employee/refresh");
+  const res = await employeeHttp.post("/auth/employee/refresh");
   return res.data as { accessToken: string };
 }

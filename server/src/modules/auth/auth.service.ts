@@ -60,7 +60,7 @@ export async function loginUser(email: string, password: string) {
   });
 
   if (!user || !user.isActive) {
-    logger.info(`\n\n---\nCredits were: \nEmail: ${email}\nPassword: ${password}\n---`)
+    logger.info({ event: "login_failed", email, reason: user ? "inactive" : "not_found" });
     throw new ApiError({
       statusCode: 401,
       message: "Invalid credentials",

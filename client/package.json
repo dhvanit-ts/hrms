@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:host": "vite --host",
     "build": "tsc -p tsconfig.json && vite build",
     "preview": "vite preview --port 3000",
     "lint": "bun x biome check",

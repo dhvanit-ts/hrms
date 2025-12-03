@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Clock,
   CheckCircle,
@@ -54,9 +54,11 @@ export const LeavesPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Check if user has admin access
-  const hasAdminAccess = isAdmin && user?.roles.some(role =>
-    ['SUPER_ADMIN', 'ADMIN', 'HR', 'MANAGER'].includes(role)
-  );
+  const hasAdminAccess = useMemo(() => {
+    return isAdmin && user?.roles?.some(role =>
+      ['SUPER_ADMIN', 'ADMIN', 'HR', 'MANAGER'].includes(role)
+    );
+  }, [isAdmin, user?.roles]);
 
   async function load() {
     if (!accessToken) return;
@@ -77,37 +79,23 @@ export const LeavesPage: React.FC = () => {
     }
   }
 
-  async function loadPendingLeaves() {
+  const loadPendingLeaves = useCallback(async () => {
     if (!accessToken || !hasAdminAccess) return;
     setIsPendingLoading(true);
     try {
       const result = await leavesApi.getPendingLeaves(accessToken, filters);
       setPendingLeaves(result.leaves);
-    } catch (error: any) {
-      const errorMessage = extractErrorMessage(error);
-      console.error("Failed to load pending leaves:", error);
-      setErrorMessage(errorMessage);
+    } catch (error) {
+      setErrorMessage(extractErrorMessage(error));
     } finally {
       setIsPendingLoading(false);
     }
-  }
+  }, [accessToken, hasAdminAccess, filters]);
 
   useEffect(() => {
-    if (isEmployee) {
-      load();
-    }
-    if (hasAdminAccess) {
-      loadPendingLeaves();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, hasAdminAccess, isEmployee]);
-
-  useEffect(() => {
-    if (hasAdminAccess) {
-      loadPendingLeaves();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
+    if (isEmployee) load();
+    if (hasAdminAccess) loadPendingLeaves();
+  }, [accessToken, isEmployee, hasAdminAccess]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,8 +162,15 @@ export const LeavesPage: React.FC = () => {
     }
   };
 
-  const handleFilterChange = (newFilters: { department?: string; startDate?: string; endDate?: string }) => {
-    setFilters(newFilters);
+  const handleFilterChange = (newFilters: any) => {
+    setFilters(prev => {
+      const same =
+        prev.department === newFilters.department &&
+        prev.startDate === newFilters.startDate &&
+        prev.endDate === newFilters.endDate;
+
+      return same ? prev : newFilters;
+    });
   };
 
   return (

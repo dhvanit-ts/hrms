@@ -510,13 +510,13 @@ server/src/modules/
 
 ### Attendance Endpoints
 
-**POST /api/attendance/punch-in**
+**POST /api/attendance/check-in**
 - **Auth**: Employee token required
 - **Body**: `{ ipAddress?: string }` (IP extracted from request if not provided)
 - **Response**: `{ attendance: Attendance }`
 - **Errors**: 401 (unauthorized), 409 (already punched in)
 
-**POST /api/attendance/punch-out**
+**POST /api/attendance/check-out**
 - **Auth**: Employee token required
 - **Body**: `{}`
 - **Response**: `{ attendance: Attendance }`

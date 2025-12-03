@@ -24,14 +24,14 @@ export interface AttendanceHistoryParams {
 }
 
 export async function punchIn(accessToken: string) {
-    const res = await employeeHttp.post("/attendance/punch-in", {}, {
+    const res = await employeeHttp.post("/attendance/check-in", {}, {
         headers: { Authorization: `Bearer ${accessToken}` },
     });
     return res.data as { attendance: Attendance };
 }
 
 export async function punchOut(accessToken: string) {
-    const res = await employeeHttp.post("/attendance/punch-out", {}, {
+    const res = await employeeHttp.post("/attendance/check-out", {}, {
         headers: { Authorization: `Bearer ${accessToken}` },
     });
     return res.data as { attendance: Attendance };

@@ -21,6 +21,9 @@ class ApiError extends Error {
   }) {
     super(message);
 
+    Object.setPrototypeOf(this, new.target.prototype); // <-- Fixes Error inheritance issues
+
+    this.name = this.constructor.name;
     this.statusCode = statusCode;
     this.code = code;
     this.success = false;
@@ -28,7 +31,20 @@ class ApiError extends Error {
     this.data = data;
     this.isOperational = true;
 
-    Error.captureStackTrace(this, this.constructor);
+    Error.captureStackTrace?.(this, this.constructor);
+  }
+
+  toJSON() {
+    // Axios + JSON.stringify will call this
+    return {
+      success: this.success,
+      message: this.message,
+      code: this.code,
+      statusCode: this.statusCode,
+      errors: this.errors,
+      data: this.data,
+      stack: this.stack, // keep or remove depending on environment
+    };
   }
 }
 

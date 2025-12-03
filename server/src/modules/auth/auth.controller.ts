@@ -11,10 +11,11 @@ import jwt from "jsonwebtoken";
 import prisma from "@/config/db.js";
 import asyncHandler from "@/core/http/asyncHandler.js";
 import ApiError from "@/core/http/ApiError.js";
+import { logger } from "@/config/logger.js";
 
 export const registerSchema = z.object({
   body: z.object({
-    email: z.string().email("Invalid email format"),
+    email: z.email("Invalid email format"),
     password: z
       .string()
       .min(12, "Password must be at least 12 characters long")
@@ -78,13 +79,16 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
   const env = loadEnv();
   const auth = req.headers.authorization;
   if (auth?.startsWith("Bearer ")) {
+    const token = auth.slice(7);
     try {
-      const token = auth.slice(7);
-      const payload = jwt.decode(token) as any;
+      const payload = jwt.verify(token, env.JWT_ACCESS_SECRET) as any;
       if (payload?.sub) {
-        await logoutUser(payload.sub);
+        const userId = typeof payload.sub === "string" ? parseInt(payload.sub, 10) : payload.sub;
+        if (Number.isInteger(userId)) await logoutUser(userId);
       }
-    } catch {}
+    } catch (err) {
+      logger.warn("Invalid access token in logout", { err: err.message });
+    }
   }
   res.clearCookie("refresh_token", {
     path: "/api/auth/refresh",
@@ -103,10 +107,10 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
       code: "MISSING_REFRESH_TOKEN",
     });
   }
-  
+
   const { userId, newToken } = await rotateRefreshToken(cookie);
   const user = await prisma.user.findUnique({
-    where: { id: parseInt(userId) },
+    where: { id: userId },
   });
   if (!user) {
     throw new ApiError({
@@ -116,7 +120,7 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     });
   }
   const accessToken = issueAccessToken({
-    sub: userId,
+    sub: userId.toString(),
     email: user.email,
     roles: user.roles as string[],
   });

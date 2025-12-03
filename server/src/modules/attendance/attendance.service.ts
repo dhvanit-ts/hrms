@@ -18,7 +18,7 @@ export async function checkIn(employeeId: string, ipAddress: string, date?: stri
     throw new ApiError({
       statusCode: 409,
       code: "DUPLICATE_PUNCH_IN",
-      message: "Already checked in. Please check out before punching in again.",
+      message: "Already checked in today. Please check out before punching in again.",
     });
   }
 

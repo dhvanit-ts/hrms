@@ -78,29 +78,19 @@ export async function rotateRefreshToken(oldToken: string) {
   const userId = typeof payload.sub === "string" ? parseInt(payload.sub) : payload.sub;
   const oldJti = payload.jti;
 
-  const existing = await prisma.refreshToken.findUnique({
-    where: { jti: oldJti },
-  });
-
-  // Token reuse or not found
-  if (!existing || existing.revokedAt) {
-    await prisma.refreshToken.deleteMany({
-      where: { userId },
-    });
-    throw new ApiError({
-      statusCode: 401,
-      message: "Unauthorized",
-      code: "TOKEN_REUSE_DETECTED",
-    });
-  }
-
-  // Mark old token as revoked
-  await prisma.refreshToken.update({
-    where: { jti: oldJti },
+  // atomic revoke: update and ensure revokedAt was null
+  const updated = await prisma.refreshToken.updateMany({
+    where: { jti: oldJti, revokedAt: null },
     data: { revokedAt: new Date() },
   });
 
-  // Issue new one
+  if (updated.count === 0) {
+    // either not found or already revoked (reuse)
+    await prisma.refreshToken.deleteMany({ where: { userId } });
+    throw new ApiError({ statusCode: 401, message: "Unauthorized", code: "TOKEN_REUSE_DETECTED" });
+  }
+
+  // now safely issue new token
   const { token: newToken, jti: newJti } = await issueRefreshToken(userId);
 
   return { userId, newToken, newJti };

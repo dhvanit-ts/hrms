@@ -57,9 +57,9 @@
 
 ## PHASE 2 — Attendance & Leave Workflow
 
-## Backend
+### Backend
 
-### Attendance APIs
+#### Attendance APIs
 
 * CRUD endpoints that don't choke under real usage.
 * Punch in options:
@@ -69,7 +69,7 @@
 * Prevent double punch-ins.
 * Track punch-out as well (unless you want zombie sessions forever).
 
-### Leave APIs
+#### Leave APIs
 
 * Create, update, approve, reject.
 * Enforce leave rules:
@@ -83,9 +83,9 @@
 
 ## PHASE 3 - Attendence & Leave Frontend workflow
 
-## Frontend
+### Frontend
 
-### Attendance UI
+#### Attendance UI
 
 * Clean dashboard showing (Implement this into existing dashboard):
 
@@ -97,7 +97,7 @@
     * **Punch In — Work From Home**
 * Must hit real APIs and show real timestamps.
 
-### Leave UI
+#### Leave UI
 
 * Page with:
 
@@ -107,3 +107,5 @@
 * Trigger email notification when backend approves leave.
 
 ---
+
+## PHASE 4 - 

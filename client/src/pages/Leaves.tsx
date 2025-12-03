@@ -17,7 +17,6 @@ import {
   CardHeader,
   CardTitle
 } from '@/shared/components/ui/card';
-import { http } from '@/services/api/http';
 import { useAuth } from '@/shared/context/AuthContext';
 import { PendingLeavesTable, type PendingLeave } from '@/components/PendingLeavesTable';
 import * as leavesApi from '@/services/api/leaves';
@@ -38,7 +37,7 @@ const getStatusBadge = (status: string) => {
 };
 
 export const LeavesPage: React.FC = () => {
-  const { accessToken, user, isAdmin, isEmployee } = useAuth();
+  const { employeeAccessToken, user, isAdmin, isEmployee } = useAuth();
   const [leaves, setLeaves] = useState<any[]>([]);
   const [type, setType] = useState('annual');
   const [startDate, setStartDate] = useState('');
@@ -61,17 +60,12 @@ export const LeavesPage: React.FC = () => {
   }, [isAdmin, user?.roles]);
 
   async function load() {
-    if (!accessToken) return;
+    if (!employeeAccessToken) return;
     try {
-      const res = await http.get('/leaves/mine', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-      if (!res.data.leaves) return;
-      setLeaves(res.data.leaves);
-      const bal = await http.get('/leaves/balance', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-      setBalance(bal.data.balance);
+      const res = await leavesApi.getMyLeaves(employeeAccessToken);
+      setLeaves(res.leaves);
+      const bal = await leavesApi.getLeaveBalance(employeeAccessToken);
+      setBalance(bal.balance);
     } catch (error: any) {
       const errorMessage = extractErrorMessage(error);
       console.error("Failed to load leave data:", error);
@@ -80,35 +74,39 @@ export const LeavesPage: React.FC = () => {
   }
 
   const loadPendingLeaves = useCallback(async () => {
-    if (!accessToken || !hasAdminAccess) return;
+    if (!employeeAccessToken || !hasAdminAccess) return;
     setIsPendingLoading(true);
     try {
-      const result = await leavesApi.getPendingLeaves(accessToken, filters);
+      const result = await leavesApi.getPendingLeaves(employeeAccessToken, filters);
       setPendingLeaves(result.leaves);
     } catch (error) {
       setErrorMessage(extractErrorMessage(error));
     } finally {
       setIsPendingLoading(false);
     }
-  }, [accessToken, hasAdminAccess, filters]);
+  }, [employeeAccessToken, hasAdminAccess, filters]);
 
   useEffect(() => {
     if (isEmployee) load();
     if (hasAdminAccess) loadPendingLeaves();
-  }, [accessToken, isEmployee, hasAdminAccess]);
+  }, [employeeAccessToken, isEmployee, hasAdminAccess]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!accessToken) return;
+    if (!employeeAccessToken) return;
     setIsLoading(true);
     try {
-      await http.post('/leaves',
-        { employeeId: parseInt(user?.id!), type, startDate, endDate },
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
+      await leavesApi.applyLeave(employeeAccessToken, {
+        type,
+        startDate,
+        endDate
+      });
       setStartDate('');
       setEndDate('');
+      setType('annual');
       await load();
+      setSuccessMessage('Leave request submitted successfully');
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error: any) {
       const errorMessage = extractErrorMessage(error);
       console.error("Failed to submit leave request:", error);
@@ -119,7 +117,7 @@ export const LeavesPage: React.FC = () => {
   };
 
   const handleApprove = async (leaveId: number) => {
-    if (!accessToken) return;
+    if (!employeeAccessToken) return;
 
     // Show confirmation dialog
     if (!window.confirm('Are you sure you want to approve this leave request?')) {
@@ -127,7 +125,7 @@ export const LeavesPage: React.FC = () => {
     }
 
     try {
-      await leavesApi.approveLeave(accessToken, leaveId);
+      await leavesApi.approveLeave(employeeAccessToken, leaveId);
       setSuccessMessage('Leave request approved successfully');
       setTimeout(() => setSuccessMessage(null), 3000);
       // Refresh the list
@@ -141,7 +139,7 @@ export const LeavesPage: React.FC = () => {
   };
 
   const handleReject = async (leaveId: number) => {
-    if (!accessToken) return;
+    if (!employeeAccessToken) return;
 
     // Show confirmation dialog
     if (!window.confirm('Are you sure you want to reject this leave request?')) {
@@ -149,7 +147,7 @@ export const LeavesPage: React.FC = () => {
     }
 
     try {
-      await leavesApi.rejectLeave(accessToken, leaveId);
+      await leavesApi.rejectLeave(employeeAccessToken, leaveId);
       setSuccessMessage('Leave request rejected successfully');
       setTimeout(() => setSuccessMessage(null), 3000);
       // Refresh the list

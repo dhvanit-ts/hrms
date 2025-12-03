@@ -23,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/dhvanit-ts/hrms/issues"
   },
-  "homepage": "https://github.com/dhvanit-ts/hrms#readme"
+  "homepage": "https://github.com/dhvanit-ts/hrms#readme",
+  "dependencies": {
+    "minimist": "^1.2.8"
+  }
 }

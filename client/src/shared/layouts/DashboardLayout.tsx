@@ -84,6 +84,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
             { path: '/dashboard/employees', label: 'Employees', icon: Users },
         ] : []),
         { path: '/dashboard/leaves', label: 'Leaves', icon: Calendar },
+        { path: '/dashboard/holidays', label: 'Holidays', icon: Calendar },
         ...(hasAdminAccess ? [
             { path: '/dashboard/reports', label: 'Reports', icon: FileText },
             { path: '/dashboard/settings', label: 'Settings', icon: Settings },

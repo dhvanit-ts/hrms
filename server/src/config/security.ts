@@ -19,7 +19,7 @@ export const applySecurity = (app: Express) => {
   const authLimiter = rateLimit({
     windowMs: 60 * 1000,
     limit: 10,
-    standardHeaders: "draft-7",
+    standardHeaders: "draft-8",
     legacyHeaders: false,
     message: "Too many requests, please try again later.",
   });

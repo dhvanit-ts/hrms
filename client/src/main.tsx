@@ -10,6 +10,7 @@ import { AuthProvider } from './shared/context/AuthContext';
 import { AuthGuard } from './routes/AuthGuard';
 import { EmployeesPage } from './pages/Employees';
 import { LeavesPage } from './pages/Leaves';
+import { HolidaysPage } from './pages/Holidays';
 import DashboardLayout from './shared/layouts/DashboardLayout';
 
 const router = createBrowserRouter([
@@ -36,6 +37,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <DashboardPage /> },
           { path: "leaves", element: <LeavesPage /> },
+          { path: "holidays", element: <HolidaysPage /> },
           { path: "employees", element: <EmployeesPage /> },
           { path: "employees/:id", element: <div>Employee details coming soon</div> },
         ]

@@ -75,10 +75,10 @@ export const employeeLogout = asyncHandler(async (req: Request, res: Response) =
       if (payload?.sub) {
         await logoutEmployee(parseInt(payload.sub));
       }
-    } catch {}
+    } catch { }
   }
   res.clearCookie("employee_refresh_token", {
-    path: "/api/auth/employee/refresh",
+    path: "/",
     domain: env.COOKIE_DOMAIN,
   });
   res.status(204).send();
@@ -100,7 +100,7 @@ export const employeeRefresh = asyncHandler(async (req: Request, res: Response) 
       code: "MISSING_REFRESH_TOKEN",
     });
   }
-  
+
   const { employeeId, newToken } = await rotateEmployeeRefreshToken(cookie);
   const employee = await prisma.employee.findUnique({
     where: { id: parseInt(employeeId) },

@@ -1,7 +1,7 @@
 import { http } from "./http";
 
 export async function login(email: string, password: string) {
-  const res = await http.post("http://localhost:4000/api/auth/login", {
+  const res = await http.post("/auth/login", {
     email,
     password,
   });
@@ -9,15 +9,12 @@ export async function login(email: string, password: string) {
 }
 
 export async function register(payload: { email: string; password: string }) {
-  const res = await http.post(
-    "http://localhost:4000/api/auth/register",
-    payload
-  );
+  const res = await http.post("/auth/register", payload);
   return res.data as { user: any; accessToken: string };
 }
 
 export async function logout() {
-  await http.post("http://localhost:4000/api/auth/logout");
+  await http.post("/auth/logout");
 }
 
 export async function me(accessToken: string) {
@@ -28,6 +25,6 @@ export async function me(accessToken: string) {
 }
 
 export async function refresh() {
-  const res = await http.post("http://localhost:4000/api/auth/refresh");
+  const res = await http.post("/auth/refresh");
   return res.data as { accessToken: string };
 }

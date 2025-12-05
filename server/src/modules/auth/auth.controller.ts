@@ -91,7 +91,7 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
     }
   }
   res.clearCookie("refresh_token", {
-    path: "/api/auth/refresh",
+    path: "/",
     domain: env.COOKIE_DOMAIN,
   });
   res.status(204).send();

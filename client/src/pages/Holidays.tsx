@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Plus, Trash2 } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
+import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -22,7 +21,8 @@ interface Holiday {
 
 export const HolidaysPage: React.FC = () => {
   const { isAdmin, user } = useAuth();
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [holidays, setHolidays] = useState<Holiday[]>([
     { id: 1, name: "New Year's Day", date: new Date(2025, 0, 1), type: 'public' },
     { id: 2, name: "Independence Day", date: new Date(2025, 6, 4), type: 'public' },
@@ -37,16 +37,6 @@ export const HolidaysPage: React.FC = () => {
   const hasAdminAccess = isAdmin && user?.roles?.some(role =>
     ['SUPER_ADMIN', 'ADMIN', 'HR'].includes(role)
   );
-
-  const holidayDates = holidays.map(h => h.date.toDateString());
-
-  const modifiers = {
-    holiday: (date: Date) => holidayDates.includes(date.toDateString()),
-  };
-
-  const modifiersClassNames = {
-    holiday: 'relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:rounded-full after:bg-rose-500',
-  };
 
   const handleAddHoliday = (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,15 +61,6 @@ export const HolidaysPage: React.FC = () => {
     }
   };
 
-  const selectedDateHolidays = holidays.filter(
-    h => selectedDate && h.date.toDateString() === selectedDate.toDateString()
-  );
-
-  const upcomingHolidays = holidays
-    .filter(h => h.date >= new Date())
-    .sort((a, b) => a.date.getTime() - b.date.getTime())
-    .slice(0, 5);
-
   const getTypeBadge = (type: string) => {
     switch (type) {
       case 'public':
@@ -93,6 +74,69 @@ export const HolidaysPage: React.FC = () => {
     }
   };
 
+  // Calendar utilities
+  const getDaysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const previousMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+  };
+
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  const isSameDay = (date1: Date, date2: Date) => {
+    return date1.getDate() === date2.getDate() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getFullYear() === date2.getFullYear();
+  };
+
+  const getHolidaysForDate = (date: Date) => {
+    return holidays.filter(h => isSameDay(h.date, date));
+  };
+
+  const isToday = (date: Date) => {
+    return isSameDay(date, new Date());
+  };
+
+  const isSelected = (date: Date) => {
+    return selectedDate ? isSameDay(date, selectedDate) : false;
+  };
+
+  const daysInMonth = getDaysInMonth(currentDate);
+  const firstDayOfMonth = getFirstDayOfMonth(currentDate);
+  const monthName = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  // Generate calendar days
+  const calendarDays: (Date | null)[] = [];
+
+  // Add empty cells for days before the first day of the month
+  for (let i = 0; i < firstDayOfMonth; i++) {
+    calendarDays.push(null);
+  }
+
+  // Add all days of the month
+  for (let day = 1; day <= daysInMonth; day++) {
+    calendarDays.push(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
+  }
+
+  const selectedDateHolidays = selectedDate ? getHolidaysForDate(selectedDate) : [];
+  const upcomingHolidays = holidays
+    .filter(h => h.date >= new Date())
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .slice(0, 5);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
@@ -103,143 +147,174 @@ export const HolidaysPage: React.FC = () => {
             View company holidays and plan your time off
           </p>
         </div>
+        <Button onClick={goToToday} variant="outline">
+          Today
+        </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-zinc-500">Total Holidays</p>
-              <CalendarIcon className="h-4 w-4 text-zinc-400" />
+      {/* Full Page Calendar */}
+      <Card>
+        <CardHeader className="border-b">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl">{monthName}</CardTitle>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" onClick={previousMonth}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={nextMonth}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
-            <div className="mt-2">
-              <h3 className="text-2xl font-bold text-zinc-900">{holidays.length}</h3>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {/* Calendar Grid */}
+          <div className="w-full">
+            {/* Week Days Header */}
+            <div className="grid grid-cols-7 border-b bg-zinc-50/50">
+              {weekDays.map((day) => (
+                <div
+                  key={day}
+                  className="p-4 text-center text-sm font-semibold text-zinc-600 border-r last:border-r-0"
+                >
+                  {day}
+                </div>
+              ))}
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-zinc-500">Upcoming</p>
-              <CalendarIcon className="h-4 w-4 text-zinc-400" />
-            </div>
-            <div className="mt-2">
-              <h3 className="text-2xl font-bold text-zinc-900">{upcomingHolidays.length}</h3>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-zinc-500">This Month</p>
-              <CalendarIcon className="h-4 w-4 text-zinc-400" />
-            </div>
-            <div className="mt-2">
-              <h3 className="text-2xl font-bold text-zinc-900">
-                {holidays.filter(h =>
-                  h.date.getMonth() === new Date().getMonth() &&
-                  h.date.getFullYear() === new Date().getFullYear()
-                ).length}
-              </h3>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Calendar */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Calendar View</CardTitle>
-            <CardDescription>Click on a date to see holidays</CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              modifiers={modifiers}
-              modifiersClassNames={modifiersClassNames}
-              className="rounded-md border"
-            />
-          </CardContent>
-        </Card>
+            {/* Calendar Days */}
+            <div className="grid grid-cols-7">
+              {calendarDays.map((date, index) => {
+                if (!date) {
+                  return (
+                    <div
+                      key={`empty-${index}`}
+                      className="min-h-[120px] border-b border-r last:border-r-0 bg-zinc-50/30"
+                    />
+                  );
+                }
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Selected Date Info */}
-          {selectedDate && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  {selectedDate.toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {selectedDateHolidays.length > 0 ? (
-                  <div className="space-y-3">
-                    {selectedDateHolidays.map(holiday => (
-                      <div key={holiday.id} className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{holiday.name}</p>
-                          <div className="mt-1">{getTypeBadge(holiday.type)}</div>
+                const dayHolidays = getHolidaysForDate(date);
+                const isCurrentDay = isToday(date);
+                const isSelectedDay = isSelected(date);
+
+                return (
+                  <div
+                    key={date.toISOString()}
+                    onClick={() => setSelectedDate(date)}
+                    className={`min-h-[120px] border-b border-r last:border-r-0 p-2 cursor-pointer transition-colors hover:bg-zinc-50 ${isSelectedDay ? 'bg-blue-50' : ''
+                      }`}
+                  >
+                    <div
+                      className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-medium mb-2 ${isCurrentDay
+                          ? 'bg-blue-600 text-white'
+                          : isSelectedDay
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'text-zinc-700'
+                        }`}
+                    >
+                      {date.getDate()}
+                    </div>
+
+                    {/* Holiday Events */}
+                    <div className="space-y-1">
+                      {dayHolidays.map((holiday) => (
+                        <div
+                          key={holiday.id}
+                          className={`text-xs px-2 py-1 rounded truncate ${holiday.type === 'public'
+                              ? 'bg-blue-100 text-blue-700'
+                              : holiday.type === 'company'
+                                ? 'bg-purple-100 text-purple-700'
+                                : 'bg-amber-100 text-amber-700'
+                            }`}
+                          title={holiday.name}
+                        >
+                          {holiday.name}
                         </div>
-                        {hasAdminAccess && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteHoliday(holiday.id)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-sm text-zinc-500">No holidays on this date</p>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                );
+              })}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-          {/* Upcoming Holidays */}
+      {/* Selected Date Details & Upcoming Holidays */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Selected Date Info */}
+        {selectedDate && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Upcoming Holidays</CardTitle>
+              <CardTitle className="text-base">
+                {selectedDate.toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {upcomingHolidays.length > 0 ? (
+              {selectedDateHolidays.length > 0 ? (
                 <div className="space-y-3">
-                  {upcomingHolidays.map(holiday => (
-                    <div key={holiday.id} className="flex items-start justify-between gap-2 pb-3 border-b last:border-0 last:pb-0">
+                  {selectedDateHolidays.map(holiday => (
+                    <div key={holiday.id} className="flex items-start justify-between gap-2 p-3 rounded-lg border">
                       <div className="flex-1">
                         <p className="font-medium text-sm">{holiday.name}</p>
-                        <p className="text-xs text-zinc-500 mt-1">
-                          {holiday.date.toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </p>
-                        <div className="mt-1">{getTypeBadge(holiday.type)}</div>
+                        <div className="mt-2">{getTypeBadge(holiday.type)}</div>
                       </div>
+                      {hasAdminAccess && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteHoliday(holiday.id)}
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-zinc-500">No upcoming holidays</p>
+                <p className="text-sm text-zinc-500">No holidays on this date</p>
               )}
             </CardContent>
           </Card>
-        </div>
+        )}
+
+        {/* Upcoming Holidays */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Upcoming Holidays</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {upcomingHolidays.length > 0 ? (
+              <div className="space-y-3">
+                {upcomingHolidays.map(holiday => (
+                  <div key={holiday.id} className="flex items-start justify-between gap-2 p-3 rounded-lg border">
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{holiday.name}</p>
+                      <p className="text-xs text-zinc-500 mt-1">
+                        {holiday.date.toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </p>
+                      <div className="mt-2">{getTypeBadge(holiday.type)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-zinc-500">No upcoming holidays</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Admin: Add Holiday Form */}
@@ -291,65 +366,6 @@ export const HolidaysPage: React.FC = () => {
           </CardContent>
         </Card>
       )}
-
-      {/* All Holidays List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Holidays ({holidays.length})</CardTitle>
-          <CardDescription>Complete list of holidays for the year</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="relative w-full overflow-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-50/50 text-zinc-500">
-                <tr>
-                  <th className="h-10 px-6 py-3 font-medium">Holiday Name</th>
-                  <th className="h-10 px-6 py-3 font-medium">Date</th>
-                  <th className="h-10 px-6 py-3 font-medium">Day</th>
-                  <th className="h-10 px-6 py-3 font-medium">Type</th>
-                  {hasAdminAccess && <th className="h-10 px-6 py-3 font-medium">Actions</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-200">
-                {holidays
-                  .sort((a, b) => a.date.getTime() - b.date.getTime())
-                  .map((holiday) => (
-                    <tr key={holiday.id} className="hover:bg-zinc-50/50 transition-colors">
-                      <td className="px-6 py-4 font-medium text-zinc-900">
-                        {holiday.name}
-                      </td>
-                      <td className="px-6 py-4 text-zinc-600">
-                        {holiday.date.toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
-                      </td>
-                      <td className="px-6 py-4 text-zinc-600">
-                        {holiday.date.toLocaleDateString('en-US', { weekday: 'long' })}
-                      </td>
-                      <td className="px-6 py-4">
-                        {getTypeBadge(holiday.type)}
-                      </td>
-                      {hasAdminAccess && (
-                        <td className="px-6 py-4">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteHoliday(holiday.id)}
-                            className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

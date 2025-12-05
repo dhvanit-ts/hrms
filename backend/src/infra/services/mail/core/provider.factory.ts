@@ -2,6 +2,7 @@ import { MailtrapProvider } from "../providers/mailtrap.provider";
 import { GmailProvider } from "../providers/gmail.provider";
 import type { EmailProvider } from "./mail.interface";
 import { env } from "@/config/env";
+import logger from "@/core/logger";
 
 export const createEmailProvider = async (): Promise<EmailProvider> => {
   const provider = chooseProvider();
@@ -33,9 +34,8 @@ const chooseProvider = (): EmailProvider => {
       throw new Error("Resend provider not implemented");
 
     default:
-      throw new Error(
-        `Unknown MAIL_PROVIDER "${env.MAIL_PROVIDER}". Expected mailtrap | gmail | resend`
-      );
+      logger.warn(`Unknown MAIL_PROVIDER="${env.MAIL_PROVIDER}", falling back to mailtrap`);
+      return new MailtrapProvider();
   }
 };
 

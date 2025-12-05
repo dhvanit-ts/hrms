@@ -93,6 +93,7 @@ department Department? @relation(fields: [departmentId], references: [id])
   leaveRequests      LeaveRequest[]  @relation("EmployeeLeaveRequests")
   approvals          LeaveRequest[]  @relation("EmployeeApprovals")
   refreshTokens      EmployeeRefreshToken[]
+  bankDetails        BankDetails?
 
   @@index([departmentId])
   @@index([jobRoleId])
@@ -187,6 +188,22 @@ model EmployeeRefreshToken {
   employeeId Int
 
   employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([employeeId])
+}
+
+model BankDetails {
+  id            Int      @id @default(autoincrement())
+  employeeId    Int      @unique
+  accountNumber String
+  bankName      String
+  branchName    String?
+  ifscCode      String
+  accountType   String   @default("savings")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@index([employeeId])
 }

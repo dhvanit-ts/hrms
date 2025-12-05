@@ -55,17 +55,23 @@ export function buildRefreshCookie(
   secure?: boolean,
   sameSite: "lax" | "strict" | "none" = "lax"
 ) {
+  const options: any = {
+    httpOnly: true,
+    secure: !!secure,
+    sameSite,
+    path: "/",
+    maxAge: maxAgeMs,
+  };
+
+  // Only set domain if it's explicitly provided and not empty
+  if (domain && domain.trim() !== "") {
+    options.domain = domain;
+  }
+
   return {
     name: "refresh_token",
     value: token,
-    options: {
-      httpOnly: true,
-      secure: !!secure,
-      sameSite,
-      domain,
-      path: "/api/auth/refresh",
-      maxAge: maxAgeMs,
-    },
+    options,
   } as const;
 }
 

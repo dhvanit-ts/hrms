@@ -108,12 +108,16 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   useEffect(() => {
     (async () => {
       try {
+        console.log('Attempting to restore admin session...');
         const refreshResult = await apiRefresh();
+        console.log('Admin refresh successful, got access token');
         setAccessToken(refreshResult.accessToken);
         const profile = await me(refreshResult.accessToken);
         setUser(profile.user);
-      } catch {
-        // Silently fail
+        console.log('Admin session restored successfully:', profile.user.email);
+      } catch (error: any) {
+        // Silently fail - no valid refresh token or session expired
+        console.log('No admin session to restore:', error?.response?.status || error.message);
       }
     })();
   }, []);
@@ -122,12 +126,16 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   useEffect(() => {
     (async () => {
       try {
+        console.log('Attempting to restore employee session...');
         const refreshResult = await apiEmployeeRefresh();
+        console.log('Employee refresh successful, got access token');
         setEmployeeAccessToken(refreshResult.accessToken);
         const profile = await employeeMe(refreshResult.accessToken);
         setEmployee(profile.employee);
-      } catch {
-        // Silently fail
+        console.log('Employee session restored successfully:', profile.employee.name);
+      } catch (error: any) {
+        // Silently fail - no valid refresh token or session expired
+        console.log('No employee session to restore:', error?.response?.status || error.message);
       }
     })();
   }, []);

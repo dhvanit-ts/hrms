@@ -15,6 +15,7 @@ import {
     Bell,
     Briefcase,
     LogOut,
+    CreditCard,
     LucideIcon
 } from 'lucide-react';
 
@@ -85,6 +86,9 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
         ] : []),
         { path: '/dashboard/leaves', label: 'Leaves', icon: Calendar },
         { path: '/dashboard/holidays', label: 'Holidays', icon: Calendar },
+        ...(isEmployee ? [
+            { path: '/dashboard/bank-details', label: 'Bank Details', icon: CreditCard },
+        ] : []),
         ...(hasAdminAccess ? [
             { path: '/dashboard/reports', label: 'Reports', icon: FileText },
             { path: '/dashboard/settings', label: 'Settings', icon: Settings },

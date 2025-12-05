@@ -33,10 +33,25 @@ model Attendance {
   updatedAt  DateTime  @updatedAt
 
   employee   Employee  @relation(fields: [employeeId], references: [id])
+  breaks     Break[]
 
   @@unique([employeeId, date])
   @@index([employeeId])
   @@index([date])
+}
+
+model Break {
+  id           Int       @id @default(autoincrement())
+  attendanceId Int
+  startTime    DateTime
+  endTime      DateTime?
+  duration     Int?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  attendance   Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+
+  @@index([attendanceId])
 }
 
 model Department {

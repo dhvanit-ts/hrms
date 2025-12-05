@@ -68,3 +68,21 @@ export const todayStatusHandler = asyncHandler(async (req: AuthenticatedRequest,
   const status = await getTodayStatus(employeeId);
   res.status(200).json(status);
 });
+
+export const startBreakHandler = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const employeeId = req.user!.id;
+  const breakRecord = await import("./attendance.service.js").then(m => m.startBreak(employeeId));
+  res.status(200).json({ break: breakRecord });
+});
+
+export const endBreakHandler = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const employeeId = req.user!.id;
+  const breakRecord = await import("./attendance.service.js").then(m => m.endBreak(employeeId));
+  res.status(200).json({ break: breakRecord });
+});
+
+export const breakStatusHandler = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const employeeId = req.user!.id;
+  const status = await import("./attendance.service.js").then(m => m.getBreakStatus(employeeId));
+  res.status(200).json(status);
+});

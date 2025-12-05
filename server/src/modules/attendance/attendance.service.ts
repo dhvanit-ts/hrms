@@ -161,6 +161,9 @@ export async function getAttendanceHistory(
   // Ensure records are ordered by date descending
   const records = await prisma.attendance.findMany({
     where: whereClause,
+    include: {
+      breaks: true,
+    },
     orderBy: {
       date: 'desc',
     },
@@ -182,10 +185,180 @@ export async function getTodayStatus(employeeId: string) {
       employeeId: eid,
       date: day,
     },
+    include: {
+      breaks: true,
+    },
   });
 
   return {
     hasActiveSession: !!(attendance?.checkIn && !attendance?.checkOut),
     attendance: attendance || null,
+  };
+}
+
+/**
+ * Start a break for the current attendance session
+ */
+export async function startBreak(employeeId: string) {
+  const eid = parseInt(employeeId);
+  const today = new Date();
+  const day = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  // Find today's attendance record
+  const attendance = await prisma.attendance.findFirst({
+    where: {
+      employeeId: eid,
+      date: day,
+    },
+    include: {
+      breaks: true,
+    },
+  });
+
+  if (!attendance?.checkIn) {
+    throw new ApiError({
+      statusCode: 409,
+      code: "NO_ACTIVE_SESSION",
+      message: "No active punch session found. Please punch in first.",
+    });
+  }
+
+  if (attendance.checkOut) {
+    throw new ApiError({
+      statusCode: 409,
+      code: "SESSION_ENDED",
+      message: "Cannot start break after checking out.",
+    });
+  }
+
+  // Check if there's already an active break
+  const activeBreak = attendance.breaks.find(b => !b.endTime);
+  if (activeBreak) {
+    throw new ApiError({
+      statusCode: 409,
+      code: "BREAK_ALREADY_ACTIVE",
+      message: "A break is already in progress. Please end it first.",
+    });
+  }
+
+  // Create new break
+  const breakRecord = await prisma.break.create({
+    data: {
+      attendanceId: attendance.id,
+      startTime: new Date(),
+    },
+  });
+
+  await writeAuditLog({
+    action: "START_BREAK",
+    entity: "Break",
+    entityId: breakRecord.id.toString(),
+    performedBy: employeeId,
+  });
+
+  return breakRecord;
+}
+
+/**
+ * End the current active break
+ */
+export async function endBreak(employeeId: string) {
+  const eid = parseInt(employeeId);
+  const today = new Date();
+  const day = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  // Find today's attendance record with breaks
+  const attendance = await prisma.attendance.findFirst({
+    where: {
+      employeeId: eid,
+      date: day,
+    },
+    include: {
+      breaks: true,
+    },
+  });
+
+  if (!attendance) {
+    throw new ApiError({
+      statusCode: 404,
+      code: "NO_ATTENDANCE_RECORD",
+      message: "No attendance record found for today.",
+    });
+  }
+
+  // Find active break
+  const activeBreak = attendance.breaks.find(b => !b.endTime);
+  if (!activeBreak) {
+    throw new ApiError({
+      statusCode: 409,
+      code: "NO_ACTIVE_BREAK",
+      message: "No active break found to end.",
+    });
+  }
+
+  const endTime = new Date();
+  const duration = Math.floor(
+    (endTime.getTime() - activeBreak.startTime.getTime()) / (1000 * 60)
+  );
+
+  // Update break with end time and duration
+  const updatedBreak = await prisma.break.update({
+    where: { id: activeBreak.id },
+    data: {
+      endTime,
+      duration: Math.max(0, duration),
+    },
+  });
+
+  await writeAuditLog({
+    action: "END_BREAK",
+    entity: "Break",
+    entityId: updatedBreak.id.toString(),
+    performedBy: employeeId,
+  });
+
+  return updatedBreak;
+}
+
+/**
+ * Get break status for today
+ */
+export async function getBreakStatus(employeeId: string) {
+  const eid = parseInt(employeeId);
+  const today = new Date();
+  const day = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const attendance = await prisma.attendance.findFirst({
+    where: {
+      employeeId: eid,
+      date: day,
+    },
+    include: {
+      breaks: {
+        orderBy: {
+          startTime: 'desc',
+        },
+      },
+    },
+  });
+
+  if (!attendance) {
+    return {
+      hasActiveBreak: false,
+      breaks: [],
+      totalBreakTime: 0,
+    };
+  }
+
+  const activeBreak = attendance.breaks.find(b => !b.endTime);
+  const totalBreakTime = attendance.breaks
+    .filter(b => b.duration)
+    .reduce((sum, b) => sum + (b.duration || 0), 0);
+
+  return {
+    hasActiveBreak: !!activeBreak,
+    activeBreak: activeBreak || null,
+    breaks: attendance.breaks,
+    totalBreakTime,
   };
 }

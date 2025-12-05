@@ -54,3 +54,41 @@ export async function getTodayStatus(accessToken: string) {
     });
     return res.data as AttendanceStatus;
 }
+
+export interface Break {
+    id: number;
+    attendanceId: number;
+    startTime: string;
+    endTime: string | null;
+    duration: number | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface BreakStatus {
+    hasActiveBreak: boolean;
+    activeBreak: Break | null;
+    breaks: Break[];
+    totalBreakTime: number;
+}
+
+export async function startBreak(accessToken: string) {
+    const res = await employeeHttp.post("/attendance/break/start", {}, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return res.data as { break: Break };
+}
+
+export async function endBreak(accessToken: string) {
+    const res = await employeeHttp.post("/attendance/break/end", {}, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return res.data as { break: Break };
+}
+
+export async function getBreakStatus(accessToken: string) {
+    const res = await employeeHttp.get("/attendance/break/status", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return res.data as BreakStatus;
+}

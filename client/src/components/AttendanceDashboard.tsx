@@ -16,8 +16,12 @@ import {
   punchOut,
   getAttendanceHistory,
   getTodayStatus,
+  startBreak,
+  endBreak,
+  getBreakStatus,
   type Attendance,
   type AttendanceStatus,
+  type BreakStatus,
 } from '@/services/api/attendance';
 import { ErrorAlert } from './ui/error-alert';
 import { extractErrorMessage } from '@/lib/utils';
@@ -25,10 +29,11 @@ import { extractErrorMessage } from '@/lib/utils';
 export function AttendanceDashboard() {
   const { employeeAccessToken: accessToken } = useAuth();
   const [todayStatus, setTodayStatus] = useState<AttendanceStatus | null>(null);
+  const [breakStatus, setBreakStatus] = useState<BreakStatus | null>(null);
   const [history, setHistory] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState<'punch-in' | 'punch-out' | null>(null);
+  const [actionLoading, setActionLoading] = useState<'punch-in' | 'punch-out' | 'start-break' | 'end-break' | null>(null);
 
   useEffect(() => {
     if (accessToken) {
@@ -43,13 +48,15 @@ export function AttendanceDashboard() {
     setError(null);
 
     try {
-      const [statusData, historyData] = await Promise.all([
+      const [statusData, historyData, breakData] = await Promise.all([
         getTodayStatus(accessToken),
         getAttendanceHistory(accessToken),
+        getBreakStatus(accessToken),
       ]);
 
       setTodayStatus(statusData);
       setHistory(historyData.attendances);
+      setBreakStatus(breakData);
     } catch (err: any) {
       const errorMessage = extractErrorMessage(err);
       console.error('Failed to load attendance data:', err);
@@ -89,6 +96,42 @@ export function AttendanceDashboard() {
     } catch (err: any) {
       const errorMessage = extractErrorMessage(err);
       console.error('Failed to punch out:', err);
+      setError(errorMessage);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleStartBreak = async () => {
+    if (!accessToken) return;
+
+    setActionLoading('start-break');
+    setError(null);
+
+    try {
+      await startBreak(accessToken);
+      await loadData();
+    } catch (err: any) {
+      const errorMessage = extractErrorMessage(err);
+      console.error('Failed to start break:', err);
+      setError(errorMessage);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleEndBreak = async () => {
+    if (!accessToken) return;
+
+    setActionLoading('end-break');
+    setError(null);
+
+    try {
+      await endBreak(accessToken);
+      await loadData();
+    } catch (err: any) {
+      const errorMessage = extractErrorMessage(err);
+      console.error('Failed to end break:', err);
       setError(errorMessage);
     } finally {
       setActionLoading(null);
@@ -153,6 +196,9 @@ export function AttendanceDashboard() {
                 {todayStatus.attendance?.type && (
                   <Badge variant="outline">{todayStatus.attendance.type}</Badge>
                 )}
+                {breakStatus?.hasActiveBreak && (
+                  <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-transparent">On Break</Badge>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -170,14 +216,42 @@ export function AttendanceDashboard() {
                 </div>
               </div>
 
-              <Button
-                onClick={handlePunchOut}
-                disabled={actionLoading !== null}
-                variant="outline"
-                className="w-full"
-              >
-                {actionLoading === 'punch-out' ? 'Punching Out...' : 'Punch Out'}
-              </Button>
+              {breakStatus && breakStatus.totalBreakTime > 0 && (
+                <div className="p-3 bg-zinc-50 rounded-md">
+                  <p className="text-sm text-muted-foreground">Total Break Time</p>
+                  <p className="text-lg font-semibold">{formatDuration(breakStatus.totalBreakTime)}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                {breakStatus?.hasActiveBreak ? (
+                  <Button
+                    onClick={handleEndBreak}
+                    disabled={actionLoading !== null}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {actionLoading === 'end-break' ? 'Ending...' : 'End Break'}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleStartBreak}
+                    disabled={actionLoading !== null}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {actionLoading === 'start-break' ? 'Starting...' : 'Start Break'}
+                  </Button>
+                )}
+                <Button
+                  onClick={handlePunchOut}
+                  disabled={actionLoading !== null || breakStatus?.hasActiveBreak}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {actionLoading === 'punch-out' ? 'Punching Out...' : 'Punch Out'}
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">

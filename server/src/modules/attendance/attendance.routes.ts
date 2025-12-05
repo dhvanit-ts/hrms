@@ -10,6 +10,9 @@ import {
   historyHandler,
   historySchema,
   todayStatusHandler,
+  startBreakHandler,
+  endBreakHandler,
+  breakStatusHandler,
 } from "./attendance.controller";
 import { validate } from "@/core/middlewares/validate.js";
 
@@ -23,6 +26,11 @@ router.post("/check-out", validate(checkSchema), checkOutHandler);
 // employee attendance history and today's status
 router.get("/history", validate(historySchema), historyHandler);
 router.get("/today", todayStatusHandler);
+
+// break management
+router.post("/break/start", startBreakHandler);
+router.post("/break/end", endBreakHandler);
+router.get("/break/status", breakStatusHandler);
 
 // summaries restricted to HR/MANAGER/ADMIN/SUPER_ADMIN
 router.get(

@@ -1,0 +1,19 @@
+{
+  "name": "@app/shared",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./user": "./src/some.module.ts"
+  },
+  "packageManager": "pnpm@10.24.0"
+}

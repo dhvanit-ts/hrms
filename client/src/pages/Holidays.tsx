@@ -107,7 +107,7 @@ export const HolidaysPage: React.FC = () => {
 
   const isToday = (date: Date) => {
     return isSameDay(date, new Date());
-  };
+  }; ``
 
   const isSelected = (date: Date) => {
     return selectedDate ? isSameDay(date, selectedDate) : false;
@@ -207,10 +207,10 @@ export const HolidaysPage: React.FC = () => {
                   >
                     <div
                       className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-medium mb-2 ${isCurrentDay
-                          ? 'bg-blue-600 text-white'
-                          : isSelectedDay
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'text-zinc-700'
+                        ? 'bg-blue-600 text-white'
+                        : isSelectedDay
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'text-zinc-700'
                         }`}
                     >
                       {date.getDate()}
@@ -222,10 +222,10 @@ export const HolidaysPage: React.FC = () => {
                         <div
                           key={holiday.id}
                           className={`text-xs px-2 py-1 rounded truncate ${holiday.type === 'public'
-                              ? 'bg-blue-100 text-blue-700'
-                              : holiday.type === 'company'
-                                ? 'bg-purple-100 text-purple-700'
-                                : 'bg-amber-100 text-amber-700'
+                            ? 'bg-blue-100 text-blue-700'
+                            : holiday.type === 'company'
+                              ? 'bg-purple-100 text-purple-700'
+                              : 'bg-amber-100 text-amber-700'
                             }`}
                           title={holiday.name}
                         >

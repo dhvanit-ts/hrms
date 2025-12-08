@@ -39,16 +39,16 @@ class ApiResponse<T = unknown> {
     this.meta = meta;
   }
 
-  static ok<T>(data: T, message = "Success") {
+  static ok<T>(res: Response, data: T, message = "Success", statusCode = 200) {
     return new ApiResponse<T>({
-      statusCode: 200,
+      statusCode,
       success: true,
       message,
       data,
     });
   }
 
-  static created<T>(data: T, message = "Created successfully") {
+  static created<T>(res: Response, data: T, message = "Created successfully") {
     return new ApiResponse<T>({
       statusCode: 201,
       success: true,

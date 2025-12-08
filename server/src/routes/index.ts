@@ -6,6 +6,7 @@ import leaveRoutes from "../modules/leave/leave.routes.js";
 import attendanceRoutes from "../modules/attendance/attendance.routes.js";
 import payrollRoutes from "../modules/payroll/payroll.routes.js";
 import bankDetailsRoutes from "../modules/bank-details/bank-details.routes.js";
+import holidayRoutes from "../modules/holiday/holiday.routes.js";
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use("/leaves", leaveRoutes);
 router.use("/attendance", attendanceRoutes);
 router.use("/payroll", payrollRoutes);
 router.use("/bank-details", bankDetailsRoutes);
+router.use("/holidays", holidayRoutes);
 
 export default router;

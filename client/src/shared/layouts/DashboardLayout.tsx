@@ -16,6 +16,7 @@ import {
     Briefcase,
     LogOut,
     CreditCard,
+    Shield,
     LucideIcon
 } from 'lucide-react';
 
@@ -78,6 +79,9 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
         ['SUPER_ADMIN', 'ADMIN', 'HR', 'MANAGER'].includes(role)
     );
 
+    // Check if user is superadmin
+    const isSuperAdmin = isAdmin && user?.roles.includes('SUPER_ADMIN');
+
     // Build navigation items based on user type
     const items = [
         { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -88,6 +92,9 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
         { path: '/dashboard/holidays', label: 'Holidays', icon: Calendar },
         ...(isEmployee ? [
             { path: '/dashboard/bank-details', label: 'Bank Details', icon: CreditCard },
+        ] : []),
+        ...(isSuperAdmin ? [
+            { path: '/dashboard/users', label: 'User Management', icon: Shield },
         ] : []),
         ...(hasAdminAccess ? [
             { path: '/dashboard/reports', label: 'Reports', icon: FileText },

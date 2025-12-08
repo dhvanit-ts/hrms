@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider     = "mysql"
-  url          = env("DATABASE_URL")
   relationMode = "prisma"
 }
 
@@ -206,6 +205,19 @@ model BankDetails {
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@index([employeeId])
+}
+
+model Holiday {
+  id          Int      @id @default(autoincrement())
+  name        String
+  date        DateTime
+  description String?
+  isRecurring Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([date, name])
+  @@index([date])
 }
 
 enum AppRole {

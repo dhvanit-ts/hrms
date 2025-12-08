@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2 } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -11,67 +11,133 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Badge } from '@/shared/components/ui/badge';
 import { useAuth } from '@/shared/context/AuthContext';
+import { holidaysApi, Holiday as ApiHoliday } from '@/services/api/holidays';
 
 interface Holiday {
   id: number;
   name: string;
   date: Date;
-  type: 'public' | 'company' | 'optional';
+  description?: string;
+  isRecurring: boolean;
 }
 
 export const HolidaysPage: React.FC = () => {
   const { isAdmin, user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [holidays, setHolidays] = useState<Holiday[]>([
-    { id: 1, name: "New Year's Day", date: new Date(2025, 0, 1), type: 'public' },
-    { id: 2, name: "Independence Day", date: new Date(2025, 6, 4), type: 'public' },
-    { id: 3, name: "Christmas", date: new Date(2025, 11, 25), type: 'public' },
-    { id: 4, name: "Company Anniversary", date: new Date(2025, 2, 15), type: 'company' },
-  ]);
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [newHolidayName, setNewHolidayName] = useState('');
   const [newHolidayDate, setNewHolidayDate] = useState('');
-  const [newHolidayType, setNewHolidayType] = useState<'public' | 'company' | 'optional'>('public');
+  const [newHolidayDescription, setNewHolidayDescription] = useState('');
+  const [newHolidayRecurring, setNewHolidayRecurring] = useState(false);
+
+  const [editingHoliday, setEditingHoliday] = useState<Holiday | null>(null);
 
   const hasAdminAccess = isAdmin && user?.roles?.some(role =>
     ['SUPER_ADMIN', 'ADMIN', 'HR'].includes(role)
   );
 
-  const handleAddHoliday = (e: React.FormEvent) => {
+  useEffect(() => {
+    fetchHolidays();
+  }, [currentDate]);
+
+  const fetchHolidays = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const year = currentDate.getFullYear();
+      const data = await holidaysApi.getAll(year);
+      const mappedHolidays = data.map(h => ({
+        ...h,
+        date: new Date(h.date),
+      }));
+      setHolidays(mappedHolidays);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to fetch holidays');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddHoliday = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newHolidayName || !newHolidayDate) return;
 
-    const newHoliday: Holiday = {
-      id: Date.now(),
-      name: newHolidayName,
-      date: new Date(newHolidayDate),
-      type: newHolidayType,
-    };
+    try {
+      const dateObj = new Date(newHolidayDate);
+      dateObj.setHours(12, 0, 0, 0);
 
-    setHolidays([...holidays, newHoliday]);
+      await holidaysApi.create({
+        name: newHolidayName,
+        date: dateObj.toISOString(),
+        description: newHolidayDescription || undefined,
+        isRecurring: newHolidayRecurring,
+      });
+
+      setNewHolidayName('');
+      setNewHolidayDate('');
+      setNewHolidayDescription('');
+      setNewHolidayRecurring(false);
+      await fetchHolidays();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to create holiday');
+    }
+  };
+
+  const handleUpdateHoliday = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingHoliday || !newHolidayName || !newHolidayDate) return;
+
+    try {
+      const dateObj = new Date(newHolidayDate);
+      dateObj.setHours(12, 0, 0, 0);
+
+      await holidaysApi.update(editingHoliday.id, {
+        name: newHolidayName,
+        date: dateObj.toISOString(),
+        description: newHolidayDescription || undefined,
+        isRecurring: newHolidayRecurring,
+      });
+
+      setEditingHoliday(null);
+      setNewHolidayName('');
+      setNewHolidayDate('');
+      setNewHolidayDescription('');
+      setNewHolidayRecurring(false);
+      await fetchHolidays();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to update holiday');
+    }
+  };
+
+  const handleDeleteHoliday = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this holiday?')) return;
+
+    try {
+      await holidaysApi.delete(id);
+      await fetchHolidays();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to delete holiday');
+    }
+  };
+
+  const startEditHoliday = (holiday: Holiday) => {
+    setEditingHoliday(holiday);
+    setNewHolidayName(holiday.name);
+    setNewHolidayDate(holiday.date.toISOString().split('T')[0]);
+    setNewHolidayDescription(holiday.description || '');
+    setNewHolidayRecurring(holiday.isRecurring);
+  };
+
+  const cancelEdit = () => {
+    setEditingHoliday(null);
     setNewHolidayName('');
     setNewHolidayDate('');
-    setNewHolidayType('public');
-  };
-
-  const handleDeleteHoliday = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this holiday?')) {
-      setHolidays(holidays.filter(h => h.id !== id));
-    }
-  };
-
-  const getTypeBadge = (type: string) => {
-    switch (type) {
-      case 'public':
-        return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-transparent">Public</Badge>;
-      case 'company':
-        return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 border-transparent">Company</Badge>;
-      case 'optional':
-        return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-transparent">Optional</Badge>;
-      default:
-        return null;
-    }
+    setNewHolidayDescription('');
+    setNewHolidayRecurring(false);
   };
 
   // Calendar utilities
@@ -137,6 +203,14 @@ export const HolidaysPage: React.FC = () => {
     .sort((a, b) => a.date.getTime() - b.date.getTime())
     .slice(0, 5);
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-zinc-500">Loading holidays...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
@@ -151,6 +225,12 @@ export const HolidaysPage: React.FC = () => {
           Today
         </Button>
       </div>
+
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          {error}
+        </div>
+      )}
 
       {/* Full Page Calendar */}
       <Card>
@@ -221,12 +301,7 @@ export const HolidaysPage: React.FC = () => {
                       {dayHolidays.map((holiday) => (
                         <div
                           key={holiday.id}
-                          className={`text-xs px-2 py-1 rounded truncate ${holiday.type === 'public'
-                            ? 'bg-blue-100 text-blue-700'
-                            : holiday.type === 'company'
-                              ? 'bg-purple-100 text-purple-700'
-                              : 'bg-amber-100 text-amber-700'
-                            }`}
+                          className="text-xs px-2 py-1 rounded truncate bg-blue-100 text-blue-700"
                           title={holiday.name}
                         >
                           {holiday.name}
@@ -263,17 +338,34 @@ export const HolidaysPage: React.FC = () => {
                     <div key={holiday.id} className="flex items-start justify-between gap-2 p-3 rounded-lg border">
                       <div className="flex-1">
                         <p className="font-medium text-sm">{holiday.name}</p>
-                        <div className="mt-2">{getTypeBadge(holiday.type)}</div>
+                        {holiday.description && (
+                          <p className="text-xs text-zinc-500 mt-1">{holiday.description}</p>
+                        )}
+                        {holiday.isRecurring && (
+                          <Badge className="mt-2 bg-green-100 text-green-700 hover:bg-green-200 border-transparent text-xs">
+                            Recurring
+                          </Badge>
+                        )}
                       </div>
                       {hasAdminAccess && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteHoliday(holiday.id)}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => startEditHoliday(holiday)}
+                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteHoliday(holiday.id)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       )}
                     </div>
                   ))}
@@ -305,7 +397,11 @@ export const HolidaysPage: React.FC = () => {
                           year: 'numeric'
                         })}
                       </p>
-                      <div className="mt-2">{getTypeBadge(holiday.type)}</div>
+                      {holiday.isRecurring && (
+                        <Badge className="mt-2 bg-green-100 text-green-700 hover:bg-green-200 border-transparent text-xs">
+                          Recurring
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -317,16 +413,18 @@ export const HolidaysPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Admin: Add Holiday Form */}
+      {/* Admin: Add/Edit Holiday Form */}
       {hasAdminAccess && (
         <Card>
           <CardHeader>
-            <CardTitle>Add New Holiday</CardTitle>
-            <CardDescription>Create a new holiday entry for the calendar</CardDescription>
+            <CardTitle>{editingHoliday ? 'Edit Holiday' : 'Add New Holiday'}</CardTitle>
+            <CardDescription>
+              {editingHoliday ? 'Update holiday details' : 'Create a new holiday entry for the calendar'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleAddHoliday} className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-3">
+            <form onSubmit={editingHoliday ? handleUpdateHoliday : handleAddHoliday} className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-zinc-700">Holiday Name</label>
                   <Input
@@ -345,23 +443,47 @@ export const HolidaysPage: React.FC = () => {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-700">Type</label>
-                  <select
-                    className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
-                    value={newHolidayType}
-                    onChange={(e) => setNewHolidayType(e.target.value as any)}
-                  >
-                    <option value="public">Public Holiday</option>
-                    <option value="company">Company Holiday</option>
-                    <option value="optional">Optional Holiday</option>
-                  </select>
-                </div>
               </div>
-              <Button type="submit" className="w-full md:w-auto">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Holiday
-              </Button>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-700">Description (Optional)</label>
+                <Input
+                  placeholder="e.g. National holiday celebrating..."
+                  value={newHolidayDescription}
+                  onChange={(e) => setNewHolidayDescription(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="recurring"
+                  checked={newHolidayRecurring}
+                  onChange={(e) => setNewHolidayRecurring(e.target.checked)}
+                  className="h-4 w-4 rounded border-zinc-300"
+                />
+                <label htmlFor="recurring" className="text-sm font-medium text-zinc-700">
+                  Recurring annually
+                </label>
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" className="w-full md:w-auto">
+                  {editingHoliday ? (
+                    <>
+                      <Edit2 className="w-4 h-4 mr-2" />
+                      Update Holiday
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Holiday
+                    </>
+                  )}
+                </Button>
+                {editingHoliday && (
+                  <Button type="button" variant="outline" onClick={cancelEdit}>
+                    Cancel
+                  </Button>
+                )}
+              </div>
             </form>
           </CardContent>
         </Card>

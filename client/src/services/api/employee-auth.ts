@@ -20,10 +20,9 @@ export async function employeeLogout() {
   await employeeHttp.post("/auth/employee/logout");
 }
 
-export async function employeeMe(accessToken: string) {
-  const res = await employeeHttp.get("/employees/me", {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+export async function employeeMe(accessToken?: string) {
+  const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+  const res = await employeeHttp.get("/employees/me", { headers });
   return res.data as { employee: any };
 }
 

@@ -77,10 +77,11 @@ export const employeeLogout = asyncHandler(async (req: Request, res: Response) =
       }
     } catch { }
   }
-  res.clearCookie("employee_refresh_token", {
-    path: "/",
-    domain: env.COOKIE_DOMAIN,
-  });
+  const clearOptions: any = { path: "/" };
+  if (env.COOKIE_DOMAIN && env.COOKIE_DOMAIN.trim() !== "") {
+    clearOptions.domain = env.COOKIE_DOMAIN;
+  }
+  res.clearCookie("employee_refresh_token", clearOptions);
   res.status(204).send();
 });
 

@@ -17,10 +17,9 @@ export async function logout() {
   await http.post("/auth/logout");
 }
 
-export async function me(accessToken: string) {
-  const res = await http.get("/users/me", {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+export async function me(accessToken?: string) {
+  const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+  const res = await http.get("/users/me", { headers });
   return res.data as { user: any };
 }
 

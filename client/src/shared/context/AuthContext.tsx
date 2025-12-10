@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { login as apiLogin, logout as apiLogout, me, register as apiRegister, refresh as apiRefresh } from '@/services/api/auth';
-import { setAuthCallbacks } from '@/services/api/http';
+import { setAuthCallbacks, setAccessTokenGetter } from '@/services/api/http';
 import {
   employeeLogin as apiEmployeeLogin,
   employeeLogout as apiEmployeeLogout,
@@ -9,7 +9,7 @@ import {
   employeeRefresh as apiEmployeeRefresh,
   employeeSetupPassword as apiEmployeeSetupPassword,
 } from '@/services/api/employee-auth';
-import { setEmployeeAuthCallbacks } from '@/services/api/employee-http';
+import { setEmployeeAuthCallbacks, setEmployeeAccessTokenGetter } from '@/services/api/employee-http';
 
 type AdminUser = { email: string; roles: string[]; id?: string };
 type Employee = {
@@ -52,10 +52,31 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [employeeAccessToken, setEmployeeAccessToken] = useState<string | null>(null);
 
+  // Track if session restoration has completed
+  const [sessionRestored, setSessionRestored] = useState(false);
+
   const navigate = useNavigate();
 
-  // Set up callbacks for admin HTTP interceptor
+  // Computed auth states
+  const isAdmin = !!user;
+  const isEmployee = !!employee;
+
+  // Redirect authenticated users away from login pages (only after session restoration)
   useEffect(() => {
+    if (!sessionRestored) return; // Wait for session restoration to complete
+
+    const currentPath = window.location.pathname;
+    const isOnLoginPage = currentPath === '/' || currentPath === '/login' || currentPath === '/admin/login';
+
+    if (isOnLoginPage && (isEmployee || isAdmin)) {
+      console.log('Redirecting authenticated user to dashboard');
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isEmployee, isAdmin, navigate, sessionRestored]);
+
+  // Set up callbacks for HTTP interceptors (only once)
+  useEffect(() => {
+    // Admin auth callbacks
     const handleRefreshSuccess = (newAccessToken: string) => {
       setAccessToken(newAccessToken);
     };
@@ -67,22 +88,29 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
     };
 
     setAuthCallbacks(handleRefreshSuccess, handleRefreshFailure);
-  }, [navigate]);
 
-  // Set up callbacks for employee HTTP interceptor
-  useEffect(() => {
-    const handleRefreshSuccess = (newAccessToken: string) => {
+    // Employee auth callbacks
+    const handleEmployeeRefreshSuccess = (newAccessToken: string) => {
       setEmployeeAccessToken(newAccessToken);
     };
 
-    const handleRefreshFailure = () => {
+    const handleEmployeeRefreshFailure = () => {
       setEmployee(null);
       setEmployeeAccessToken(null);
       navigate('/login');
     };
 
-    setEmployeeAuthCallbacks(handleRefreshSuccess, handleRefreshFailure);
+    setEmployeeAuthCallbacks(handleEmployeeRefreshSuccess, handleEmployeeRefreshFailure);
   }, [navigate]);
+
+  // Update token getters whenever tokens change
+  useEffect(() => {
+    setAccessTokenGetter(() => accessToken);
+  }, [accessToken]);
+
+  useEffect(() => {
+    setEmployeeAccessTokenGetter(() => employeeAccessToken);
+  }, [employeeAccessToken]);
 
   // Security check: Ensure access token is never persisted to storage
   useEffect(() => {
@@ -104,40 +132,63 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
     }
   }, []);
 
-  // Best-effort restore admin session on mount
+  // Best-effort restore sessions on mount
   useEffect(() => {
-    (async () => {
-      try {
-        console.log('Attempting to restore admin session...');
-        const refreshResult = await apiRefresh();
-        console.log('Admin refresh successful, got access token');
-        setAccessToken(refreshResult.accessToken);
-        const profile = await me(refreshResult.accessToken);
-        setUser(profile.user);
-        console.log('Admin session restored successfully:', profile.user.email);
-      } catch (error: any) {
-        // Silently fail - no valid refresh token or session expired
-        console.log('No admin session to restore:', error?.response?.status || error.message);
-      }
-    })();
-  }, []);
+    let isMounted = true;
 
-  // Best-effort restore employee session on mount
-  useEffect(() => {
-    (async () => {
+    const restoreSessions = async () => {
+      console.log('Attempting session restoration...');
+
       try {
-        console.log('Attempting to restore employee session...');
-        const refreshResult = await apiEmployeeRefresh();
-        console.log('Employee refresh successful, got access token');
-        setEmployeeAccessToken(refreshResult.accessToken);
-        const profile = await employeeMe(refreshResult.accessToken);
-        setEmployee(profile.employee);
-        console.log('Employee session restored successfully:', profile.employee.name);
-      } catch (error: any) {
-        // Silently fail - no valid refresh token or session expired
-        console.log('No employee session to restore:', error?.response?.status || error.message);
+        // Try employee session first (since it's more common)
+        try {
+          console.log('Attempting to restore employee session...');
+          const refreshResult = await apiEmployeeRefresh();
+          if (isMounted) {
+            console.log('Employee refresh successful, got access token');
+            setEmployeeAccessToken(refreshResult.accessToken);
+            const profile = await employeeMe(refreshResult.accessToken);
+            setEmployee(profile.employee);
+            console.log('Employee session restored successfully:', profile.employee.name);
+            return; // If employee session restored, don't try admin
+          }
+        } catch (error: any) {
+          console.log('Employee refresh failed:', error?.response?.data?.code || error.message);
+          // Only try admin if employee refresh failed due to missing token
+          if (error?.response?.data?.code === 'MISSING_REFRESH_TOKEN') {
+            console.log('No employee token, trying admin...');
+          }
+        }
+
+        // Try admin session if employee failed
+        try {
+          console.log('Attempting to restore admin session...');
+          const refreshResult = await apiRefresh();
+          if (isMounted) {
+            console.log('Admin refresh successful, got access token');
+            setAccessToken(refreshResult.accessToken);
+            const profile = await me(refreshResult.accessToken);
+            setUser(profile.user);
+            console.log('Admin session restored successfully:', profile.user.email);
+          }
+        } catch (error: any) {
+          console.log('Admin refresh failed:', error?.response?.data || error.message);
+          console.log('Admin refresh error details:', error?.response);
+        }
+      } finally {
+        // Mark session restoration as complete regardless of success/failure
+        if (isMounted) {
+          setSessionRestored(true);
+          console.log('Session restoration completed');
+        }
       }
-    })();
+    };
+
+    restoreSessions();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Admin auth methods
@@ -146,10 +197,13 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
     setEmployee(null);
     setEmployeeAccessToken(null);
 
+    console.log('Admin login attempt...');
     const res = await apiLogin(email, password);
+    console.log('Admin login successful, setting state');
     setAccessToken(res.accessToken);
     const profile = await me(res.accessToken);
     setUser(profile.user);
+    console.log('Admin user set:', profile.user);
   };
 
   const doLogout = async () => {
@@ -220,10 +274,10 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
       employeeLogin: doEmployeeLogin,
       employeeSetupPassword: doEmployeeSetupPassword,
       employeeLogout: doEmployeeLogout,
-      isAdmin: !!user,
-      isEmployee: !!employee,
+      isAdmin,
+      isEmployee,
     }),
-    [user, accessToken, employee, employeeAccessToken]
+    [user, accessToken, employee, employeeAccessToken, isAdmin, isEmployee]
   );
 
   return <AuthContext.Provider value={value}>{children || <Outlet />}</AuthContext.Provider>;

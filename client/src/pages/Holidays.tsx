@@ -173,7 +173,7 @@ export const HolidaysPage: React.FC = () => {
 
   const isToday = (date: Date) => {
     return isSameDay(date, new Date());
-  }; ``
+  };
 
   const isSelected = (date: Date) => {
     return selectedDate ? isSameDay(date, selectedDate) : false;

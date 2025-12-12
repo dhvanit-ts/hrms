@@ -134,8 +134,6 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
 
   // Best-effort restore sessions on mount
   useEffect(() => {
-    let isMounted = true;
-
     const restoreSessions = async () => {
       console.log('Attempting session restoration...');
 
@@ -144,14 +142,12 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         try {
           console.log('Attempting to restore employee session...');
           const refreshResult = await apiEmployeeRefresh();
-          if (isMounted) {
-            console.log('Employee refresh successful, got access token');
-            setEmployeeAccessToken(refreshResult.accessToken);
-            const profile = await employeeMe(refreshResult.accessToken);
-            setEmployee(profile.employee);
-            console.log('Employee session restored successfully:', profile.employee.name);
-            return; // If employee session restored, don't try admin
-          }
+          console.log('Employee refresh successful, got access token');
+          setEmployeeAccessToken(refreshResult.accessToken);
+          const profile = await employeeMe(refreshResult.accessToken);
+          setEmployee(profile.employee);
+          console.log('Employee session restored successfully:', profile.employee.name);
+          return; // If employee session restored, don't try admin
         } catch (error: any) {
           console.log('Employee refresh failed:', error?.response?.data?.code || error.message);
           // Only try admin if employee refresh failed due to missing token
@@ -164,31 +160,23 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         try {
           console.log('Attempting to restore admin session...');
           const refreshResult = await apiRefresh();
-          if (isMounted) {
-            console.log('Admin refresh successful, got access token');
-            setAccessToken(refreshResult.accessToken);
-            const profile = await me(refreshResult.accessToken);
-            setUser(profile.user);
-            console.log('Admin session restored successfully:', profile.user.email);
-          }
+          console.log('Admin refresh successful, got access token');
+          setAccessToken(refreshResult.accessToken);
+          const profile = await me(refreshResult.accessToken);
+          setUser(profile.user);
+          console.log('Admin session restored successfully:', profile.user.email);
         } catch (error: any) {
           console.log('Admin refresh failed:', error?.response?.data || error.message);
           console.log('Admin refresh error details:', error?.response);
         }
       } finally {
         // Mark session restoration as complete regardless of success/failure
-        if (isMounted) {
-          setSessionRestored(true);
-          console.log('Session restoration completed');
-        }
+        setSessionRestored(true);
+        console.log('Session restoration completed');
       }
     };
 
     restoreSessions();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   // Admin auth methods

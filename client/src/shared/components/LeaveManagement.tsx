@@ -8,7 +8,7 @@ import {
     type LeaveBalance,
     type ApplyLeaveParams,
 } from "@/services/api/leaves";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Badge } from "@/shared/components/ui/badge";
 import {
@@ -19,8 +19,8 @@ import {
     TableHeader,
     TableRow,
 } from "@/shared/components/ui/table";
-import { Spinner } from "@/components/ui/spinner";
-import { ErrorAlert } from "@/components/ui/error-alert";
+import { Spinner } from "@/shared/components/ui/spinner";
+import { ErrorAlert } from "@/shared/components/ui/error-alert";
 import { extractErrorMessage } from "@/lib/utils";
 
 export const LeaveManagement: React.FC = () => {

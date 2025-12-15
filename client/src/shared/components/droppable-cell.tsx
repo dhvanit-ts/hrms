@@ -2,8 +2,8 @@
 
 import { useDroppable } from "@dnd-kit/core";
 
-import { useCalendarDnd } from "@/components/event-calendar";
 import { cn } from "@/lib/utils";
+import { useCalendarDnd } from "./calendar-dnd-context";
 
 interface DroppableCellProps {
   id: string;
@@ -36,8 +36,8 @@ export function DroppableCell({
   const formattedTime =
     time !== undefined
       ? `${Math.floor(time)}:${Math.round((time - Math.floor(time)) * 60)
-          .toString()
-          .padStart(2, "0")}`
+        .toString()
+        .padStart(2, "0")}`
       : null;
 
   return (

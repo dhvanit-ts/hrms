@@ -10,7 +10,7 @@ import {
     CardHeader,
     CardTitle
 } from '@/shared/components/ui/card';
-import { ErrorAlert } from '@/components/ui/error-alert';
+import { ErrorAlert } from '@/shared/components/ui/error-alert';
 import { extractErrorMessage } from '@/lib/utils';
 import * as bankDetailsApi from '@/services/api/bank-details';
 import type { BankDetails, CreateBankDetailsInput } from '@/services/api/bank-details';

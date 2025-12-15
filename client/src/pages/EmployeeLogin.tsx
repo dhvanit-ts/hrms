@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useEmployeeAuth } from '@/shared/context/EmployeeAuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Label } from '@/components/ui/label';
+import { Label } from '@/shared/components/ui/label';
 
 const MIN_PASSWORD_LENGTH = 8;
 

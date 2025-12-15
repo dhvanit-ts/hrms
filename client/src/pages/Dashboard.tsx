@@ -5,8 +5,8 @@ import { Link } from 'react-router-dom';
 import { Users, Calendar, User as UserIcon, Briefcase } from 'lucide-react';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useAuth } from '@/shared/context/AuthContext';
-import { AttendanceDashboard } from '@/components/AttendanceDashboard';
-import { LeaveManagement } from '@/components/LeaveManagement';
+import { AttendanceDashboard } from '@/shared/components/AttendanceDashboard';
+import { LeaveManagement } from '@/shared/components/LeaveManagement';
 import { statsApi, type DashboardStats } from '@/services/api/stats';
 
 // UI Components Imports
@@ -19,10 +19,10 @@ import {
   CardTitle
 } from '@/shared/components/ui/card';
 import { Input } from '@/shared/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/shared/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { http } from '@/services/api/http';
-import { Spinner } from '@/components/ui/spinner';
+import { Spinner } from '@/shared/components/ui/spinner';
 import z from 'zod';
 
 const employeeSchema = z.object({

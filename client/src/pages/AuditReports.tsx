@@ -21,7 +21,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/shared/components/ui/select';
 import { Badge } from '@/shared/components/ui/badge';
 
 const AuditReportsPage: React.FC = () => {

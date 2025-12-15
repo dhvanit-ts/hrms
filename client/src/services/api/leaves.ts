@@ -1,4 +1,5 @@
 import { employeeHttp } from "./employee-http";
+import { http } from "./http";
 
 export interface LeaveRequest {
     id: number;
@@ -170,6 +171,82 @@ export async function rejectLeave(
 ) {
     try {
         const res = await employeeHttp.patch(`/leaves/${leaveId}/reject`,
+            { reason },
+            {
+                headers: { Authorization: `Bearer ${accessToken}` },
+            }
+        );
+        return res.data as { leave: LeaveRequest };
+    } catch (error: any) {
+        // Handle authorization errors
+        if (error.response?.status === 403) {
+            throw new Error("You do not have permission to reject leaves");
+        }
+        if (error.response?.data) {
+            throw new Error(
+                error.response.data.message || "Failed to reject leave"
+            );
+        }
+        throw error;
+    }
+}
+
+// Admin API methods using regular HTTP client
+
+export async function getPendingLeavesAdmin(
+    accessToken: string,
+    params?: GetPendingLeavesParams
+) {
+    try {
+        const res = await http.get("/leaves/pending", {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            params,
+        });
+        return res.data as { leaves: PendingLeave[] };
+    } catch (error: any) {
+        // Handle authorization errors
+        if (error.response?.status === 403) {
+            throw new Error("You do not have permission to view pending leaves");
+        }
+        if (error.response?.data) {
+            throw new Error(
+                error.response.data.message || "Failed to fetch pending leaves"
+            );
+        }
+        throw error;
+    }
+}
+
+export async function approveLeaveAdmin(
+    accessToken: string,
+    leaveId: number
+) {
+    try {
+        const res = await http.patch(`/leaves/${leaveId}/approve`, {}, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        return res.data as { leave: LeaveRequest };
+    } catch (error: any) {
+        // Handle authorization errors
+        if (error.response?.status === 403) {
+            throw new Error("You do not have permission to approve leaves");
+        }
+        if (error.response?.data) {
+            throw new Error(
+                error.response.data.message || "Failed to approve leave"
+            );
+        }
+        throw error;
+    }
+}
+
+export async function rejectLeaveAdmin(
+    accessToken: string,
+    leaveId: number,
+    reason?: string
+) {
+    try {
+        const res = await http.patch(`/leaves/${leaveId}/reject`,
             { reason },
             {
                 headers: { Authorization: `Bearer ${accessToken}` },

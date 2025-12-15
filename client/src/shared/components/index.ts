@@ -14,8 +14,8 @@ export { EventDialog } from "./event-dialog";
 export { EventItem } from "./event-item";
 export { EventsPopup } from "./events-popup";
 // Hook exports
-export * from "./hooks/use-current-time-indicator";
-export * from "./hooks/use-event-visibility";
+export * from "../hooks/use-current-time-indicator";
+export * from "../hooks/use-event-visibility";
 export { MonthView } from "./month-view";
 // Type exports
 export type { CalendarEvent, CalendarView, EventColor } from "./types";

@@ -15,19 +15,17 @@ import type React from "react";
 import { useMemo } from "react";
 
 import {
-  type CalendarEvent,
-  DraggableEvent,
-  DroppableCell,
-  EventItem,
-  isMultiDayEvent,
-  useCurrentTimeIndicator,
-  WeekCellsHeight,
-} from "@/components/event-calendar";
-import {
   EndHour,
   StartHour,
-} from "@/components/constants";
+  WeekCellsHeight,
+} from "@/shared/components/constants";
 import { cn } from "@/lib/utils";
+import { CalendarEvent } from "./types";
+import { isMultiDayEvent } from "./utils";
+import { useCurrentTimeIndicator } from "../hooks/use-current-time-indicator";
+import { EventItem } from "./event-item";
+import { DraggableEvent } from "./draggable-event";
+import { DroppableCell } from "./droppable-cell";
 
 interface DayViewProps {
   currentDate: Date;
@@ -302,11 +300,11 @@ export function DayView({
                         "absolute h-[calc(var(--week-cells-height)/4)] w-full",
                         quarter === 0 && "top-0",
                         quarter === 1 &&
-                          "top-[calc(var(--week-cells-height)/4)]",
+                        "top-[calc(var(--week-cells-height)/4)]",
                         quarter === 2 &&
-                          "top-[calc(var(--week-cells-height)/4*2)]",
+                        "top-[calc(var(--week-cells-height)/4*2)]",
                         quarter === 3 &&
-                          "top-[calc(var(--week-cells-height)/4*3)]",
+                        "top-[calc(var(--week-cells-height)/4*3)]",
                       )}
                       date={currentDate}
                       id={`day-cell-${currentDate.toISOString()}-${quarterHourTime}`}

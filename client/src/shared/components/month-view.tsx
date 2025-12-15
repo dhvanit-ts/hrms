@@ -15,25 +15,19 @@ import {
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 
-import {
-  type CalendarEvent,
-  DraggableEvent,
-  DroppableCell,
-  EventGap,
-  EventHeight,
-  EventItem,
-  getAllEventsForDay,
-  getEventsForDay,
-  getSpanningEventsForDay,
-  sortEvents,
-  useEventVisibility,
-} from "@/components/event-calendar";
-import { DefaultStartHour } from "@/components/constants";
+
+import { DefaultStartHour, EventGap, EventHeight } from "@/shared/components/constants";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@/shared/components/ui/popover";
+import { CalendarEvent } from "./types";
+import { useEventVisibility } from "../hooks/use-event-visibility";
+import { getAllEventsForDay, getEventsForDay, getSpanningEventsForDay, sortEvents } from "./utils";
+import { DroppableCell } from "./droppable-cell";
+import { EventItem } from "./event-item";
+import { DraggableEvent } from "./draggable-event";
 
 interface MonthViewProps {
   currentDate: Date;

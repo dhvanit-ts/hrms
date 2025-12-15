@@ -18,9 +18,9 @@ import {
   CardTitle
 } from '@/shared/components/ui/card';
 import { useAuth } from '@/shared/context/AuthContext';
-import { PendingLeavesTable, type PendingLeave } from '@/components/PendingLeavesTable';
+import { PendingLeavesTable, type PendingLeave } from '@/shared/components/PendingLeavesTable';
 import * as leavesApi from '@/services/api/leaves';
-import { ErrorAlert } from '@/components/ui/error-alert';
+import { ErrorAlert } from '@/shared/components/ui/error-alert';
 import { extractErrorMessage } from '@/lib/utils';
 
 // Helper to map status to badge variant
@@ -37,7 +37,7 @@ const getStatusBadge = (status: string) => {
 };
 
 export const LeavesPage: React.FC = () => {
-  const { employeeAccessToken, user, isAdmin, isEmployee } = useAuth();
+  const { employeeAccessToken, accessToken, user, isAdmin, isEmployee } = useAuth();
   const [leaves, setLeaves] = useState<any[]>([]);
   const [type, setType] = useState('annual');
   const [startDate, setStartDate] = useState('');
@@ -74,22 +74,22 @@ export const LeavesPage: React.FC = () => {
   }
 
   const loadPendingLeaves = useCallback(async () => {
-    if (!employeeAccessToken || !hasAdminAccess) return;
+    if (!accessToken || !hasAdminAccess) return;
     setIsPendingLoading(true);
     try {
-      const result = await leavesApi.getPendingLeaves(employeeAccessToken, filters);
+      const result = await leavesApi.getPendingLeavesAdmin(accessToken, filters);
       setPendingLeaves(result.leaves);
     } catch (error) {
       setErrorMessage(extractErrorMessage(error));
     } finally {
       setIsPendingLoading(false);
     }
-  }, [employeeAccessToken, hasAdminAccess, filters]);
+  }, [accessToken, hasAdminAccess, filters]);
 
   useEffect(() => {
     if (isEmployee) load();
     if (hasAdminAccess) loadPendingLeaves();
-  }, [employeeAccessToken, isEmployee, hasAdminAccess]);
+  }, [employeeAccessToken, accessToken, isEmployee, hasAdminAccess]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,15 +117,10 @@ export const LeavesPage: React.FC = () => {
   };
 
   const handleApprove = async (leaveId: number) => {
-    if (!employeeAccessToken) return;
-
-    // Show confirmation dialog
-    if (!window.confirm('Are you sure you want to approve this leave request?')) {
-      return;
-    }
+    if (!accessToken) return;
 
     try {
-      await leavesApi.approveLeave(employeeAccessToken, leaveId);
+      await leavesApi.approveLeaveAdmin(accessToken, leaveId);
       setSuccessMessage('Leave request approved successfully');
       setTimeout(() => setSuccessMessage(null), 3000);
       // Refresh the list
@@ -139,7 +134,7 @@ export const LeavesPage: React.FC = () => {
   };
 
   const handleReject = async (leaveId: number) => {
-    if (!employeeAccessToken) return;
+    if (!accessToken) return;
 
     // Show confirmation dialog
     if (!window.confirm('Are you sure you want to reject this leave request?')) {
@@ -147,7 +142,7 @@ export const LeavesPage: React.FC = () => {
     }
 
     try {
-      await leavesApi.rejectLeave(employeeAccessToken, leaveId);
+      await leavesApi.rejectLeaveAdmin(accessToken, leaveId);
       setSuccessMessage('Leave request rejected successfully');
       setTimeout(() => setSuccessMessage(null), 3000);
       // Refresh the list

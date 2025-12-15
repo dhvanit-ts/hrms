@@ -20,9 +20,9 @@ import {
   CardContent,
 } from '@/shared/components/ui/card';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/shared/components/ui/sheet';
-import { Spinner } from '@/components/ui/spinner';
+import { Spinner } from '@/shared/components/ui/spinner';
 import { z } from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/shared/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { http } from '@/services/api/http';

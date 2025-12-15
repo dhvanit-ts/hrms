@@ -23,7 +23,7 @@ import {
   type AttendanceStatus,
   type BreakStatus,
 } from '@/services/api/attendance';
-import { ErrorAlert } from './ui/error-alert';
+import { ErrorAlert } from '@/shared/components/ui/error-alert';
 import { extractErrorMessage } from '@/lib/utils';
 
 export function AttendanceDashboard() {

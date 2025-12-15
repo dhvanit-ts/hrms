@@ -3,21 +3,13 @@
 import { RiCalendarLine, RiDeleteBinLine } from "@remixicon/react";
 import { format, isBefore } from "date-fns";
 import { useCallback, useEffect, useMemo, useState } from "react";
-
-import type {
-  CalendarEvent,
-  EventColor,
-} from "@/components/event-calendar";
 import {
   DefaultEndHour,
   DefaultStartHour,
   EndHour,
   StartHour,
-} from "@/components/constants";
+} from "@/shared/components/constants";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -25,23 +17,27 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@/shared/components/ui/dialog";
+import { Input } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+} from "@/shared/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/shared/components/ui/radio-group";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+} from "@/shared/components/ui/select";
+import { Textarea } from "@/shared/components/ui/textarea";
+import { CalendarEvent, EventColor } from "./types";
+import { Button } from "./ui/button";
+import { Calendar } from "./ui/calendar";
+import { Checkbox } from "./ui/checkbox";
 
 interface EventDialogProps {
   event: CalendarEvent | null;
@@ -196,43 +192,43 @@ export function EventDialog({
     bgClass: string;
     borderClass: string;
   }> = [
-    {
-      bgClass: "bg-sky-400 data-[state=checked]:bg-sky-400",
-      borderClass: "border-sky-400 data-[state=checked]:border-sky-400",
-      label: "Sky",
-      value: "sky",
-    },
-    {
-      bgClass: "bg-amber-400 data-[state=checked]:bg-amber-400",
-      borderClass: "border-amber-400 data-[state=checked]:border-amber-400",
-      label: "Amber",
-      value: "amber",
-    },
-    {
-      bgClass: "bg-violet-400 data-[state=checked]:bg-violet-400",
-      borderClass: "border-violet-400 data-[state=checked]:border-violet-400",
-      label: "Violet",
-      value: "violet",
-    },
-    {
-      bgClass: "bg-rose-400 data-[state=checked]:bg-rose-400",
-      borderClass: "border-rose-400 data-[state=checked]:border-rose-400",
-      label: "Rose",
-      value: "rose",
-    },
-    {
-      bgClass: "bg-emerald-400 data-[state=checked]:bg-emerald-400",
-      borderClass: "border-emerald-400 data-[state=checked]:border-emerald-400",
-      label: "Emerald",
-      value: "emerald",
-    },
-    {
-      bgClass: "bg-orange-400 data-[state=checked]:bg-orange-400",
-      borderClass: "border-orange-400 data-[state=checked]:border-orange-400",
-      label: "Orange",
-      value: "orange",
-    },
-  ];
+      {
+        bgClass: "bg-sky-400 data-[state=checked]:bg-sky-400",
+        borderClass: "border-sky-400 data-[state=checked]:border-sky-400",
+        label: "Sky",
+        value: "sky",
+      },
+      {
+        bgClass: "bg-amber-400 data-[state=checked]:bg-amber-400",
+        borderClass: "border-amber-400 data-[state=checked]:border-amber-400",
+        label: "Amber",
+        value: "amber",
+      },
+      {
+        bgClass: "bg-violet-400 data-[state=checked]:bg-violet-400",
+        borderClass: "border-violet-400 data-[state=checked]:border-violet-400",
+        label: "Violet",
+        value: "violet",
+      },
+      {
+        bgClass: "bg-rose-400 data-[state=checked]:bg-rose-400",
+        borderClass: "border-rose-400 data-[state=checked]:border-rose-400",
+        label: "Rose",
+        value: "rose",
+      },
+      {
+        bgClass: "bg-emerald-400 data-[state=checked]:bg-emerald-400",
+        borderClass: "border-emerald-400 data-[state=checked]:border-emerald-400",
+        label: "Emerald",
+        value: "emerald",
+      },
+      {
+        bgClass: "bg-orange-400 data-[state=checked]:bg-orange-400",
+        borderClass: "border-orange-400 data-[state=checked]:border-orange-400",
+        label: "Orange",
+        value: "orange",
+      },
+    ];
 
   return (
     <Dialog onOpenChange={(open) => !open && onClose()} open={isOpen}>

@@ -21,30 +21,24 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import {
-  AgendaDaysToShow,
-  AgendaView,
-  addHoursToDate,
-  CalendarDndProvider,
-  type CalendarEvent,
-  type CalendarView,
-  DayView,
-  EventDialog,
-  EventGap,
-  EventHeight,
-  MonthView,
-  WeekCellsHeight,
-  WeekView,
-} from "@/components/event-calendar";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/shared/components/ui/dropdown-menu";
+import { CalendarEvent, CalendarView } from "./types";
+import { AgendaDaysToShow, EventGap, EventHeight, WeekCellsHeight } from "./constants";
+import { addHoursToDate } from "./utils";
+import { CalendarDndProvider } from "./calendar-dnd-context";
+import { MonthView } from "./month-view";
+import { WeekView } from "./week-view";
+import { DayView } from "./day-view";
+import { AgendaView } from "./agenda-view";
+import { EventDialog } from "./event-dialog";
 
 export interface EventCalendarProps {
   events?: CalendarEvent[];

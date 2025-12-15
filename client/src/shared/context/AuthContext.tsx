@@ -6,10 +6,10 @@ import {
   employeeLogin as apiEmployeeLogin,
   employeeLogout as apiEmployeeLogout,
   employeeMe,
-  employeeRefresh as apiEmployeeRefresh,
   employeeSetupPassword as apiEmployeeSetupPassword,
 } from '@/services/api/employee-auth';
 import { setEmployeeAuthCallbacks, setEmployeeAccessTokenGetter } from '@/services/api/employee-http';
+import { debug } from '@/config/logger';
 
 type AdminUser = { email: string; roles: string[]; id?: string };
 type Employee = {
@@ -69,7 +69,7 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
     const isOnLoginPage = currentPath === '/' || currentPath === '/login' || currentPath === '/admin/login';
 
     if (isOnLoginPage && (isEmployee || isAdmin)) {
-      console.log('Redirecting authenticated user to dashboard');
+      debug.log('Redirecting authenticated user to dashboard');
       navigate('/dashboard', { replace: true });
     }
   }, [isEmployee, isAdmin, navigate, sessionRestored]);
@@ -135,45 +135,75 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   // Best-effort restore sessions on mount
   useEffect(() => {
     const restoreSessions = async () => {
-      console.log('Attempting session restoration...');
+      debug.log('Attempting session restoration...');
 
+      // Try admin session first, then employee as fallback
+      // Use direct axios calls to bypass interceptors during session restoration
       try {
-        // Try employee session first (since it's more common)
-        try {
-          console.log('Attempting to restore employee session...');
-          const refreshResult = await apiEmployeeRefresh();
-          console.log('Employee refresh successful, got access token');
-          setEmployeeAccessToken(refreshResult.accessToken);
-          const profile = await employeeMe(refreshResult.accessToken);
-          setEmployee(profile.employee);
-          console.log('Employee session restored successfully:', profile.employee.name);
-          return; // If employee session restored, don't try admin
-        } catch (error: any) {
-          console.log('Employee refresh failed:', error?.response?.data?.code || error.message);
-          // Only try admin if employee refresh failed due to missing token
-          if (error?.response?.data?.code === 'MISSING_REFRESH_TOKEN') {
-            console.log('No employee token, trying admin...');
-          }
+        debug.log('Attempting to restore admin session...');
+        // Direct call to avoid HTTP interceptor interference
+        const refreshResponse = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!refreshResponse.ok) {
+          throw new Error(`Admin refresh failed: ${refreshResponse.status}`);
         }
 
-        // Try admin session if employee failed
-        try {
-          console.log('Attempting to restore admin session...');
-          const refreshResult = await apiRefresh();
-          console.log('Admin refresh successful, got access token');
-          setAccessToken(refreshResult.accessToken);
-          const profile = await me(refreshResult.accessToken);
-          setUser(profile.user);
-          console.log('Admin session restored successfully:', profile.user.email);
-        } catch (error: any) {
-          console.log('Admin refresh failed:', error?.response?.data || error.message);
-          console.log('Admin refresh error details:', error?.response);
-        }
-      } finally {
-        // Mark session restoration as complete regardless of success/failure
+        const refreshResult = await refreshResponse.json();
+        debug.log('Admin refresh successful, got access token');
+        setAccessToken(refreshResult.accessToken);
+        const profile = await me(refreshResult.accessToken);
+        setUser(profile.user);
+        debug.log('Admin session restored successfully:', profile.user.email);
         setSessionRestored(true);
-        console.log('Session restoration completed');
+        return; // Success - don't try employee
+      } catch (error: any) {
+        const errorCode = error?.response?.data?.code;
+        const errorStatus = error?.response?.status;
+        debug.log('Admin refresh failed - Status:', errorStatus, 'Code:', errorCode, 'Message:', error.message);
+        debug.log('Full admin error:', error?.response?.data);
+
+        // Try employee if admin failed due to missing token OR other auth errors
+        // (could be wrong token type, expired, etc.)
+        if (errorStatus === 401 || error.message.includes('401')) {
+          try {
+            debug.log('Admin failed with 401, attempting employee session...');
+            // Direct call to avoid HTTP interceptor interference
+            const employeeRefreshResponse = await fetch('/api/auth/employee/refresh', {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!employeeRefreshResponse.ok) {
+              throw new Error(`Employee refresh failed: ${employeeRefreshResponse.status}`);
+            }
+
+            const refreshResult = await employeeRefreshResponse.json();
+            debug.log('Employee refresh successful, got access token');
+            setEmployeeAccessToken(refreshResult.accessToken);
+            const profile = await employeeMe(refreshResult.accessToken);
+            setEmployee(profile.employee);
+            debug.log('Employee session restored successfully:', profile.employee.name);
+            setSessionRestored(true);
+            return; // Success
+          } catch (employeeError: any) {
+            const empErrorCode = employeeError?.response?.data?.code;
+            const empErrorStatus = employeeError?.response?.status;
+            debug.log('Employee refresh failed - Status:', empErrorStatus, 'Code:', empErrorCode, 'Message:', employeeError.message);
+            debug.log('Full employee error:', employeeError?.response?.data);
+          }
+        } else {
+          debug.log('Admin failed with non-401 error, not trying employee fallback');
+        }
       }
+
+      // Both failed or admin failed for other reasons
+      debug.log('Session restoration failed - user needs to log in');
+      setSessionRestored(true);
     };
 
     restoreSessions();
@@ -185,13 +215,13 @@ export const AuthProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
     setEmployee(null);
     setEmployeeAccessToken(null);
 
-    console.log('Admin login attempt...');
+    debug.log('Admin login attempt...');
     const res = await apiLogin(email, password);
-    console.log('Admin login successful, setting state');
+    debug.log('Admin login successful, setting state');
     setAccessToken(res.accessToken);
     const profile = await me(res.accessToken);
     setUser(profile.user);
-    console.log('Admin user set:', profile.user);
+    debug.log('Admin user set:', profile.user);
   };
 
   const doLogout = async () => {

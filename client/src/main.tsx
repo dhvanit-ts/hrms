@@ -13,6 +13,7 @@ import { LeavesPage } from './pages/Leaves';
 import { HolidaysPage } from './pages/Holidays';
 import { BankDetailsPage } from './pages/BankDetails';
 import { UsersPage } from './pages/Users';
+import { AuditReportsPage } from './pages/AuditReports';
 import DashboardLayout from './shared/layouts/DashboardLayout';
 
 const router = createBrowserRouter([
@@ -44,6 +45,7 @@ const router = createBrowserRouter([
           { path: "employees", element: <EmployeesPage /> },
           { path: "employees/:id", element: <div>Employee details coming soon</div> },
           { path: "users", element: <UsersPage /> },
+          { path: "reports", element: <AuditReportsPage /> },
         ]
       },
 

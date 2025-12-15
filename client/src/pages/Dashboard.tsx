@@ -1,12 +1,13 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Calendar, User as UserIcon, Briefcase } from 'lucide-react';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useAuth } from '@/shared/context/AuthContext';
 import { AttendanceDashboard } from '@/components/AttendanceDashboard';
 import { LeaveManagement } from '@/components/LeaveManagement';
+import { statsApi, type DashboardStats } from '@/services/api/stats';
 
 // UI Components Imports
 import { Button } from '@/shared/components/ui/button';
@@ -127,11 +128,32 @@ const EmployeeForm = ({ onSuccess }: { onSuccess: () => void }) => {
 
 const DashboardPage: React.FC = () => {
   const { isAdmin, isEmployee, user, employee } = useAuth();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
 
   // Check if user has admin/HR/manager roles
   const hasAdminAccess = isAdmin && user?.roles.some(role =>
     ['SUPER_ADMIN', 'ADMIN', 'HR', 'MANAGER'].includes(role)
   );
+
+  // Fetch dashboard stats for admin users
+  useEffect(() => {
+    if (hasAdminAccess) {
+      const fetchStats = async () => {
+        setIsLoadingStats(true);
+        try {
+          const dashboardStats = await statsApi.getDashboardStats();
+          setStats(dashboardStats);
+        } catch (error) {
+          console.error('Failed to fetch dashboard stats:', error);
+        } finally {
+          setIsLoadingStats(false);
+        }
+      };
+
+      fetchStats();
+    }
+  }, [hasAdminAccess]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -156,25 +178,84 @@ const DashboardPage: React.FC = () => {
       {/* Admin/HR/Manager Stats - Only show for admin users */}
       {hasAdminAccess && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { label: 'Total Employees', value: '124', change: '+4%', icon: Users },
-            { label: 'On Leave', value: '8', change: 'Active now', icon: Calendar },
-            { label: 'New Hires', value: '12', change: 'This month', icon: UserIcon },
-            { label: 'Open Roles', value: '3', change: 'Urgent', icon: Briefcase },
-          ].map((stat, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between space-y-0 pb-2">
-                  <p className="text-sm font-medium text-zinc-500">{stat.label}</p>
-                  <stat.icon className="h-4 w-4 text-zinc-400" />
-                </div>
-                <div className="flex items-baseline gap-2 mt-2">
-                  <h3 className="text-2xl font-bold text-zinc-900">{stat.value}</h3>
-                  <span className="text-xs font-medium text-emerald-600">{stat.change}</span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {isLoadingStats ? (
+            // Loading skeleton
+            Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between space-y-0 pb-2">
+                    <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <div className="h-8 w-16 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-4 w-12 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : stats ? (
+            [
+              {
+                label: 'Total Employees',
+                value: stats.totalEmployees?.toString() || "N/A",
+                change: 'Active',
+                icon: Users
+              },
+              {
+                label: 'On Leave',
+                value: stats.onLeave?.toString() || "N/A",
+                change: 'Today',
+                icon: Calendar
+              },
+              {
+                label: 'New Hires',
+                value: stats.newHires?.toString() || "N/A",
+                change: 'This month',
+                icon: UserIcon
+              },
+              {
+                label: 'Open Roles',
+                value: stats.openRoles?.toString() || "N/A",
+                change: 'Available',
+                icon: Briefcase
+              },
+            ].map((stat, i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between space-y-0 pb-2">
+                    <p className="text-sm font-medium text-zinc-500">{stat.label}</p>
+                    <stat.icon className="h-4 w-4 text-zinc-400" />
+                  </div>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <h3 className="text-2xl font-bold text-zinc-900">{stat.value}</h3>
+                    <span className="text-xs font-medium text-emerald-600">{stat.change}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            // Error state - show placeholder with dashes
+            [
+              { label: 'Total Employees', icon: Users },
+              { label: 'On Leave', icon: Calendar },
+              { label: 'New Hires', icon: UserIcon },
+              { label: 'Open Roles', icon: Briefcase },
+            ].map((stat, i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between space-y-0 pb-2">
+                    <p className="text-sm font-medium text-zinc-500">{stat.label}</p>
+                    <stat.icon className="h-4 w-4 text-zinc-400" />
+                  </div>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <h3 className="text-2xl font-bold text-zinc-900">--</h3>
+                    <span className="text-xs font-medium text-gray-400">Unavailable</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       )}
 

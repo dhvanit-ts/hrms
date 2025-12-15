@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Users,
   Search,
   Plus,
   MoreHorizontal,
   Filter,
   Mail,
   BadgeCheck,
-  Building2
+  Building2,
+  Edit3
 } from 'lucide-react';
 
 // UI Components
@@ -267,7 +267,7 @@ export const EmployeesPage: React.FC = () => {
                   </tr>
                 ) : (
                   filteredRows.map((r) => (
-                    <tr key={r._id} className="group hover:bg-zinc-50/50 transition-colors">
+                    <tr key={r.id} className="group hover:bg-zinc-50/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <img
@@ -277,8 +277,9 @@ export const EmployeesPage: React.FC = () => {
                           />
                           <div>
                             <Link
-                              to={`/employees/${r._id}`}
-                              className="font-medium text-zinc-900 hover:underline hover:text-indigo-600 transition-colors"
+                              to={`/dashboard/employees/${r.id}`}
+                              className="font-medium text-zinc-900 hover:underline hover:text-indigo-600 transition-colors cursor-pointer"
+                              title="View employee profile"
                             >
                               {r.name}
                             </Link>
@@ -308,9 +309,14 @@ export const EmployeesPage: React.FC = () => {
                         {getStatusBadge(r.status)}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <MoreHorizontal className="h-4 w-4 text-zinc-500" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Link to={`/dashboard/employees/${r.id}`}>
+                            <Button variant="outline" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Edit3 className="h-3.5 w-3.5 mr-1" />
+                              Edit Profile
+                            </Button>
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))

@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Users,
   Calendar,
+  Clock,
   FileText,
   Settings,
   Menu,
@@ -89,6 +90,10 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
       { path: '/dashboard/employees', label: 'Employees', icon: Users },
     ] : []),
     { path: '/dashboard/leaves', label: 'Leaves', icon: Calendar },
+    ...(isEmployee ? [
+      { path: '/dashboard/attendance', label: 'Attendance', icon: Clock },
+      { path: '/dashboard/profile', label: 'My Profile', icon: Users },
+    ] : []),
     { path: '/dashboard/holidays', label: 'Holidays', icon: Calendar },
     ...(isEmployee ? [
       { path: '/dashboard/bank-details', label: 'Bank Details', icon: CreditCard },

@@ -310,7 +310,7 @@ export const LeavesPage: React.FC = () => {
                         </tr>
                       ) : (
                         leaves.map((l) => (
-                          <tr key={l._id} className="hover:bg-zinc-50/50 transition-colors">
+                          <tr key={l.id} className="hover:bg-zinc-50/50 transition-colors">
                             <td className="px-6 py-4 font-medium capitalize text-zinc-900">
                               {l.type}
                             </td>

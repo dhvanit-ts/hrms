@@ -202,7 +202,7 @@ export const PendingLeavesTable: React.FC<PendingLeavesTableProps> = ({
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <AlertDialog>
-                            <AlertDialogTrigger>
+                            <AlertDialogTrigger asChild>
                               <Button
                                 size="sm"
                                 variant="outline"

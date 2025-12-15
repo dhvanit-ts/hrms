@@ -42,7 +42,7 @@ export const getBankDetailsHandler = asyncHandler(
 
 export const updateBankDetailsHandler = asyncHandler(
     async (req: AuthenticatedRequest, res: Response) => {
-        const employeeId = parseInt(req.user!.id);
+        const employeeId = parseInt(req.user.id);
         const bankDetails = await bankDetailsService.updateBankDetails(employeeId, req.body);
         res.status(200).json({ bankDetails });
     }

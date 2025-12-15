@@ -24,15 +24,24 @@ export interface UpdateUserData {
 }
 
 const tasks = {
-  "backend": "current",
-  "infra and system design": "after backend and before flagship projects",
-  "dsa": "after GenAI project (at the end)",
-  "genai": "before GenAI project",
+  "backend (1)": "current",
+  "infra and system design (2)": "after backend and before flagship projects",
+  "genai (4)": "before GenAI project",
   "flagship projects": {
-    "linkaroo and nestly and showcasing them (final touch)": "feb",
-    "GenAI Project": "march"
-  }
+    "linkaroo and nestly and showcasing them (final touch) (3)": "feb",
+    "GenAI Project (5)": "march"
+  },
+  "dsa (6)": "after GenAI project (at the end)",
 }
+
+const order = [
+  tasks["backend (1)"],
+  tasks["infra and system design (2)"],
+  tasks["flagship projects"]["linkaroo and nestly and showcasing them (final touch) (3)"],
+  tasks["genai (4)"],
+  tasks["flagship projects"]["GenAI Project (5)"],
+  tasks["dsa (6)"]
+]
 
 export const usersApi = {
   getAll: async () => {

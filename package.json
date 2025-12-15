@@ -23,5 +23,9 @@
   "bugs": {
     "url": "https://github.com/dhvanit-ts/hrms/issues"
   },
-  "homepage": "https://github.com/dhvanit-ts/hrms#readme"
+  "homepage": "https://github.com/dhvanit-ts/hrms#readme",
+  "dependencies": {
+    "@langchain/core": "^1.1.4",
+    "langchain": "^1.1.5"
+  }
 }

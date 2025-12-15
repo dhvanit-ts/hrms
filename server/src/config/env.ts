@@ -19,6 +19,7 @@ const envSchema = z.object({
   OFFICE_IP_RANGES: z.string().default(''),
   MAILTRAP_TOKEN: z.string(),
   MAIL_PROVIDER: z.string(),
+  GEMINI_API_KEY: z.string(),
   GMAIL_APP_USER: z.string(),
   GMAIL_APP_PASS: z.string()
 });

@@ -46,7 +46,7 @@ export async function createBankDetails(employeeId: number, data: CreateBankDeta
         action: "CREATE_BANK_DETAILS",
         entity: "BankDetails",
         entityId: bankDetails.id.toString(),
-        performedBy: employeeId.toString(),
+        performedBy: employeeId,
     });
 
     return bankDetails;
@@ -88,7 +88,7 @@ export async function updateBankDetails(employeeId: number, data: UpdateBankDeta
         action: "UPDATE_BANK_DETAILS",
         entity: "BankDetails",
         entityId: bankDetails.id.toString(),
-        performedBy: employeeId.toString(),
+        performedBy: employeeId,
     });
 
     return bankDetails;
@@ -115,7 +115,7 @@ export async function deleteBankDetails(employeeId: number) {
         action: "DELETE_BANK_DETAILS",
         entity: "BankDetails",
         entityId: existing.id.toString(),
-        performedBy: employeeId.toString(),
+        performedBy: employeeId,
     });
 
     return { success: true };

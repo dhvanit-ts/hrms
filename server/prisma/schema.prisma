@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider     = "mysql"
+  url = env("DATABASE_URL")
   relationMode = "prisma"
 }
 
@@ -12,7 +13,7 @@ model AuditLog {
   action      String
   entity      String
   entityId    String
-  performedBy String?
+  performedBy Int?
   timestamp   DateTime @default(now())
   metadata    Json?
 

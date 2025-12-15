@@ -5,7 +5,7 @@ export async function writeAuditLog(params: {
   action: string;
   entity: string;
   entityId: string;
-  performedBy?: string;
+  performedBy?: number;
   metadata?: Record<string, unknown>;
 }) {
   await prisma.auditLog.create({

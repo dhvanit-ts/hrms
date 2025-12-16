@@ -287,9 +287,8 @@ export const EmployeeProfilePage: React.FC = () => {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-4">
           {isAdminMode && (
-            <Button variant="outline" size="sm" onClick={() => navigate('/dashboard/employees')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Employees
+            <Button className='aspect-square size-12 rounded-full' variant="outline" size="sm" onClick={() => navigate('/dashboard/employees')}>
+              <ArrowLeft className="size-5" />
             </Button>
           )}
           <div>

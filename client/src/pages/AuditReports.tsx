@@ -60,7 +60,6 @@ const AuditReportsPage: React.FC = () => {
       });
 
       setAuditLogs(result.data);
-      console.log(result)
       setPagination(result.pagination);
     } catch (error) {
       console.error('Failed to fetch audit logs:', error);

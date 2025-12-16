@@ -1,6 +1,10 @@
 import winston from 'winston';
+import { loadEnv } from './env.js';
 
-const isDev = (process.env.NODE_ENV ?? 'development') !== 'production';
+const env = loadEnv()
+
+const isDev = (env.NODE_ENV ?? 'development') !== 'production';
+const isDebug = env.NODE_ENV === "debug"
 
 const devFormat = winston.format.printf(({ level, message, timestamp, stack, ...meta }) => {
   const metaString = Object.keys(meta).length ? ` ${JSON.stringify(meta, null, 2)}` : '';
@@ -18,6 +22,11 @@ export const logger = winston.createLogger({
   ),
   transports: [new winston.transports.Console({ stderrLevels: ['error'] })]
 });
+
+export const debug = {
+  log: (...msg: any[]) => isDebug ? console.log(...msg) : null,
+  warn: (...msg: any[]) => isDebug ? console.warn(...msg) : null
+}
 
 // Sentry placeholder: integrate @sentry/node and transport here if DSN present.
 

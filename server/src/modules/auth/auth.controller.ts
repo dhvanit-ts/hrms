@@ -11,7 +11,7 @@ import jwt from "jsonwebtoken";
 import prisma from "@/config/db.js";
 import asyncHandler from "@/core/http/asyncHandler.js";
 import ApiError from "@/core/http/ApiError.js";
-import { logger } from "@/config/logger.js";
+import { debug, logger } from "@/config/logger.js";
 
 export const registerSchema = z.object({
   body: z.object({
@@ -70,7 +70,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     env.COOKIE_SECURE,
     env.COOKIE_SAMESITE as any
   );
-  console.log('Admin login - Setting refresh cookie:', refreshCookie.name, 'with options:', refreshCookie.options);
+  debug.log('Admin login - Setting refresh cookie:', refreshCookie.name, 'with options:', refreshCookie.options);
   res
     .cookie(refreshCookie.name, refreshCookie.value, refreshCookie.options)
     .json({ user: result.user, accessToken: result.accessToken });
@@ -101,17 +101,17 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
 
 export const refresh = asyncHandler(async (req: Request, res: Response) => {
   const env = loadEnv();
-  console.log('Admin refresh - All cookies received:', req.cookies);
+  debug.log('Admin refresh - All cookies received:', req.cookies);
   const cookie = req.cookies?.refresh_token as string | undefined;
   if (!cookie) {
-    console.log('Admin refresh - No refresh_token cookie found');
+    debug.log('Admin refresh - No refresh_token cookie found');
     throw new ApiError({
       statusCode: 401,
       message: "Unauthorized",
       code: "MISSING_REFRESH_TOKEN",
     });
   }
-  console.log('Admin refresh - Found refresh_token cookie');
+  debug.log('Admin refresh - Found refresh_token cookie');
 
   const { userId, newToken } = await rotateRefreshToken(cookie);
   const user = await prisma.user.findUnique({

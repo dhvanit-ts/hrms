@@ -61,7 +61,6 @@ export async function createEmployee(data: {
 }
 
 export async function updateEmployee(id: number, data: any) {
-  console.log(data)
   const updated = await prisma.employee.update({
     where: { id },
     data,

@@ -33,12 +33,12 @@ async function run() {
     where: { email: employeeEmail1 },
   });
   if (!existingEmployee1) {
-    const emoloyeeCount = await prisma.employee.count();
+    const employeeCount = await prisma.employee.count() + 1;
     const passwordHash = await hashPassword(globalPassword)
     await prisma.employee.create({
       data: {
-        employeeId: "E-" + emoloyeeCount.toFixed() + 1,
-        name: "Nikul",
+        employeeId: "E-" + employeeCount,
+        name: "Employee",
         email: employeeEmail1,
         phone: "+915656565656",
         status: "active",
@@ -56,12 +56,12 @@ async function run() {
     where: { email: employeeEmail2 },
   });
   if (!existingEmployee2) {
-    const emoloyeeCount = await prisma.employee.count();
+    const employeeCount = await prisma.employee.count() + 1;
     const passwordHash = await hashPassword(globalPassword)
     await prisma.employee.create({
       data: {
-        employeeId: "E-" + emoloyeeCount + 1,
-        name: "Nikul",
+        employeeId: "E-" + employeeCount,
+        name: "Employee",
         email: employeeEmail2,
         phone: "+915656565656",
         status: "active",

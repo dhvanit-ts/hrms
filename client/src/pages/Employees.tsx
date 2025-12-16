@@ -23,33 +23,81 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Spinner } from '@/shared/components/ui/spinner';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/shared/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { http } from '@/services/api/http';
+import * as departmentsApi from '@/services/api/departments';
+import * as jobRolesApi from '@/services/api/job-roles';
+import type { CreateEmployeeDTO } from '@/types/employee.dto';
 
 const employeeSchema = z.object({
+  employeeId: z.string().min(1, "Employee ID is required"),
   name: z.string().min(1, "Full name is required"),
   email: z.string().email("Invalid email address"),
-  role: z.string().min(1, "Role is required"),
-  department: z.string().min(1, "Department is required"),
+  phone: z.string().optional(),
+  departmentId: z.number().min(1, "Department is required"),
+  jobRoleId: z.number().min(1, "Job role is required"),
+  hireDate: z.string().optional(),
+  salary: z.number().min(0, "Salary must be positive").optional(),
 })
 
 const EmployeeForm = ({ onSuccess }: { onSuccess: () => void }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [departments, setDepartments] = useState<departmentsApi.Department[]>([]);
+  const [jobRoles, setJobRoles] = useState<jobRolesApi.JobRole[]>([]);
+  const { accessToken } = useAuth();
+
   const form = useForm({
     resolver: zodResolver(employeeSchema),
     defaultValues: {
+      employeeId: "",
       name: "",
       email: "",
-      role: "",
-      department: "",
+      phone: "",
+      departmentId: undefined,
+      jobRoleId: undefined,
+      hireDate: "",
+      salary: undefined,
     },
   });
+
+  // Load departments and job roles
+  useEffect(() => {
+    const loadData = async () => {
+      if (!accessToken) return;
+
+      try {
+        const [deptResult, roleResult] = await Promise.all([
+          departmentsApi.getDepartments(accessToken),
+          jobRolesApi.getJobRoles(accessToken, false) // only active roles
+        ]);
+        setDepartments(deptResult.departments);
+        setJobRoles(roleResult.jobRoles);
+      } catch (error) {
+        console.error('Failed to load form data:', error);
+      }
+    };
+
+    loadData();
+  }, [accessToken]);
 
   const onSubmit = async (values: z.infer<typeof employeeSchema>) => {
     setIsSubmitting(true);
     try {
-      await http.post('/employees', values);
+      const createData: Omit<CreateEmployeeDTO, "employeeId"> = {
+        name: values.name,
+        email: values.email,
+        phone: values.phone || null,
+        departmentId: values.departmentId,
+        jobRoleId: values.jobRoleId,
+        hireDate: values.hireDate || null,
+        salary: values.salary || null,
+      };
+
+      await http.post('/employees', createData, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
       form.reset();
       onSuccess();
     } catch (error) {
@@ -62,56 +110,131 @@ const EmployeeForm = ({ onSuccess }: { onSuccess: () => void }) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4 px-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Full Name</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g. Jane Doe" {...field} />
-              </FormControl>
-              {form.formState.errors.name && <p className="text-sm font-medium text-red-500">{form.formState.errors.name.message}</p>}
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder="jane@company.com" {...field} />
-              </FormControl>
-              {form.formState.errors.email && <p className="text-sm font-medium text-red-500">{form.formState.errors.email.message}</p>}
-            </FormItem>
-          )}
-        />
+        <div>
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Full Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. Jane Doe" {...field} />
+                </FormControl>
+                {form.formState.errors.name && <p className="text-sm font-medium text-red-500">{form.formState.errors.name.message}</p>}
+              </FormItem>
+            )}
+          />
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="role"
+            name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Role</FormLabel>
+                <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g. Developer" {...field} />
+                  <Input placeholder="jane@company.com" {...field} />
                 </FormControl>
-                {form.formState.errors.role && <p className="text-sm font-medium text-red-500">{form.formState.errors.role.message}</p>}
+                {form.formState.errors.email && <p className="text-sm font-medium text-red-500">{form.formState.errors.email.message}</p>}
               </FormItem>
             )}
           />
           <FormField
             control={form.control}
-            name="department"
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone (Optional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. +1 234 567 8900" {...field} />
+                </FormControl>
+                {form.formState.errors.phone && <p className="text-sm font-medium text-red-500">{form.formState.errors.phone.message}</p>}
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="departmentId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Department</FormLabel>
+                <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id.toString()}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.departmentId && <p className="text-sm font-medium text-red-500">{form.formState.errors.departmentId.message}</p>}
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="jobRoleId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Job Role</FormLabel>
+                <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select job role" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {jobRoles.map((role) => (
+                      <SelectItem key={role.id} value={role.id.toString()}>
+                        {role.title} (Level {role.level})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.jobRoleId && <p className="text-sm font-medium text-red-500">{form.formState.errors.jobRoleId.message}</p>}
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="hireDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Hire Date (Optional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g. Engineering" {...field} />
+                  <Input type="date" {...field} />
                 </FormControl>
-                {form.formState.errors.department && <p className="text-sm font-medium text-red-500">{form.formState.errors.department.message}</p>}
+                {form.formState.errors.hireDate && <p className="text-sm font-medium text-red-500">{form.formState.errors.hireDate.message}</p>}
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="salary"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Salary (Optional)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 50000"
+                    {...field}
+                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                  />
+                </FormControl>
+                {form.formState.errors.salary && <p className="text-sm font-medium text-red-500">{form.formState.errors.salary.message}</p>}
               </FormItem>
             )}
           />
@@ -203,7 +326,19 @@ export const EmployeesPage: React.FC = () => {
                 Add a new employee to your organization.
               </SheetDescription>
             </SheetHeader>
-            <EmployeeForm onSuccess={() => { }} />
+            <EmployeeForm onSuccess={() => {
+              // Refresh the employee list
+              (async () => {
+                try {
+                  const res = await http.get('/employees', { headers: { Authorization: `Bearer ${accessToken}` } });
+                  if (res.data.employees) {
+                    setRows(res.data.employees);
+                  }
+                } catch (error) {
+                  console.error("Failed to refresh employees", error);
+                }
+              })();
+            }} />
           </SheetContent>
         </Sheet>
       </div>

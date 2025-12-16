@@ -17,6 +17,8 @@ import { BankDetailsPage } from './pages/BankDetails';
 import { UsersPage } from './pages/Users';
 import { AuditReportsPage } from './pages/AuditReports';
 import DashboardLayout from './shared/layouts/DashboardLayout';
+import DepartmentsPage from './pages/Departments';
+import JobRolesPage from './pages/JobRoles';
 
 const router = createBrowserRouter([
   {
@@ -50,6 +52,8 @@ const router = createBrowserRouter([
           { path: "employees/:id", element: <EmployeeProfilePage /> },
           { path: "users", element: <UsersPage /> },
           { path: "reports", element: <AuditReportsPage /> },
+          { path: "departments", element: <DepartmentsPage /> },
+          { path: "job-roles", element: <JobRolesPage /> },
         ]
       },
 

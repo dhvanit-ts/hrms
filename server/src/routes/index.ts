@@ -9,6 +9,8 @@ import bankDetailsRoutes from "../modules/bank-details/bank-details.routes.js";
 import holidayRoutes from "../modules/holiday/holiday.routes.js";
 import { statsRoutes } from "../modules/stats/stats.routes.js";
 import { auditRoutes } from "../modules/audit/audit.routes.js";
+import departmentRoutes from "../modules/department/department.routes.js";
+import jobRoleRoutes from "../modules/job-role/job-role.routes.js";
 
 const router = Router();
 
@@ -20,6 +22,8 @@ router.use("/attendance", attendanceRoutes);
 router.use("/payroll", payrollRoutes);
 router.use("/bank-details", bankDetailsRoutes);
 router.use("/holidays", holidayRoutes);
+router.use("/departments", departmentRoutes);
+router.use("/job-roles", jobRoleRoutes);
 router.use("/stats", statsRoutes);
 router.use("/audit", auditRoutes);
 

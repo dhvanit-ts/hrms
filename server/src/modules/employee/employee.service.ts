@@ -2,22 +2,35 @@ import prisma from "@/config/db.js";
 import { writeAuditLog } from "@/infra/services/audit.service";
 
 export async function listEmployees() {
-  return prisma.employee.findMany();
+  return prisma.employee.findMany({
+    include: {
+      department: true,
+      jobRole: true,
+    }
+  });
 }
 
 export async function getEmployee(id: number) {
-  return prisma.employee.findUnique({ where: { id } });
+  return prisma.employee.findUnique({
+    where: { id },
+    include: {
+      department: true,
+      jobRole: true,
+    }
+  });
 }
 
 export async function createEmployee(data: {
   employeeId: string;
   name: string;
   email: string;
-  phone?: string;
-  dateOfBirth?: string;
-  departmentId?: number;
-  jobRoleId?: number;
-  hireDate?: string;
+  phone?: string | null;
+  dateOfBirth?: string | null;
+  departmentId?: number | null;
+  jobRoleId?: number | null;
+  hireDate?: string | null;
+  salary?: number | null;
+  leaveAllowance?: number | null;
 }) {
   const created = await prisma.employee.create({
     data: {
@@ -25,11 +38,17 @@ export async function createEmployee(data: {
       name: data.name,
       email: data.email.toLowerCase(),
       phone: data.phone,
-      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
+      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
       departmentId: data.departmentId,
       jobRoleId: data.jobRoleId,
-      hireDate: data.hireDate ? new Date(data.hireDate) : undefined,
+      hireDate: data.hireDate ? new Date(data.hireDate) : null,
+      salary: data.salary,
+      leaveAllowance: data.leaveAllowance || 20, // Default to 20 days
     },
+    include: {
+      department: true,
+      jobRole: true,
+    }
   });
 
   await writeAuditLog({
@@ -41,20 +60,15 @@ export async function createEmployee(data: {
   return created;
 }
 
-export async function updateEmployee(
-  id: number,
-  data: Partial<{
-    name: string;
-    email: string;
-    phone: string;
-    status: "active" | "inactive" | "terminated";
-  }>
-) {
-  if (data.email) data.email = data.email.toLowerCase();
-
+export async function updateEmployee(id: number, data: any) {
+  console.log(data)
   const updated = await prisma.employee.update({
     where: { id },
     data,
+    include: {
+      department: true,
+      jobRole: true,
+    }
   });
 
   await writeAuditLog({

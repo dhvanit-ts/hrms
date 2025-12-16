@@ -80,6 +80,8 @@ model Employee {
   jobRoleId          Int?
   hireDate           DateTime?
   status             EmployeeStatus  @default(active)
+  salary             Int             @default(0)
+  leaveAllowance     Int             @default(10)
   lastLogin          DateTime?
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt

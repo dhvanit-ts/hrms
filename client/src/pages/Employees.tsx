@@ -139,14 +139,6 @@ const useAuth = () => {
   return { user, accessToken };
 };
 
-// Mock Data
-const mockEmployees = [
-  { _id: '1', employeeId: 'EMP-001', name: 'Alice Johnson', email: 'alice@origin.com', status: 'Active', role: 'Frontend Developer', department: 'Engineering', avatar: 'https://i.pravatar.cc/150?u=alice' },
-  { _id: '2', employeeId: 'EMP-002', name: 'Bob Smith', email: 'bob@origin.com', status: 'Active', role: 'Product Manager', department: 'Product', avatar: 'https://i.pravatar.cc/150?u=bob' },
-  { _id: '3', employeeId: 'EMP-003', name: 'Charlie Brown', email: 'charlie@origin.com', status: 'On Leave', role: 'UI Designer', department: 'Design', avatar: 'https://i.pravatar.cc/150?u=charlie' },
-  { _id: '4', employeeId: 'EMP-004', name: 'Diana Prince', email: 'diana@origin.com', status: 'Inactive', role: 'Marketing Lead', department: 'Marketing', avatar: 'https://i.pravatar.cc/150?u=diana' },
-];
-
 /* ----------------------------------------------------------------------------------
  * MAIN COMPONENT
  * ---------------------------------------------------------------------------------- */
@@ -297,11 +289,11 @@ export const EmployeesPage: React.FC = () => {
                         <div className="flex flex-col gap-0.5">
                           <div className="flex items-center gap-1.5 text-zinc-900">
                             <BadgeCheck className="h-3.5 w-3.5 text-indigo-500" />
-                            {r.role || 'Employee'}
+                            {r.jobRole?.title || r.role || 'Employee'}
                           </div>
                           <div className="flex items-center gap-1.5 text-xs text-zinc-500">
                             <Building2 className="h-3 w-3" />
-                            {r.department || 'General'}
+                            {r.department?.name || r.department || 'General'}
                           </div>
                         </div>
                       </td>

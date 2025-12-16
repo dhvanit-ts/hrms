@@ -32,29 +32,16 @@ import { ErrorAlert } from '@/shared/components/ui/error-alert';
 import { extractErrorMessage } from '@/lib/utils';
 import * as attendanceApi from '@/services/api/attendance';
 import * as leavesApi from '@/services/api/leaves';
+import * as departmentsApi from '@/services/api/departments';
+import * as jobRolesApi from '@/services/api/job-roles';
+import {
+  type EmployeeProfile,
+  type EmployeeFormData,
+  EmployeeTransformer,
+  EmployeeDTOValidator
+} from '@/types/employee.dto';
 
-interface Employee {
-  id: number;
-  employeeId: string;
-  name: string;
-  email: string;
-  phone?: string;
-  dateOfBirth?: string;
-  departmentId?: number;
-  jobRoleId?: number;
-  hireDate?: string;
-  status: string;
-  salary?: number;
-  leaveAllowance?: number;
-  department?: {
-    id: number;
-    name: string;
-  };
-  jobRole?: {
-    id: number;
-    title: string;
-  };
-}
+// Using EmployeeProfile from DTO instead of local interface
 
 interface ProfileStats {
   totalWorkingDays: number;
@@ -67,12 +54,12 @@ export const EmployeeProfilePage: React.FC = () => {
   const { employeeAccessToken, accessToken, isEmployee, isAdmin, user } = useAuth();
   const { id: employeeId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [employee, setEmployee] = useState<EmployeeProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState<Partial<Employee>>({});
+  const [editForm, setEditForm] = useState<EmployeeFormData>({});
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -85,6 +72,8 @@ export const EmployeeProfilePage: React.FC = () => {
     confirm: false
   });
   const [profileStats, setProfileStats] = useState<ProfileStats | null>(null);
+  const [departments, setDepartments] = useState<departmentsApi.Department[]>([]);
+  const [jobRoles, setJobRoles] = useState<jobRolesApi.JobRole[]>([]);
 
   // Determine if this is admin mode (editing another employee) or self mode
   const isAdminMode = employeeId && isAdmin;
@@ -95,6 +84,22 @@ export const EmployeeProfilePage: React.FC = () => {
     ['SUPER_ADMIN', 'ADMIN', 'HR', 'MANAGER'].includes(role)
   );
 
+  // Load departments and job roles for admin mode
+  const loadDropdownData = async () => {
+    if (isAdminMode && accessToken) {
+      try {
+        const [deptRes, rolesRes] = await Promise.all([
+          departmentsApi.getDepartments(accessToken),
+          jobRolesApi.getJobRoles(accessToken)
+        ]);
+        setDepartments(deptRes.departments);
+        setJobRoles(rolesRes.jobRoles);
+      } catch (error) {
+        console.error('Failed to load dropdown data:', error);
+      }
+    }
+  };
+
   // Load employee profile data
   const loadProfile = async () => {
     setIsLoading(true);
@@ -103,11 +108,15 @@ export const EmployeeProfilePage: React.FC = () => {
 
       if (isAdminMode && accessToken) {
         // Admin viewing another employee's profile
-        profileRes = await http.get(`/employees/${employeeId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
+        const [empRes] = await Promise.all([
+          http.get(`/employees/${employeeId}`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          }),
+          loadDropdownData() // Load departments and job roles
+        ]);
+        profileRes = empRes;
         setEmployee(profileRes.data.employee);
-        setEditForm(profileRes.data.employee);
+        setEditForm(EmployeeTransformer.toFormData(profileRes.data.employee));
 
         // For admin mode, we might not load attendance stats for now
         // This could be extended later if needed
@@ -124,7 +133,7 @@ export const EmployeeProfilePage: React.FC = () => {
         ]);
 
         setEmployee(empProfileRes.employee);
-        setEditForm(empProfileRes.employee);
+        setEditForm(EmployeeTransformer.toFormData(empProfileRes.employee));
 
         // Calculate stats
         const presentDays = attendanceRes.attendances.filter(a => a.checkIn).length;
@@ -153,14 +162,32 @@ export const EmployeeProfilePage: React.FC = () => {
   const handleSaveProfile = async () => {
     try {
       if (isAdminMode && accessToken) {
-        // Admin updating employee profile
-        if (editForm.id) delete editForm.id
-        await http.patch(`/employees/${employeeId}`, editForm, {
+        // Admin updating employee profile - prepare clean data
+        const updateData: any = {};
+
+        // Only include fields that should be updated
+        if (editForm.name) updateData.name = editForm.name;
+        if (editForm.email) updateData.email = editForm.email;
+        if (editForm.phone !== undefined) updateData.phone = editForm.phone || null;
+        if (editForm.status) updateData.status = editForm.status;
+        if (editForm.salary !== undefined) updateData.salary = editForm.salary || null;
+        if (editForm.leaveAllowance !== undefined) updateData.leaveAllowance = editForm.leaveAllowance || null;
+        if (editForm.dateOfBirth !== undefined) updateData.dateOfBirth = editForm.dateOfBirth || null;
+        if (editForm.departmentId !== undefined) updateData.departmentId = editForm.departmentId || null;
+        if (editForm.jobRoleId !== undefined) updateData.jobRoleId = editForm.jobRoleId || null;
+        if (editForm.hireDate !== undefined) updateData.hireDate = editForm.hireDate || null
+
+        await http.patch(`/employees/${employeeId}`, updateData, {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
       } else if (isViewingOwnProfile && employeeAccessToken) {
         // Employee updating their own profile (limited fields)
-        const allowedFields = { name: editForm.name, email: editForm.email, phone: editForm.phone, dateOfBirth: editForm.dateOfBirth };
+        const allowedFields = {
+          name: editForm.name,
+          email: editForm.email,
+          phone: editForm.phone || null,
+          dateOfBirth: editForm.dateOfBirth || null
+        };
         // Here you would call an update profile API for employees
         // For now, we'll just show success message
       }
@@ -192,14 +219,7 @@ export const EmployeeProfilePage: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Not set';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+
 
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
@@ -423,7 +443,7 @@ export const EmployeeProfilePage: React.FC = () => {
                       onChange={(e) => setEditForm({ ...editForm, dateOfBirth: e.target.value })}
                     />
                   ) : (
-                    <p className="text-zinc-900 bg-zinc-50 p-3 rounded-md">{formatDate(employee.dateOfBirth)}</p>
+                    <p className="text-zinc-900 bg-zinc-50 p-3 rounded-md">{EmployeeTransformer.formatDate(employee.dateOfBirth)}</p>
                   )}
                 </div>
 
@@ -525,7 +545,20 @@ export const EmployeeProfilePage: React.FC = () => {
                     <Briefcase className="w-4 h-4" />
                     Job Title
                   </label>
-                  <p className="text-zinc-900 bg-zinc-50 p-3 rounded-md">{employee.jobRole?.title || 'Not assigned'}</p>
+                  {isAdminMode && isEditing ? (
+                    <select
+                      className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
+                      value={editForm.jobRoleId || ''}
+                      onChange={(e) => setEditForm({ ...editForm, jobRoleId: e.target.value ? Number(e.target.value) : null })}
+                    >
+                      <option value="">Select Job Role</option>
+                      {jobRoles?.map(role => (
+                        <option key={role.id} value={role.id}>{role.title}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="text-zinc-900 bg-zinc-50 p-3 rounded-md">{employee.jobRole?.title || 'Not assigned'}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -533,7 +566,20 @@ export const EmployeeProfilePage: React.FC = () => {
                     <MapPin className="w-4 h-4" />
                     Department
                   </label>
-                  <p className="text-zinc-900 bg-zinc-50 p-3 rounded-md">{employee.department?.name || 'Not assigned'}</p>
+                  {isAdminMode && isEditing ? (
+                    <select
+                      className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
+                      value={editForm.departmentId || ''}
+                      onChange={(e) => setEditForm({ ...editForm, departmentId: e.target.value ? Number(e.target.value) : null })}
+                    >
+                      <option value="">Select Department</option>
+                      {departments?.map(dept => (
+                        <option key={dept.id} value={dept.id}>{dept.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="text-zinc-900 bg-zinc-50 p-3 rounded-md">{employee.department?.name || 'Not assigned'}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -541,7 +587,15 @@ export const EmployeeProfilePage: React.FC = () => {
                     <Calendar className="w-4 h-4" />
                     Hire Date
                   </label>
-                  <p className="text-zinc-900 bg-zinc-50 p-3 rounded-md">{formatDate(employee.hireDate)}</p>
+                  {isAdminMode && isEditing ? (
+                    <Input
+                      type="date"
+                      value={editForm.hireDate ? EmployeeTransformer.toDateInputFormat(editForm.hireDate) : ''}
+                      onChange={(e) => setEditForm({ ...editForm, hireDate: e.target.value || null })}
+                    />
+                  ) : (
+                    <p className="text-zinc-900 bg-zinc-50 p-3 rounded-md">{EmployeeTransformer.formatDate(employee.hireDate)}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -553,7 +607,7 @@ export const EmployeeProfilePage: React.FC = () => {
                     <select
                       className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
                       value={editForm.status || ''}
-                      onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                      onChange={(e) => setEditForm({ ...editForm, status: e.target.value as "active" | "inactive" | "terminated" })}
                     >
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>

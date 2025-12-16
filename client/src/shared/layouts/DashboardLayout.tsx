@@ -18,7 +18,8 @@ import {
   LogOut,
   CreditCard,
   Shield,
-  LucideIcon
+  LucideIcon,
+  Building2
 } from 'lucide-react';
 
 // UI Components
@@ -97,6 +98,10 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
     { path: '/dashboard/holidays', label: 'Holidays', icon: Calendar },
     ...(isEmployee ? [
       { path: '/dashboard/bank-details', label: 'Bank Details', icon: CreditCard },
+    ] : []),
+    ...(isSuperAdmin ? [
+      { path: '/dashboard/departments', label: 'Departments', icon: Building2 },
+      { path: '/dashboard/job-roles', label: 'Job Roles', icon: Briefcase },
     ] : []),
     ...(isSuperAdmin ? [
       { path: '/dashboard/users', label: 'User Management', icon: Shield },

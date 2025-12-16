@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `Employee` ADD COLUMN `leaveAllowance` INTEGER NOT NULL DEFAULT 10,
+    ADD COLUMN `salary` INTEGER NOT NULL DEFAULT 0;

@@ -8,49 +8,49 @@ import {
   removeEmployee,
   updateEmployee,
 } from "@/modules/employee/employee.service.js";
+import {
+  EmployeeDTO,
+  CreateEmployeeSchema,
+  UpdateEmployeeSchema,
+  type CreateEmployeeDTO,
+  type UpdateEmployeeDTO
+} from "./employee.dto.js";
 
 export const createEmployeeSchema = z.object({
-  body: z.object({
-    employeeId: z.string().min(1),
-    name: z.string().min(1),
-    email: z.email(),
-    phone: z.string().optional(),
-    dateOfBirth: z.string().optional(),
-    departmentId: z.string().optional(),
-    jobRoleId: z.string().optional(),
-    hireDate: z.string().optional(),
-  }),
+  body: CreateEmployeeSchema,
 });
 
-export async function createEmp(_req: AuthenticatedRequest, res: Response) {
-  const created = await createEmployee(_req.body);
-  res.status(201).json({ employee: created });
+export async function createEmp(req: AuthenticatedRequest, res: Response) {
+  const validatedData = EmployeeDTO.validateCreateData(req.body);
+  const created = await createEmployee(validatedData);
+  const employeeDTO = EmployeeDTO.toEmployeeProfile(created);
+  res.status(201).json({ employee: employeeDTO });
 }
 
 export async function listEmp(_req: AuthenticatedRequest, res: Response) {
   const items = await listEmployees();
-  res.json({ employees: items });
+  const employeesDTO = EmployeeDTO.toEmployeeList(items);
+  res.json({ employees: employeesDTO });
 }
 
 export async function getEmp(req: AuthenticatedRequest, res: Response) {
   const item = await getEmployee(Number(req.params.id));
   if (!item) return res.status(404).json({ error: "NotFound" });
-  res.json({ employee: item });
+  const employeeDTO = EmployeeDTO.toEmployeeProfile(item);
+  res.json({ employee: employeeDTO });
 }
 
 export const updateEmployeeSchema = z.object({
   params: z.object({ id: z.string().min(1) }),
-  body: z.object({
-    name: z.string().optional(),
-    email: z.string().email().optional(),
-    phone: z.string().optional(),
-    status: z.enum(["active", "inactive", "terminated"]).optional(),
-  }),
+  body: UpdateEmployeeSchema,
 });
 
 export async function updateEmp(req: AuthenticatedRequest, res: Response) {
-  const updated = await updateEmployee(Number(req.params.id), req.body);
-  res.json({ employee: updated });
+  const validatedData = EmployeeDTO.validateUpdateData(req.body);
+  const prismaData = EmployeeDTO.transformUpdateDataForPrisma(validatedData);
+  const updated = await updateEmployee(Number(req.params.id), prismaData);
+  const employeeDTO = EmployeeDTO.toEmployeeProfile(updated);
+  res.json({ employee: employeeDTO });
 }
 
 export async function removeEmp(req: AuthenticatedRequest, res: Response) {
@@ -67,5 +67,6 @@ export async function getMe(req: AuthenticatedRequest, res: Response) {
   if (!employee) {
     return res.status(404).json({ error: "Employee not found" });
   }
-  res.json({ employee });
+  const employeeDTO = EmployeeDTO.toEmployeeProfile(employee);
+  res.json({ employee: employeeDTO });
 }

@@ -160,6 +160,8 @@ model User {
 
   profile       Profile?        @relation(fields: [profileRef], references: [id])
   refreshTokens RefreshToken[]
+  leads         Lead[]
+  leadActivities LeadActivity[]
 
   @@index([email])
   @@index([isActive])
@@ -224,6 +226,46 @@ model Holiday {
   @@index([date])
 }
 
+model Lead {
+  id          Int        @id @default(autoincrement())
+  name        String
+  email       String
+  phone       String?
+  company     String?
+  position    String?
+  source      String?    // e.g., "website", "referral", "cold_call"
+  status      LeadStatus @default(new)
+  priority    Priority   @default(medium)
+  assignedTo  Int?       // Manager who owns this lead
+  notes       String?    @db.Text
+  value       Decimal?   @db.Decimal(10,2) // Potential deal value
+  followUpDate DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  manager     User?      @relation(fields: [assignedTo], references: [id])
+  activities  LeadActivity[]
+
+  @@index([assignedTo])
+  @@index([status])
+  @@index([followUpDate])
+}
+
+model LeadActivity {
+  id          Int            @id @default(autoincrement())
+  leadId      Int
+  type        ActivityType
+  description String         @db.Text
+  performedBy Int
+  createdAt   DateTime       @default(now())
+
+  lead        Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user        User           @relation(fields: [performedBy], references: [id])
+
+  @@index([leadId])
+  @@index([performedBy])
+}
+
 enum AppRole {
   ADMIN
   MANAGER
@@ -240,4 +282,29 @@ enum EmployeeStatus {
   active
   inactive
   terminated
+}
+
+enum LeadStatus {
+  new
+  contacted
+  qualified
+  proposal
+  negotiation
+  closed_won
+  closed_lost
+}
+
+enum Priority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum ActivityType {
+  call
+  email
+  meeting
+  note
+  task
 }

@@ -19,7 +19,8 @@ import {
   CreditCard,
   Shield,
   LucideIcon,
-  Building2
+  Building2,
+  Target
 } from 'lucide-react';
 
 // UI Components
@@ -81,6 +82,11 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
     ['SUPER_ADMIN', 'ADMIN', 'HR', 'MANAGER'].includes(role)
   );
 
+  // Check if user is manager or above
+  const hasManagerAccess = isAdmin && user?.roles.some(role =>
+    ['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(role)
+  );
+
   // Check if user is superadmin
   const isSuperAdmin = isAdmin && user?.roles.includes('SUPER_ADMIN');
 
@@ -89,6 +95,9 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     ...(hasAdminAccess ? [
       { path: '/dashboard/employees', label: 'Employees', icon: Users },
+    ] : []),
+    ...(hasManagerAccess ? [
+      { path: '/dashboard/leads', label: 'Lead Management', icon: Target },
     ] : []),
     { path: '/dashboard/leaves', label: 'Leaves', icon: Calendar },
     ...(isEmployee ? [

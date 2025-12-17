@@ -170,7 +170,7 @@ export const EmployeeProfilePage: React.FC = () => {
         if (editForm.email) updateData.email = editForm.email;
         if (editForm.phone !== undefined) updateData.phone = editForm.phone || null;
         if (editForm.status) updateData.status = editForm.status;
-        if (editForm.salary !== undefined) updateData.salary = editForm.salary || null;
+        if (editForm.salary !== undefined) updateData.salary = editForm.salary || 0;
         if (editForm.leaveAllowance !== undefined) updateData.leaveAllowance = editForm.leaveAllowance || null;
         if (editForm.dateOfBirth !== undefined) updateData.dateOfBirth = editForm.dateOfBirth || null;
         if (editForm.departmentId !== undefined) updateData.departmentId = editForm.departmentId || null;

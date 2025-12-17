@@ -19,6 +19,7 @@ import { AuditReportsPage } from './pages/AuditReports';
 import DashboardLayout from './shared/layouts/DashboardLayout';
 import DepartmentsPage from './pages/Departments';
 import JobRolesPage from './pages/JobRoles';
+import LeadsPage from './pages/Leads';
 
 const router = createBrowserRouter([
   {
@@ -54,6 +55,7 @@ const router = createBrowserRouter([
           { path: "reports", element: <AuditReportsPage /> },
           { path: "departments", element: <DepartmentsPage /> },
           { path: "job-roles", element: <JobRolesPage /> },
+          { path: "leads", element: <LeadsPage /> },
         ]
       },
 

@@ -50,7 +50,7 @@ export const HolidaysPage: React.FC = () => {
       setError(null);
       const year = currentDate.getFullYear();
       const data = await holidaysApi.getAll(year);
-      const mappedHolidays = data.map(h => ({
+      const mappedHolidays = (data || []).map(h => ({
         ...h,
         date: new Date(h.date),
       }));

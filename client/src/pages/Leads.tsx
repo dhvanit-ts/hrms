@@ -72,8 +72,8 @@ export default function Leads() {
       const params = {
         page: pagination.page,
         limit: pagination.limit,
-        ...(filters.status && { status: filters.status }),
-        ...(filters.priority && { priority: filters.priority }),
+        ...(!!filters.status && { status: filters.status === "*" ? "" : filters.status }),
+        ...(!!filters.priority && { priority: filters.priority === "*" ? "" : filters.priority }),
       };
 
       const response: LeadsResponse = await leadsApi.getLeads(params);

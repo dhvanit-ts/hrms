@@ -16,6 +16,7 @@ import { HolidaysPage } from './pages/Holidays';
 import { BankDetailsPage } from './pages/BankDetails';
 import { UsersPage } from './pages/Users';
 import { AuditReportsPage } from './pages/AuditReports';
+import { SettingsPage } from './pages/Settings';
 import DashboardLayout from './shared/layouts/DashboardLayout';
 import DepartmentsPage from './pages/Departments';
 import JobRolesPage from './pages/JobRoles';
@@ -56,6 +57,7 @@ const router = createBrowserRouter([
           { path: "departments", element: <DepartmentsPage /> },
           { path: "job-roles", element: <JobRolesPage /> },
           { path: "leads", element: <LeadsPage /> },
+          { path: "settings", element: <SettingsPage /> },
         ]
       },
 

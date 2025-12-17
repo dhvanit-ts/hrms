@@ -27,23 +27,23 @@ export interface UpdateHolidayData {
 export const holidaysApi = {
   getAll: async (year?: number) => {
     const params = year ? { year } : {};
-    const response = await http.get<Holiday[]>("/holidays", { params });
-    return response.data;
+    const response = await http.get<{ data: Holiday[] }>("/holidays", { params });
+    return response.data.data;
   },
 
   getById: async (id: number) => {
-    const response = await http.get<Holiday>(`/holidays/${id}`);
-    return response.data;
+    const response = await http.get<{ data: Holiday }>(`/holidays/${id}`);
+    return response.data.data;
   },
 
   create: async (data: CreateHolidayData) => {
-    const response = await http.post<Holiday>("/holidays", data);
-    return response.data;
+    const response = await http.post<{ data: Holiday }>("/holidays", data);
+    return response.data.data
   },
 
   update: async (id: number, data: UpdateHolidayData) => {
-    const response = await http.put<Holiday>(`/holidays/${id}`, data);
-    return response.data;
+    const response = await http.put<{ data: Holiday }>(`/holidays/${id}`, data);
+    return response.data.data
   },
 
   delete: async (id: number) => {

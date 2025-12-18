@@ -3,6 +3,7 @@ import { useAuth } from '@/shared/context/AuthContext';
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
+import { Input } from '@/shared/components/ui/input';
 import {
   Table,
   TableBody,
@@ -22,12 +23,18 @@ import {
   type Attendance,
   type AttendanceStatus,
   type BreakStatus,
+  type AttendanceHistoryParams,
 } from '@/services/api/attendance';
 import { ErrorAlert } from '@/shared/components/ui/error-alert';
 import { extractErrorMessage } from '@/lib/utils';
+import { useEmployeeEmploymentDates } from '@/shared/hooks/useEmployeeEmploymentDates';
+import { getEmploymentDateConstraints } from '@/lib/dateConstraints';
+import { EmploymentDateInfo } from '@/shared/components/ui/employment-date-info';
+import { ConstrainedDateInput } from '@/shared/components/ui/constrained-date-input';
 
 export function AttendanceDashboard() {
   const { employeeAccessToken: accessToken } = useAuth();
+  const { employmentDates } = useEmployeeEmploymentDates();
   const [todayStatus, setTodayStatus] = useState<AttendanceStatus | null>(null);
   const [breakStatus, setBreakStatus] = useState<BreakStatus | null>(null);
   const [history, setHistory] = useState<Attendance[]>([]);
@@ -35,13 +42,17 @@ export function AttendanceDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<'punch-in' | 'punch-out' | 'start-break' | 'end-break' | null>(null);
 
+  // Date filter state
+  const [dateFilters, setDateFilters] = useState<AttendanceHistoryParams>({});
+  const [showFilters, setShowFilters] = useState(false);
+
   useEffect(() => {
     if (accessToken) {
       loadData();
     }
   }, [accessToken]);
 
-  const loadData = async () => {
+  const loadData = async (filters?: AttendanceHistoryParams) => {
     if (!accessToken) return;
 
     setLoading(true);
@@ -50,7 +61,7 @@ export function AttendanceDashboard() {
     try {
       const [statusData, historyData, breakData] = await Promise.all([
         getTodayStatus(accessToken),
-        getAttendanceHistory(accessToken),
+        getAttendanceHistory(accessToken, filters),
         getBreakStatus(accessToken),
       ]);
 
@@ -160,6 +171,19 @@ export function AttendanceDashboard() {
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
   };
+
+  const handleFilterChange = (filters: AttendanceHistoryParams) => {
+    setDateFilters(filters);
+    loadData(filters);
+  };
+
+  const clearFilters = () => {
+    setDateFilters({});
+    loadData();
+  };
+
+  // Get date constraints for filter inputs
+  const dateConstraints = getEmploymentDateConstraints(employmentDates);
 
   useEffect(() => {
     loadData()
@@ -280,9 +304,54 @@ export function AttendanceDashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Attendance History</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>Attendance History</CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              {showFilters ? 'Hide Filters' : 'Filter by Date'}
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {showFilters && (
+            <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Start Date</label>
+                  <ConstrainedDateInput
+                    value={dateFilters.startDate || ''}
+                    onChange={(value) => handleFilterChange({ ...dateFilters, startDate: value || undefined })}
+                    employmentDates={employmentDates}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">End Date</label>
+                  <ConstrainedDateInput
+                    value={dateFilters.endDate || ''}
+                    onChange={(value) => handleFilterChange({ ...dateFilters, endDate: value || undefined })}
+                    employmentDates={employmentDates}
+                  />
+                </div>
+              </div>
+
+              <EmploymentDateInfo employmentDates={employmentDates} />
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearFilters}
+                  disabled={!dateFilters.startDate && !dateFilters.endDate}
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            </div>
+          )}
+
           {history.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">No attendance records found</p>
           ) : (

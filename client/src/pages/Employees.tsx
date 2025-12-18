@@ -32,7 +32,6 @@ import * as jobRolesApi from '@/services/api/job-roles';
 import type { CreateEmployeeDTO } from '@/types/employee.dto';
 
 const employeeSchema = z.object({
-  employeeId: z.string().min(1, "Employee ID is required"),
   name: z.string().min(1, "Full name is required"),
   email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
@@ -51,7 +50,6 @@ const EmployeeForm = ({ onSuccess }: { onSuccess: () => void }) => {
   const form = useForm({
     resolver: zodResolver(employeeSchema),
     defaultValues: {
-      employeeId: "",
       name: "",
       email: "",
       phone: "",

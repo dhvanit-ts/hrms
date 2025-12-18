@@ -178,3 +178,19 @@ html, body, #root {
   }
 }
 
+
+/* Custom styles for constrained date inputs */
+.constrained-date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}
+
+/* Style for date inputs with constraints */
+input[type="date"].constrained-date-input {
+  position: relative;
+}
+
+/* Add visual feedback for date inputs with constraints */
+input[type="date"].constrained-date-input:focus {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}

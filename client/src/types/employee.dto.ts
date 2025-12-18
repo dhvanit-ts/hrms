@@ -11,6 +11,7 @@ export interface EmployeeBase {
   departmentId: number | null;
   jobRoleId: number | null;
   hireDate: string | null;
+  terminationDate: string | null;
   status: "active" | "inactive" | "terminated";
   salary: number | null;
   leaveAllowance: number | null;
@@ -43,6 +44,7 @@ export interface CreateEmployeeDTO {
   departmentId?: number | null;
   jobRoleId?: number | null;
   hireDate?: string | null;
+  terminationDate?: string | null;
   salary?: number | null;
   leaveAllowance?: number | null;
 }
@@ -55,6 +57,7 @@ export interface UpdateEmployeeDTO {
   departmentId?: number | null;
   jobRoleId?: number | null;
   hireDate?: string | null;
+  terminationDate?: string | null;
   status?: "active" | "inactive" | "terminated";
   salary?: number | null;
   leaveAllowance?: number | null;
@@ -91,6 +94,7 @@ export interface EmployeeFormData {
   departmentId?: number | null;
   jobRoleId?: number | null;
   hireDate?: string | null;    // HTML date input format (YYYY-MM-DD) or null
+  terminationDate?: string | null; // HTML date input format (YYYY-MM-DD) or null
   status?: "active" | "inactive" | "terminated";
   salary?: number | null;
   leaveAllowance?: number | null;
@@ -178,6 +182,7 @@ export class EmployeeTransformer {
       departmentId: employee.departmentId,
       jobRoleId: employee.jobRoleId,
       hireDate: employee.hireDate ? this.toDateInputFormat(employee.hireDate) : null,
+      terminationDate: employee.terminationDate ? this.toDateInputFormat(employee.terminationDate) : null,
       status: employee.status,
       salary: employee.salary,
       leaveAllowance: employee.leaveAllowance,
@@ -200,6 +205,9 @@ export class EmployeeTransformer {
     if (formData.jobRoleId !== undefined) result.jobRoleId = formData.jobRoleId;
     if (formData.hireDate !== undefined) {
       result.hireDate = formData.hireDate ? this.fromDateInputFormat(formData.hireDate) : null;
+    }
+    if (formData.terminationDate !== undefined) {
+      result.terminationDate = formData.terminationDate ? this.fromDateInputFormat(formData.terminationDate) : null;
     }
     if (formData.status !== undefined) result.status = formData.status;
     if (formData.salary !== undefined) result.salary = formData.salary;

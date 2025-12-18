@@ -25,6 +25,16 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Badge } from '@/shared/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/shared/components/ui/alert-dialog';
 import { useAuth } from '@/shared/context/AuthContext';
 import { employeeMe } from '@/services/api/employee-auth';
 import { http } from '@/services/api/http';
@@ -66,6 +76,8 @@ export const EmployeeProfilePage: React.FC = () => {
     newPassword: '',
     confirmPassword: ''
   });
+  const [showTerminationDialog, setShowTerminationDialog] = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState<"active" | "inactive" | "terminated" | null>(null);
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
@@ -75,16 +87,13 @@ export const EmployeeProfilePage: React.FC = () => {
   const [departments, setDepartments] = useState<departmentsApi.Department[]>([]);
   const [jobRoles, setJobRoles] = useState<jobRolesApi.JobRole[]>([]);
 
-  // Determine if this is admin mode (editing another employee) or self mode
   const isAdminMode = employeeId && isAdmin;
   const isViewingOwnProfile = !employeeId && isEmployee;
 
-  // Check if user has admin access
   const hasAdminAccess = isAdmin && user?.roles?.some(role =>
     ['SUPER_ADMIN', 'ADMIN', 'HR', 'MANAGER'].includes(role)
   );
 
-  // Load departments and job roles for admin mode
   const loadDropdownData = async () => {
     if (isAdminMode && accessToken) {
       try {
@@ -100,19 +109,17 @@ export const EmployeeProfilePage: React.FC = () => {
     }
   };
 
-  // Load employee profile data
   const loadProfile = async () => {
     setIsLoading(true);
     try {
       let profileRes;
 
       if (isAdminMode && accessToken) {
-        // Admin viewing another employee's profile
         const [empRes] = await Promise.all([
           http.get(`/employees/${employeeId}`, {
             headers: { Authorization: `Bearer ${accessToken}` }
           }),
-          loadDropdownData() // Load departments and job roles
+          loadDropdownData()
         ]);
         profileRes = empRes;
         setEmployee(profileRes.data.employee);
@@ -122,22 +129,26 @@ export const EmployeeProfilePage: React.FC = () => {
         // This could be extended later if needed
 
       } else if (isViewingOwnProfile && employeeAccessToken) {
-        // Employee viewing their own profile
-        const [empProfileRes, attendanceRes, leaveBalanceRes] = await Promise.all([
-          employeeMe(employeeAccessToken),
+        const empProfileRes = await employeeMe(employeeAccessToken);
+        setEmployee(empProfileRes.employee);
+        setEditForm(EmployeeTransformer.toFormData(empProfileRes.employee));
+
+        const currentYear = new Date().getFullYear();
+        const yearStart = new Date(currentYear, 0, 1);
+        const hireDate = empProfileRes.employee.hireDate ? new Date(empProfileRes.employee.hireDate) : null;
+
+        const effectiveStartDate = hireDate && hireDate > yearStart ? hireDate : yearStart;
+
+        const [attendanceRes, leaveBalanceRes] = await Promise.all([
           attendanceApi.getAttendanceHistory(employeeAccessToken, {
-            startDate: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
+            startDate: effectiveStartDate.toISOString().split('T')[0],
             endDate: new Date().toISOString().split('T')[0]
           }),
           leavesApi.getLeaveBalance(employeeAccessToken)
         ]);
 
-        setEmployee(empProfileRes.employee);
-        setEditForm(EmployeeTransformer.toFormData(empProfileRes.employee));
-
-        // Calculate stats
         const presentDays = attendanceRes.attendances.filter(a => a.checkIn).length;
-        const totalWorkingDays = Math.floor((new Date().getTime() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (1000 * 60 * 60 * 24));
+        const totalWorkingDays = Math.floor((new Date().getTime() - effectiveStartDate.getTime()) / (1000 * 60 * 60 * 24));
 
         setProfileStats({
           totalWorkingDays,
@@ -158,14 +169,11 @@ export const EmployeeProfilePage: React.FC = () => {
     loadProfile();
   }, [employeeAccessToken, accessToken, isEmployee, isAdmin, employeeId]);
 
-  // Handle profile update
   const handleSaveProfile = async () => {
     try {
       if (isAdminMode && accessToken) {
-        // Admin updating employee profile - prepare clean data
         const updateData: any = {};
 
-        // Only include fields that should be updated
         if (editForm.name) updateData.name = editForm.name;
         if (editForm.email) updateData.email = editForm.email;
         if (editForm.phone !== undefined) updateData.phone = editForm.phone || null;
@@ -201,7 +209,22 @@ export const EmployeeProfilePage: React.FC = () => {
     }
   };
 
-  // Handle password change
+  const handleConfirmTermination = () => {
+    if (pendingStatusChange) {
+      setEditForm({ ...editForm, status: pendingStatusChange });
+      setShowTerminationDialog(false);
+      setPendingStatusChange(null);
+    }
+  };
+
+  const handleCancelTermination = () => {
+    setShowTerminationDialog(false);
+    setPendingStatusChange(null);
+    if (employee) {
+      setEditForm({ ...editForm, status: employee.status });
+    }
+  };
+
   const handleChangePassword = async () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       setErrorMessage('New passwords do not match');
@@ -209,7 +232,6 @@ export const EmployeeProfilePage: React.FC = () => {
     }
 
     try {
-      // Here you would call a change password API
       setSuccessMessage('Password changed successfully');
       setShowPasswordForm(false);
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -219,8 +241,6 @@ export const EmployeeProfilePage: React.FC = () => {
     }
   };
 
-
-
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case 'active':
@@ -228,7 +248,7 @@ export const EmployeeProfilePage: React.FC = () => {
       case 'inactive':
         return <Badge variant="secondary">Inactive</Badge>;
       case 'terminated':
-        return <Badge variant="destructive">Terminated</Badge>;
+        return <Badge variant="destructive" className='text-zinc-200 font-bold'>Terminated</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -268,7 +288,6 @@ export const EmployeeProfilePage: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Success/Error Messages */}
       {successMessage && (
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-md">
           {successMessage}
@@ -606,7 +625,17 @@ export const EmployeeProfilePage: React.FC = () => {
                     <select
                       className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
                       value={editForm.status || ''}
-                      onChange={(e) => setEditForm({ ...editForm, status: e.target.value as "active" | "inactive" | "terminated" })}
+                      onChange={(e) => {
+                        const newStatus = e.target.value as "active" | "inactive" | "terminated";
+                        if (newStatus === "terminated" && employee?.status !== "terminated") {
+                          // Show confirmation dialog for termination
+                          setPendingStatusChange(newStatus);
+                          setShowTerminationDialog(true);
+                        } else {
+                          // Direct status change for other statuses
+                          setEditForm({ ...editForm, status: newStatus });
+                        }
+                      }}
                     >
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
@@ -817,6 +846,35 @@ export const EmployeeProfilePage: React.FC = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Termination Confirmation Dialog */}
+      <AlertDialog open={showTerminationDialog} onOpenChange={setShowTerminationDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Employee Termination</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to terminate this employee? This action will:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Set the employee status to "Terminated"</li>
+                <li>Automatically set the termination date to today</li>
+                <li>Restrict future attendance and leave operations</li>
+                <li>This action can be reversed by changing the status back</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelTermination}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmTermination}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Confirm Termination
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

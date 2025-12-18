@@ -79,6 +79,7 @@ model Employee {
   departmentId       Int?
   jobRoleId          Int?
   hireDate           DateTime?
+  terminationDate    DateTime?
   status             EmployeeStatus  @default(active)
   salary             Int             @default(0)
   leaveAllowance     Int             @default(10)

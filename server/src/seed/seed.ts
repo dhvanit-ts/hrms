@@ -2,8 +2,14 @@ import "dotenv/config";
 import { hashPassword } from "../lib/password.js";
 import { logger } from "../config/logger.js";
 import prisma from "../config/db.js";
+import { loadEnv } from "../config/env.js";
 
 async function run() {
+  const env = loadEnv()
+  if (env.NODE_ENV === "production") {
+    logger.info("Skipping seeding in production environment");
+    return;
+  }
   const globalPassword = "ChangeMeNow!123";
 
   const data: { role: string; email: string; password: string }[] = [];

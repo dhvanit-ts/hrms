@@ -3,7 +3,7 @@ import { authenticate } from "@/core/middlewares/auth.js";
 import { requireRoles } from "@/core/middlewares/rbac.js";
 import {
   createEmp,
-  createEmployeeSchema,
+  createEmployeeSchemaWithBody,
   getEmp,
   getMe,
   listEmp,
@@ -27,7 +27,7 @@ router.get(
 router.post(
   "/",
   requireRoles("HR", "ADMIN", "SUPER_ADMIN"),
-  validate(createEmployeeSchema),
+  validate(createEmployeeSchemaWithBody),
   createEmp
 );
 router.patch(

@@ -2,12 +2,16 @@ import { writeAuditLog } from "@/infra/services/audit.service";
 import prisma from "@/config/db.js";
 import { ipValidationService } from "@/infra/services/ip-validation.service";
 import ApiError from "@/core/http/ApiError.js";
+import { AttendanceValidationService } from "./attendance-validation.service.js";
 
 export async function checkIn(employeeId: string, ipAddress: string, date?: string) {
   const d = date ? new Date(date) : new Date();
   const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
   const eid = parseInt(employeeId);
+
+  // Validate employee eligibility for attendance on this date
+  await AttendanceValidationService.validateEmployeeAttendanceEligibility(eid, day);
 
   // Check for existing active session before creating record
   const existing = await prisma.attendance.findFirst({
@@ -59,6 +63,9 @@ export async function checkOut(employeeId: string, date?: string) {
   const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
   const eid = parseInt(employeeId);
+
+  // Validate employee eligibility for attendance on this date
+  await AttendanceValidationService.validateEmployeeAttendanceEligibility(eid, day);
 
   // Verify active session exists before updating
   const item = await prisma.attendance.findFirst({
@@ -134,29 +141,23 @@ export async function getAttendanceHistory(
 ) {
   const eid = parseInt(employeeId);
 
-  const whereClause: any = {
-    employeeId: eid,
-  };
+  // Validate date range request
+  const validation = await AttendanceValidationService.validateAttendanceDateRange(
+    eid,
+    filters?.startDate,
+    filters?.endDate
+  );
 
-  // Add date range filtering if provided
-  if (filters?.startDate || filters?.endDate) {
-    whereClause.date = {};
-
-    if (filters.startDate) {
-      const startDate = new Date(filters.startDate);
-      const startDay = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-      whereClause.date.gte = startDay;
-    }
-
-    if (filters.endDate) {
-      const endDate = new Date(filters.endDate);
-      const endDay = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-      // Include the entire end date
-      const nextDay = new Date(endDay);
-      nextDay.setDate(endDay.getDate() + 1);
-      whereClause.date.lt = nextDay;
-    }
+  if (!validation.isValid) {
+    throw new ApiError({
+      statusCode: 400,
+      code: "INVALID_DATE_RANGE",
+      message: validation.message || "Invalid date range for attendance query",
+    });
   }
+
+  // Get attendance query filters that respect employment period
+  const whereClause = await AttendanceValidationService.getAttendanceQueryFilters(eid, filters);
 
   // Ensure records are ordered by date descending
   const records = await prisma.attendance.findMany({
@@ -179,6 +180,18 @@ export async function getTodayStatus(employeeId: string) {
   const eid = parseInt(employeeId);
   const today = new Date();
   const day = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  // Validate employee eligibility (but don't throw error, just return status)
+  try {
+    await AttendanceValidationService.validateEmployeeAttendanceEligibility(eid, day);
+  } catch (error) {
+    // Return inactive status if employee is not eligible
+    return {
+      hasActiveSession: false,
+      attendance: null,
+      eligibilityError: error instanceof ApiError ? error.message : "Employee not eligible for attendance",
+    };
+  }
 
   const attendance = await prisma.attendance.findFirst({
     where: {
@@ -203,6 +216,9 @@ export async function startBreak(employeeId: string) {
   const eid = parseInt(employeeId);
   const today = new Date();
   const day = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  // Validate employee eligibility for attendance operations
+  await AttendanceValidationService.validateEmployeeAttendanceEligibility(eid, day);
 
   // Find today's attendance record
   const attendance = await prisma.attendance.findFirst({
@@ -266,6 +282,9 @@ export async function endBreak(employeeId: string) {
   const eid = parseInt(employeeId);
   const today = new Date();
   const day = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  // Validate employee eligibility for attendance operations
+  await AttendanceValidationService.validateEmployeeAttendanceEligibility(eid, day);
 
   // Find today's attendance record with breaks
   const attendance = await prisma.attendance.findFirst({

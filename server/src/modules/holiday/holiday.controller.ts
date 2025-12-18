@@ -5,17 +5,21 @@ import { validate } from "../../core/middlewares/validate.js";
 import { HolidayService } from "./holiday.service.js";
 
 const createHolidaySchema = z.object({
-    name: z.string().min(1, "Holiday name is required"),
-    date: z.iso.datetime("Invalid date format"),
-    description: z.string().optional(),
-    isRecurring: z.boolean().optional().default(false),
+    body: z.object({
+        name: z.string().min(1, "Holiday name is required"),
+        date: z.iso.datetime("Invalid date format"),
+        description: z.string().optional(),
+        isRecurring: z.boolean().optional().default(false),
+    })
 });
 
 const updateHolidaySchema = z.object({
-    name: z.string().min(1).optional(),
-    date: z.iso.datetime().optional(),
-    description: z.string().optional(),
-    isRecurring: z.boolean().optional(),
+    body: z.object({
+        name: z.string().min(1).optional(),
+        date: z.iso.datetime().optional(),
+        description: z.string().optional(),
+        isRecurring: z.boolean().optional(),
+    })
 });
 
 export class HolidayController {

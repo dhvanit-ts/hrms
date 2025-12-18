@@ -31,7 +31,7 @@ export const loadEnv = (): Env => {
   const parsed = envSchema.safeParse(process.env);
   if (!parsed.success) {
     // eslint-disable-next-line no-console
-    console.error('Invalid environment configuration', parsed.error.flatten());
+    console.error('Invalid environment configuration', z.treeifyError(parsed.error));
     throw new Error('Invalid environment configuration');
   }
   return parsed.data;

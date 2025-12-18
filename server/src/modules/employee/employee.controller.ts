@@ -12,11 +12,9 @@ import {
   EmployeeDTO,
   CreateEmployeeSchema,
   UpdateEmployeeSchema,
-  type CreateEmployeeDTO,
-  type UpdateEmployeeDTO
 } from "./employee.dto.js";
 
-export const createEmployeeSchema = z.object({
+export const createEmployeeSchemaWithBody = z.object({
   body: CreateEmployeeSchema,
 });
 

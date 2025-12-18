@@ -11,6 +11,7 @@ export const EmployeeBaseSchema = z.object({
   departmentId: z.number().nullable(),
   jobRoleId: z.number().nullable(),
   hireDate: z.string().nullable(),
+  terminationDate: z.string().nullable(),
   status: z.enum(["active", "inactive", "terminated"]),
   salary: z.number().nullable(),
   leaveAllowance: z.number().nullable(),
@@ -33,14 +34,14 @@ export const EmployeeWithRelationsSchema = EmployeeBaseSchema.extend({
 
 // Create Employee DTO Schema
 export const CreateEmployeeSchema = z.object({
-  employeeId: z.string().min(1, "Employee ID is required"),
   name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email format"),
+  email: z.email("Invalid email format"),
   phone: z.string().nullable().optional(),
   dateOfBirth: z.string().nullable().optional(),
   departmentId: z.number().nullable().optional(),
   jobRoleId: z.number().nullable().optional(),
   hireDate: z.string().nullable().optional(),
+  terminationDate: z.string().nullable().optional(),
   salary: z.number().nullable().optional(),
   leaveAllowance: z.number().nullable().optional(),
 });
@@ -54,6 +55,7 @@ export const UpdateEmployeeSchema = z.object({
   departmentId: z.number().nullable().optional(),
   jobRoleId: z.number().nullable().optional(),
   hireDate: z.string().nullable().optional(),
+  terminationDate: z.string().nullable().optional(),
   status: z.enum(["active", "inactive", "terminated"]).optional(),
   salary: z.number().nullable().optional(),
   leaveAllowance: z.number().nullable().optional(),
@@ -104,6 +106,7 @@ export class EmployeeDTO {
       departmentId: employee.departmentId ?? null,
       jobRoleId: employee.jobRoleId ?? null,
       hireDate: employee.hireDate?.toISOString() ?? null,
+      terminationDate: employee.terminationDate?.toISOString() ?? null,
       status: employee.status,
       salary: employee.salary ?? null,
       leaveAllowance: employee.leaveAllowance ?? null,
@@ -198,6 +201,9 @@ export class EmployeeDTO {
     }
     if (data.hireDate !== undefined) {
       prismaData.hireDate = data.hireDate ? new Date(data.hireDate) : null;
+    }
+    if (data.terminationDate !== undefined) {
+      prismaData.terminationDate = data.terminationDate ? new Date(data.terminationDate) : null;
     }
 
     // Handle department relation

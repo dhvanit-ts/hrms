@@ -22,9 +22,14 @@ import {
 import { Spinner } from "@/shared/components/ui/spinner";
 import { ErrorAlert } from "@/shared/components/ui/error-alert";
 import { extractErrorMessage } from "@/lib/utils";
+import { useEmployeeEmploymentDates } from "@/shared/hooks/useEmployeeEmploymentDates";
+import { getEmploymentDateConstraints, isDateWithinEmploymentPeriod } from "@/lib/dateConstraints";
+import { EmploymentDateInfo } from "@/shared/components/ui/employment-date-info";
+import { ConstrainedDateInput } from "@/shared/components/ui/constrained-date-input";
 
 export const LeaveManagement: React.FC = () => {
     const { employeeAccessToken: accessToken } = useAuth();
+    const { employmentDates } = useEmployeeEmploymentDates();
     const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
     const [balance, setBalance] = useState<LeaveBalance | null>(null);
     const [loading, setLoading] = useState(false);
@@ -103,6 +108,18 @@ export const LeaveManagement: React.FC = () => {
                 setFormError("End date cannot be before start date");
                 return;
             }
+
+            // Validate against employment period using the utility function
+            if (employmentDates) {
+                if (!isDateWithinEmploymentPeriod(startDate, employmentDates)) {
+                    setFormError("Start date is outside your employment period");
+                    return;
+                }
+                if (!isDateWithinEmploymentPeriod(endDate, employmentDates)) {
+                    setFormError("End date is outside your employment period");
+                    return;
+                }
+            }
         }
 
         setSubmitting(true);
@@ -161,6 +178,9 @@ export const LeaveManagement: React.FC = () => {
         });
     };
 
+    // Get date constraints for form inputs
+    const dateConstraints = getEmploymentDateConstraints(employmentDates);
+
     return (
         <div className="space-y-6">
             {/* Leave Balance Card */}
@@ -215,12 +235,10 @@ export const LeaveManagement: React.FC = () => {
                             <label className="block text-sm font-medium mb-2">
                                 Start Date
                             </label>
-                            <Input
-                                type="date"
+                            <ConstrainedDateInput
                                 value={formData.startDate}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, startDate: e.target.value })
-                                }
+                                onChange={(value) => setFormData({ ...formData, startDate: value })}
+                                employmentDates={employmentDates}
                                 required
                             />
                         </div>
@@ -231,12 +249,10 @@ export const LeaveManagement: React.FC = () => {
                             <label className="block text-sm font-medium mb-2">
                                 End Date
                             </label>
-                            <Input
-                                type="date"
+                            <ConstrainedDateInput
                                 value={formData.endDate}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, endDate: e.target.value })
-                                }
+                                onChange={(value) => setFormData({ ...formData, endDate: value })}
+                                employmentDates={employmentDates}
                                 required
                             />
                         </div>
@@ -254,6 +270,8 @@ export const LeaveManagement: React.FC = () => {
                             />
                         </div>
                     </div>
+
+                    <EmploymentDateInfo employmentDates={employmentDates} />
 
                     {formError && (
                         <ErrorAlert

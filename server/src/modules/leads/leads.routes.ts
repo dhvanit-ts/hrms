@@ -9,7 +9,7 @@ const router = Router();
 
 // All lead routes require authentication and manager/admin role
 router.use(authenticate);
-router.use(requireRoles("MANAGER", "ADMIN"));
+router.use(requireRoles("SUPER_ADMIN", "ADMIN", "MANAGER"));
 
 // Lead CRUD operations
 router.get("/", LeadsController.getLeads);

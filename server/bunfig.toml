@@ -1,0 +1,15 @@
+[build]
+entrypoints = ["src/server.ts"]  # main entry file
+outdir = "./dist"                # output directory
+target = "node"                 # target environment node
+format = "esm"                  # ES module output format
+
+# To enable source maps for debugging (optional)
+# sourcemap = "external"
+
+# Plugin to handle path alias "@/":
+[[plugins]]
+name = "path-alias"
+[[plugins.setup]]
+filter = "^@/"
+pathPrefix = "./src/"

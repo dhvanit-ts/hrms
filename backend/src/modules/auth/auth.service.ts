@@ -5,9 +5,9 @@ import { HttpError } from "@/core/http";
 import cache from "@/infra/services/cache/index";
 import * as authRepo from "@/modules/auth/auth.repo";
 import { hashPassword, verifyPassword } from "@/lib/crypto";
-import oauthService from "@/modules/auth/oauth/oauth.service";
-import tokenService from "@/modules/auth/tokens/token.service";
-import otpService from "@/modules/auth/otp/otp.service";
+import OAuthService from "@/modules/auth/oauth/oauth.service";
+import TokenService from "@/modules/auth/tokens/token.service";
+import OtpService from "@/modules/auth/otp/otp.service";
 import { runTransaction } from "@/infra/db/transactions";
 import { invalidateUserCache } from "./auth.cache";
 
@@ -27,11 +27,11 @@ class AuthService {
     res
       .cookie("accessToken", accessToken, {
         ...this.options,
-        maxAge: tokenService.accessTokenExpiryMs,
+        maxAge: TokenService.accessTokenExpiryMs,
       })
       .cookie("refreshToken", refreshToken, {
         ...this.options,
-        maxAge: tokenService.refreshTokenExpiryMs,
+        maxAge: TokenService.refreshTokenExpiryMs,
       });
   };
 
@@ -101,7 +101,7 @@ class AuthService {
         );
 
         const { accessToken, refreshToken } =
-          await tokenService.generateAndPersistTokens(
+          await TokenService.generateAndPersistTokens(
             createdUser.id,
             createdUser.username,
             req,
@@ -142,7 +142,7 @@ class AuthService {
       throw HttpError.badRequest("Invalid password", { service: "authService.loginAuthService" });
 
     const { accessToken, refreshToken } =
-      await tokenService.generateAndPersistTokens(user.id, user.username, req);
+      await TokenService.generateAndPersistTokens(user.id, user.username, req);
 
     return { user, accessToken, refreshToken };
   };
@@ -180,25 +180,25 @@ class AuthService {
       throw HttpError.unauthorized("Refresh token is invalid or not recognized", { service: "authService.refreshAccessTokenService" });
 
     const { accessToken, refreshToken } =
-      await tokenService.generateAndPersistTokens(user.id, user.username, req);
+      await TokenService.generateAndPersistTokens(user.id, user.username, req);
 
     return { accessToken, refreshToken };
   };
 
   static sendOtpService = async (email: string, username: string) => {
-    return otpService.sendOtp(email, username);
+    return OtpService.sendOtp(email, username);
   };
 
   static verifyOtpService = async (email: string, otp: string): Promise<boolean> => {
-    return otpService.verifyOtp(email, otp);
+    return OtpService.verifyOtp(email, otp);
   };
 
   static async handleGoogleOAuth(code: string, req: Request) {
-    return oauthService.handleGoogleOAuth(code, req);
+    return OAuthService.handleGoogleOAuth(code, req);
   }
 
   static async handleUserOAuth(email: string, username: string, req: Request) {
-    return oauthService.createUserFromOAuth(email, username, req);
+    return OAuthService.createUserFromOAuth(email, username, req);
   }
 }
 

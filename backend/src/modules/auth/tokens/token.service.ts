@@ -7,23 +7,23 @@ import { runTransaction } from "@/infra/db/transactions";
 import { DB } from "@/infra/db/types";
 
 class TokenService {
-  accessTokenExpiryMs = 1000 * 60 * parseInt(env.ACCESS_TOKEN_TTL || "0", 10);
-  refreshTokenExpiryMs =
+  static accessTokenExpiryMs = 1000 * 60 * parseInt(env.ACCESS_TOKEN_TTL || "0", 10);
+  static refreshTokenExpiryMs =
     1000 * 60 * 60 * 24 * parseInt(env.REFRESH_TOKEN_TTL || "0", 10);
 
-  generateAccessToken(id: string, username: string) {
+  static generateAccessToken(id: string, username: string) {
     return jwt.sign({ id, username }, env.ACCESS_TOKEN_SECRET, {
       expiresIn: `${env.ACCESS_TOKEN_TTL}m` as jwt.SignOptions["expiresIn"],
     });
   }
 
-  generateRefreshToken(id: string, username: string) {
+  static generateRefreshToken(id: string, username: string) {
     return jwt.sign({ id, username }, env.REFRESH_TOKEN_SECRET, {
       expiresIn: `${env.REFRESH_TOKEN_TTL}d` as jwt.SignOptions["expiresIn"],
     });
   }
 
-  async generateAndPersistTokens(
+  static async generateAndPersistTokens(
     id: string,
     username: string,
     _req: Request,
@@ -39,7 +39,7 @@ class TokenService {
     }, dbTx);
   }
 
-  createTempTokenPair(accessToken: string, refreshToken: string) {
+  static createTempTokenPair(accessToken: string, refreshToken: string) {
     const tempToken = randomUUID();
     return {
       tempToken,
@@ -48,4 +48,4 @@ class TokenService {
   }
 }
 
-export default new TokenService();
+export default TokenService;

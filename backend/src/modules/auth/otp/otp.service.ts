@@ -4,7 +4,7 @@ import { hashOTP } from "@/lib/crypto";
 import { HttpError } from "@/core/http";
 
 class OtpService {
-  async sendOtp(email: string, username: string) {
+  static async sendOtp(email: string, username: string) {
     const data = await mailService.send(
       email,
       "OTP",
@@ -24,7 +24,7 @@ class OtpService {
     return { otp: data.details.otp, messageId: data.id };
   }
 
-  async verifyOtp(email: string, otp: string) {
+  static async verifyOtp(email: string, otp: string) {
     const cached = await cache.get<string>(`otp:${email}`);
     if (!cached) return false;
 
@@ -36,4 +36,4 @@ class OtpService {
   }
 }
 
-export default new OtpService();
+export default OtpService;

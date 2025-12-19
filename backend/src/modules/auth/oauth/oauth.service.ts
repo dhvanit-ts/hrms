@@ -7,7 +7,7 @@ import tokenService from "@/modules/auth/tokens/token.service";
 import { HttpError } from "@/core/http";
 
 class OAuthService {
-  handleGoogleOAuth = async (code: string, req: Request) => {
+  static handleGoogleOAuth = async (code: string, req: Request) => {
     // 1. Exchange code for access token
     const { data } = await axios.post(
       "https://oauth2.googleapis.com/token",
@@ -62,7 +62,7 @@ class OAuthService {
     return { redirectUrl };
   };
 
-  createUserFromOAuth = async (
+  static createUserFromOAuth = async (
     email: string,
     username: string,
     req: Request
@@ -97,4 +97,4 @@ class OAuthService {
   };
 }
 
-export default new OAuthService();
+export default OAuthService;

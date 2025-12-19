@@ -31,8 +31,8 @@ export class RedisCacheProvider implements CacheProvider {
     }
   }
 
-  async del(key: string) {
-    return (await this.client.del(key)) > 0;
+  async del(...keys: string[]) {
+    return (await this.client.del(keys)) > 0;
   }
 
   async flush() {

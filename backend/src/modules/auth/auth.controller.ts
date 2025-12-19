@@ -1,37 +1,37 @@
-import { UseController, ApiResponse, ApiError } from "@/core/http";
+import { UseController, HttpError, HttpResponse } from "@/core/http";
 import { Request, Response } from "express";
-import authService from "./auth.service";
+import AuthService from "./auth.service";
 import { AuthenticatedRequest } from "@/core/middlewares";
 import * as authSchemas from "@/modules/auth/auth.schema";
-import withValidation from "@/lib/withValidation";
+import { withBodyValidation } from "@/lib/validation";
 import { toInternalUser } from "../user/user.dto";
 
 class AuthController {
-  static loginUser = withValidation(authSchemas.loginSchema, this.loginUserHandler)
+  static loginUser = withBodyValidation(authSchemas.loginSchema, this.loginUserHandler)
 
   @UseController()
   static async loginUserHandler(req: Request, res: Response) {
     const { email, password } = req.body;
 
     const { user, accessToken, refreshToken } =
-      await authService.loginAuthService(email, password, req);
+      await AuthService.loginAuthService(email, password, req);
 
-    authService.setAuthCookies(res, accessToken, refreshToken);
+    AuthService.setAuthCookies(res, accessToken, refreshToken);
 
-    return ApiResponse.ok(
+    return HttpResponse.ok(
+      "User logged in successfully!",
       toInternalUser(user),
-      "User logged in successfully!"
     );
   }
 
   @UseController()
   static async logoutUser(req: AuthenticatedRequest, res: Response) {
 
-    await authService.logoutAuthService(req.user.id);
+    await AuthService.logoutAuthService(req.user.id);
 
-    authService.clearAuthCookies(res);
+    AuthService.clearAuthCookies(res);
 
-    return ApiResponse.ok({ success: true }, "User logged out successfully");
+    return HttpResponse.ok("User logged out successfully")
   }
 
   @UseController()
@@ -40,48 +40,41 @@ class AuthController {
       req.cookies.refreshToken || req.body.refreshToken;
 
     if (!incomingRefreshToken)
-      throw ApiError.unauthorized("Unauthorized request", { service: "authService.refreshAccessTokenService" });
+      throw HttpError.unauthorized("Unauthorized request", { service: "authService.refreshAccessTokenService" });
 
     const { accessToken, refreshToken } =
-      await authService.refreshAccessTokenService(incomingRefreshToken, req);
+      await AuthService.refreshAccessTokenService(incomingRefreshToken, req);
 
-    authService.setAuthCookies(res, accessToken, refreshToken);
+    AuthService.setAuthCookies(res, accessToken, refreshToken);
 
-    return ApiResponse.ok(
-      { success: true },
-      "Access token refreshed successfully"
-    );
+    return HttpResponse.ok("Access token refreshed successfully");
   }
 
-  static sendOtp = withValidation(authSchemas.otpSchema, this.sendOtpHandler)
+  static sendOtp = withBodyValidation(authSchemas.otpSchema, this.sendOtpHandler)
 
   @UseController()
-  static async sendOtpHandler(req: Request, _res: Response) {
+  static async sendOtpHandler(req: Request) {
     const { email, username } = req.body;
 
-    const { messageId } = await authService.sendOtpService(email, username);
+    const { messageId } = await AuthService.sendOtpService(email, username);
 
-    return ApiResponse.ok(
-      {
-        messageId,
-      },
-      "OTP sent successfully"
+    return HttpResponse.ok(
+      "OTP sent successfully",
+      { messageId },
     );
   }
 
-  static verifyOtp = withValidation(authSchemas.verifyOtpSchema, this.verifyOtpHandler)
+  static verifyOtp = withBodyValidation(authSchemas.verifyOtpSchema, this.verifyOtpHandler)
 
   @UseController()
-  static async verifyOtpHandler(req: Request, _res: Response) {
+  static async verifyOtpHandler(req: Request) {
     const { email, otp } = req.body;
 
-    const isVerified = await authService.verifyOtpService(email, otp);
+    const isVerified = await AuthService.verifyOtpService(email, otp);
 
-    return ApiResponse.ok(
-      {
-        isVerified,
-      },
-      isVerified ? "OTP verified successfully" : "Invalid OTP"
+    return HttpResponse.ok(
+      isVerified ? "OTP verified successfully" : "Invalid OTP",
+      { isVerified },
     );
   }
 }

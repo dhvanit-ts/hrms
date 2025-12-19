@@ -1,23 +1,26 @@
-import type { NextFunction, Request, RequestHandler, Response } from "express";
-import ApiResponse from "./response";
+import type { RequestHandler } from "express";
 import ApiError from "./error";
+import { HttpController } from "./types";
+import HttpResponse from "./response";
 
-function executeController(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>
-) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next))
-      .then((result) => {
-        if (result instanceof ApiResponse) {
-          return res.status(result.statusCode).json(result);
-        }
-      })
-      .catch(next);
+function executeController(fn: HttpController): RequestHandler {
+  return async (req, res, next) => {
+    try {
+      const result = await fn(req, res, next);
+
+      if (!(result instanceof HttpResponse)) {
+        throw new Error("Controller must return HttpResponse");
+      }
+
+      result.send(res);
+    } catch (err) {
+      next(err);
+    }
   };
 }
 
 export const controllerHandler = (
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>
+  fn: HttpController
 ): RequestHandler => executeController(fn);
 
 export function UseController() {
@@ -26,24 +29,16 @@ export function UseController() {
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) => {
-    const original = descriptor.value;
+    const original = descriptor.value as HttpController;
 
-    if (typeof original !== "function") {
-      throw new Error("UseController decorator can only be applied to methods.");
-    }
-
-    descriptor.value = executeController(function (
-      this: unknown,
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ) {
-
+    descriptor.value = executeController(async (req, res, next) => {
       if ("user" in req && req.user === undefined) {
-        throw ApiError.unauthorized("Unauthorized request", { service: propertyKey })
+        throw ApiError.unauthorized("Unauthorized request", {
+          service: propertyKey,
+        });
       }
 
-      return original.call(this, req, res, next);
+      return original(req, res, next);
     });
 
     return descriptor;

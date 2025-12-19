@@ -4,7 +4,7 @@ import { env } from "@/config/env";
 import cache from "@/infra/services/cache/index";
 import * as authRepo from "@/modules/auth/auth.repo";
 import tokenService from "@/modules/auth/tokens/token.service";
-import { ApiError } from "@/core/http";
+import { HttpError } from "@/core/http";
 
 class OAuthService {
   handleGoogleOAuth = async (code: string, req: Request) => {
@@ -76,11 +76,7 @@ class OAuthService {
     });
 
     if (!createdUser)
-      throw new ApiError({
-        statusCode: 500,
-        message: "Failed to create user",
-        data: { service: "authService.handleUserOAuth" },
-      });
+      throw HttpError.internal("Failed to create user", { service: "authService.handleUserOAuth" });
 
     const { accessToken, refreshToken } =
       await tokenService.generateAndPersistTokens(
@@ -90,12 +86,7 @@ class OAuthService {
       );
 
     if (!accessToken || !refreshToken) {
-      throw new ApiError({
-        statusCode: 500,
-        message: "Failed to generate access and refresh token",
-        code: "INTERNAL_SERVER_ERROR",
-        data: { service: "authService.handleUserOAuth" },
-      });
+      throw HttpError.internal("Failed to generate access and refresh token", { service: "authService.handleUserOAuth" });
     }
 
     return {

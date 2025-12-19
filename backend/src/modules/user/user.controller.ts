@@ -1,116 +1,114 @@
-import userService from "./user.service";
-import authService from "@/modules/auth/auth.service";
+import UserService from "./user.service";
+import AuthService from "@/modules/auth/auth.service";
 import type { Request, Response } from "express";
 import type { AuthenticatedRequest } from "@/core/middlewares";
-import { toUserSafe } from "./user.dto";
-import { ApiError, ApiResponse, AsyncHandler } from "@/core/http";
+import { toPublicUser } from "./user.dto";
+import * as authSchemas from "@/modules/user/user.schema";
+import { HttpError, HttpResponse, UseController } from "@/core/http";
+import { withBodyValidation, withParamsValidation, withQueryValidation } from "@/lib/validation";
 
 class UserController {
-  @AsyncHandler()
-  async getUserById(req: Request, _res: Response) {
+
+  static getUserById = withParamsValidation(authSchemas.userIdSchema, this.getUserByIdHandler)
+
+  @UseController()
+  static async getUserByIdHandler(req: Request) {
     const { userId } = req.params;
-
-    const user = await userService.getUserByIdService(userId);
-
-    return ApiResponse.ok(toUserSafe(user), "User fetched successfully");
+    const user = await UserService.getUserByIdService(userId);
+    return HttpResponse.ok("User fetched successfully", toPublicUser(user));
   }
 
-  @AsyncHandler()
-  async searchUsers(req: Request, _res: Response) {
+  static searchUsers = withParamsValidation(authSchemas.searchQuerySchema, this.searchUsersHandler)
+
+  @UseController()
+  static async searchUsersHandler(req: Request) {
     const { query } = req.params;
-
-    const users = await userService.searchUsersService(query);
-
-    return ApiResponse.ok(users, "Users fetched successfully");
+    const users = await UserService.searchUsersService(query);
+    return HttpResponse.ok("Users fetched successfully", users);
   }
 
-  @AsyncHandler()
-  async googleCallback(req: Request, res: Response) {
+  static googleCallback = withQueryValidation(authSchemas.googleCallbackSchema, this.googleCallbackHandler)
+
+  @UseController()
+  static async googleCallbackHandler(req: Request) {
     const code = req.query.code as string;
-
-    const { redirectUrl } = await authService.handleGoogleOAuth(code, req);
-
-    return res.status(302).redirect(redirectUrl);
+    const { redirectUrl } = await AuthService.handleGoogleOAuth(code, req);
+    return HttpResponse.redirect(redirectUrl)
   }
 
-  @AsyncHandler()
-  async handleUserOAuth(req: Request, res: Response) {
+  static handleUserOAuth = withBodyValidation(authSchemas.userOAuthSchema, this.handleUserOAuthHandler)
+
+  @UseController()
+  static async handleUserOAuthHandler(req: Request, res: Response) {
     const { email, username } = req.body;
 
     const { createdUser, accessToken, refreshToken } =
-      await authService.handleUserOAuth(email, username, req);
+      await AuthService.handleUserOAuth(email, username, req);
 
-    authService.setAuthCookies(res, accessToken, refreshToken);
-    return ApiResponse.created(
-      toUserSafe(createdUser),
-      "User created successfully!"
+    AuthService.setAuthCookies(res, accessToken, refreshToken);
+    return HttpResponse.created(
+      "User created successfully!",
+      toPublicUser(createdUser)
     );
   }
 
-  @AsyncHandler()
-  async handleTempToken(req: Request, res: Response) {
+  static handleTempToken = withBodyValidation(authSchemas.tempTokenSchema, this.redeemTempToken)
+
+  @UseController()
+  static async redeemTempToken(req: Request, res: Response) {
     const { tempToken } = req.body;
 
-    const tokens = await authService.redeemTempToken(tempToken);
-
+    const tokens = await AuthService.redeemTempToken(tempToken);
     if (!tokens)
-      throw new ApiError({
-        statusCode: 400,
-        message: "Invalid or expired token",
-        code: "INVALID_TEMP_TOKEN",
-        data: { service: "authService.handleTempToken" },
-      });
+      throw HttpError.badRequest("Invalid or expired token", { service: "AuthService.handleTempToken" });
 
     const { accessToken, refreshToken } = tokens;
 
-    authService.setAuthCookies(res, accessToken, refreshToken);
-    return ApiResponse.ok({
-      success: true,
-    });
+    AuthService.setAuthCookies(res, accessToken, refreshToken);
+    return HttpResponse.ok("Token handled successfully");
   }
 
-  @AsyncHandler()
-  async initializeUser(req: Request, _res: Response) {
+  static initializeUser = withBodyValidation(authSchemas.initializeUserSchema, this.initializeUserHandler)
+
+  @UseController()
+  static async initializeUserHandler(req: Request) {
     const { email, username, password } = req.body;
 
-    const savedEmail = await authService.initializeAuthService(
+    const savedEmail = await AuthService.initializeAuthService(
       email,
       username,
       password
     );
 
-    return ApiResponse.created(
+    return HttpResponse.created(
+      "User initialized successfully and OTP sent",
       { email: savedEmail },
-      "User initialized successfully and OTP sent"
     );
   }
 
-  @AsyncHandler()
-  async registerUser(req: Request, res: Response) {
+  static registerUser = withBodyValidation(authSchemas.registrationSchema, this.registerUserHandler)
+
+  @UseController()
+  static async registerUserHandler(req: Request, res: Response) {
     const { email } = req.body;
 
     const { createdUser, accessToken, refreshToken } =
-      await authService.registerAuthService(email, req);
+      await AuthService.registerAuthService(email, req);
 
-    authService.setAuthCookies(res, accessToken, refreshToken);
-    return ApiResponse.created(
-      toUserSafe(createdUser),
-      "Form submitted successfully!"
+    AuthService.setAuthCookies(res, accessToken, refreshToken);
+    return HttpResponse.created(
+      "Form submitted successfully!",
+      toPublicUser(createdUser),
     );
   }
 
-  @AsyncHandler()
-  async getUserData(req: AuthenticatedRequest, _res: Response) {
+  @UseController()
+  static async getUserData(req: AuthenticatedRequest) {
     if (!req.user || !req.user.id) {
-      throw new ApiError({
-        statusCode: 404,
-        message: "User not found",
-        data: { service: "authService.getUserDataService" },
-      });
+      throw HttpError.notFound("User not found", { service: "AuthService.getUserDataService" });
     }
-
-    return ApiResponse.ok(req.user, "User fetched successfully!");
+    return HttpResponse.ok("User fetched successfully!", req.user);
   }
 }
 
-export default new UserController();
+export default UserController;

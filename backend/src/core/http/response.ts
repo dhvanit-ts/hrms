@@ -1,6 +1,6 @@
 import type { Response } from "express";
 
-class ApiResponse<T = unknown> {
+class HttpResponse<T = unknown> {
   readonly success: boolean;
   readonly statusCode: number;
   readonly message: string;
@@ -9,6 +9,7 @@ class ApiResponse<T = unknown> {
   readonly errors?: Record<string, unknown>[];
   readonly stack?: string;
   readonly meta?: Record<string, unknown>;
+  readonly redirectUrl?: string;
 
   private constructor({
     statusCode,
@@ -19,6 +20,7 @@ class ApiResponse<T = unknown> {
     errors,
     stack,
     meta,
+    redirectUrl,
   }: {
     statusCode: number;
     success: boolean;
@@ -28,6 +30,7 @@ class ApiResponse<T = unknown> {
     errors?: Record<string, unknown>[];
     stack?: string;
     meta?: Record<string, unknown>;
+    redirectUrl?: string;
   }) {
     this.statusCode = statusCode;
     this.success = success;
@@ -37,10 +40,11 @@ class ApiResponse<T = unknown> {
     this.errors = errors;
     this.stack = stack;
     this.meta = meta;
+    this.redirectUrl = redirectUrl;
   }
 
-  static ok<T>(data: T, message = "Success") {
-    return new ApiResponse<T>({
+  static ok<T>(message = "Success", data?: T) {
+    return new HttpResponse<T>({
       statusCode: 200,
       success: true,
       message,
@@ -48,8 +52,8 @@ class ApiResponse<T = unknown> {
     });
   }
 
-  static created<T>(data: T, message = "Created successfully") {
-    return new ApiResponse<T>({
+  static created<T>(message = "Created successfully", data: T) {
+    return new HttpResponse<T>({
       statusCode: 201,
       success: true,
       message,
@@ -57,7 +61,18 @@ class ApiResponse<T = unknown> {
     });
   }
 
-  // ApiResponse.ts
+  static redirect(
+    url: string,
+    statusCode: 301 | 302 | 303 | 307 | 308 = 302
+  ) {
+    return new HttpResponse({
+      statusCode,
+      success: true,
+      message: "Redirect",
+      redirectUrl: url,
+    });
+  }
+
   static error(
     statusCode: number,
     message: string,
@@ -66,7 +81,7 @@ class ApiResponse<T = unknown> {
     stack?: string,
     meta?: Record<string, unknown>
   ) {
-    return new ApiResponse({
+    return new HttpResponse({
       statusCode,
       success: false,
       message,
@@ -78,6 +93,11 @@ class ApiResponse<T = unknown> {
   }
 
   send(res: Response): void {
+    if (this.redirectUrl) {
+      res.redirect(this.statusCode, this.redirectUrl);
+      return;
+    }
+
     res.status(this.statusCode).json({
       success: this.success,
       statusCode: this.statusCode,
@@ -91,4 +111,4 @@ class ApiResponse<T = unknown> {
   }
 }
 
-export default ApiResponse;
+export default HttpResponse;

@@ -3,38 +3,23 @@ import { User } from "@/shared/types/User";
 import logger from "@/core/logger";
 import { withCache } from "@/lib/cached";
 import { DB } from "@/infra/db/types";
-
-// TODO: Cache invalidation is missing
-// That means, when you update some field, user will get old cached value
-// cached.invalidate(keys.id(id));
-// cached.invalidate(keys.email(email));
-// cached.invalidate(keys.username(username));
-
-// You'll invalidate (delete) cached stuff by key in the service itself
-
-const keys = {
-  id: (id: string) => `user:id:${id}`,
-  email: (email: string) => `user:email:${email}`,
-  username: (u: string) => `user:username:${u}`,
-  search: (q: string, page: number = 0, limit: number = 0) =>
-    `user:search:${q.trim().toLowerCase()}:${page}:${limit}`,
-};
-
-export const UserCacheKeys = keys
+import { UserCacheKeys } from "./auth.cache";
 
 export const findById = (userId: string, dbTx?: DB) =>
-  withCache(keys.id(userId), () => authAdapter.findById(userId, dbTx));
+  withCache(UserCacheKeys.id(userId), () => authAdapter.findById(userId, dbTx));
+
+export const findByIdForAuth = (userId: string, dbTx?: DB) => authAdapter.findById(userId, dbTx);
 
 export const findByEmail = (email: string, dbTx?: DB) =>
-  withCache(keys.email(email), () => authAdapter.findByEmail(email, dbTx));
+  withCache(UserCacheKeys.email(email), () => authAdapter.findByEmail(email, dbTx));
 
 export const findByUsername = (username: string, dbTx?: DB) =>
-  withCache(keys.username(username), () =>
+  withCache(UserCacheKeys.username(username), () =>
     authAdapter.findByUsername(username, dbTx)
   );
 
 export const searchUsers = (query: string, dbTx?: DB) =>
-  withCache(keys.search(query), () => authAdapter.searchUsers(query, dbTx));
+  withCache(UserCacheKeys.search(query), () => authAdapter.searchUsers(query, dbTx));
 
 export const updateRefreshToken = async (
   id: string,

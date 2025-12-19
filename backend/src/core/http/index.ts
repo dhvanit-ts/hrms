@@ -1,5 +1,5 @@
-import ApiResponse from "./response";
-import ApiError from "./error";
+import HttpResponse from "./response";
+import HttpError from "./error";
 import { controllerHandler, UseController } from "./controller";
 
-export { ApiResponse, ApiError, UseController, controllerHandler };
+export { HttpResponse, HttpError, UseController, controllerHandler };

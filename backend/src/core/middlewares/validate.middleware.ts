@@ -2,10 +2,11 @@ import type { NextFunction, Request, Response } from "express";
 import type { ZodType } from "zod";
 import ApiError from "@/core/http/error";
 
+export type ValidationDatasource = "body" | "query" | "params"
 type ValidateRequest = Request & { validated?: Record<string, unknown> };
 
 export const validate =
-  <T>(schema: ZodType<T>, dataSource: "body" | "query" | "params" = "body") =>
+  <T>(schema: ZodType<T>, dataSource: ValidationDatasource = "body") =>
     (req: ValidateRequest, _res: Response, next: NextFunction) => {
       const data = req[dataSource];
 

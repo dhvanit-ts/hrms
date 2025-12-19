@@ -1,4 +1,4 @@
-class ApiError extends Error {
+class HttpError extends Error {
   statusCode: number;
   code: string;
   success: false;
@@ -33,8 +33,8 @@ class ApiError extends Error {
 
   // TYPE CHECKER
 
-  static isApiError(err: unknown): err is ApiError {
-    return err instanceof ApiError;
+  static isHttpError(err: unknown): err is HttpError {
+    return err instanceof HttpError;
   }
 
   // FACTORIES
@@ -44,7 +44,7 @@ class ApiError extends Error {
     data?: unknown,
     errors?: Record<string, unknown>[]
   ) {
-    return new ApiError({
+    return new HttpError({
       statusCode: 400,
       code: "BAD_REQUEST",
       message,
@@ -57,7 +57,7 @@ class ApiError extends Error {
     message = "Unauthorized",
     data?: unknown
   ) {
-    return new ApiError({
+    return new HttpError({
       statusCode: 401,
       code: "UNAUTHORIZED",
       message,
@@ -69,7 +69,7 @@ class ApiError extends Error {
     message = "Forbidden",
     data?: unknown
   ) {
-    return new ApiError({
+    return new HttpError({
       statusCode: 403,
       code: "FORBIDDEN",
       message,
@@ -81,7 +81,7 @@ class ApiError extends Error {
     message = "Resource not found",
     data?: unknown
   ) {
-    return new ApiError({
+    return new HttpError({
       statusCode: 404,
       code: "NOT_FOUND",
       message,
@@ -93,7 +93,7 @@ class ApiError extends Error {
     message = "Internal server error",
     data?: unknown
   ) {
-    return new ApiError({
+    return new HttpError({
       statusCode: 500,
       code: "INTERNAL_ERROR",
       message,
@@ -102,4 +102,4 @@ class ApiError extends Error {
   }
 }
 
-export default ApiError;
+export default HttpError;

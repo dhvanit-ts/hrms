@@ -19,8 +19,8 @@ export class NodeCacheProvider implements CacheProvider {
     return this.cache.set(key, value, ttl);
   }
 
-  async del(key: string) {
-    return this.cache.del(key) > 0;
+  async del(...keys: string[]) {
+    return this.cache.del(keys) > 0;
   }
 
   async flush() {

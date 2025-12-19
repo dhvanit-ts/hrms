@@ -4,7 +4,7 @@ export class MultiTierCacheProvider implements CacheProvider {
     private l1: CacheProvider,
     private l2: CacheProvider,
     private ttl?: number
-  ) {}
+  ) { }
 
   async get<T>(key: string) {
     const l1Val = await this.l1.get<T>(key);
@@ -25,9 +25,9 @@ export class MultiTierCacheProvider implements CacheProvider {
     return l1Success && l2Success;
   }
 
-  async del(key: string) {
-    const l1Success = await this.l1.del(key);
-    const l2Success = await this.l2.del(key);
+  async del(...keys: string[]) {
+    const l1Success = await this.l1.del(...keys);
+    const l2Success = await this.l2.del(...keys);
     return l1Success && l2Success;
   }
 

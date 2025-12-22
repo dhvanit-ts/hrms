@@ -40,6 +40,9 @@ class ErrorMiddlewares {
       error.errors,
       isDev ? error.stack : undefined,
       error.meta as Record<string, unknown> | undefined
+      //  meta: isDev
+      // ? { ...httpErr.meta, stack: (httpErr as Error).stack }
+      // : httpErr.meta as Record<string, unknown> | undefined,
     ).send(res);
   };
 

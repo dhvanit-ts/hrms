@@ -1,4 +1,5 @@
 import type { Response } from "express";
+import type { ErrorDetail } from "./errorDetail"; // wherever you stick it
 
 class HttpResponse<T = unknown> {
   readonly success: boolean;
@@ -6,41 +7,28 @@ class HttpResponse<T = unknown> {
   readonly message: string;
   readonly code?: string;
   readonly data?: T;
-  readonly errors?: Record<string, unknown>[];
-  readonly stack?: string;
+  readonly errors?: ErrorDetail[];
   readonly meta?: Record<string, unknown>;
   readonly redirectUrl?: string;
 
-  private constructor({
-    statusCode,
-    success,
-    message,
-    code,
-    data,
-    errors,
-    stack,
-    meta,
-    redirectUrl,
-  }: {
+  private constructor(args: {
     statusCode: number;
     success: boolean;
     message: string;
     code?: string;
     data?: T;
-    errors?: Record<string, unknown>[];
-    stack?: string;
+    errors?: ErrorDetail[];
     meta?: Record<string, unknown>;
     redirectUrl?: string;
   }) {
-    this.statusCode = statusCode;
-    this.success = success;
-    this.message = message;
-    this.code = code;
-    this.data = data;
-    this.errors = errors;
-    this.stack = stack;
-    this.meta = meta;
-    this.redirectUrl = redirectUrl;
+    this.statusCode = args.statusCode;
+    this.success = args.success;
+    this.message = args.message;
+    this.code = args.code;
+    this.data = args.data;
+    this.errors = args.errors;
+    this.meta = args.meta;
+    this.redirectUrl = args.redirectUrl;
   }
 
   static ok<T>(message = "Success", data?: T) {
@@ -73,21 +61,25 @@ class HttpResponse<T = unknown> {
     });
   }
 
-  static error(
-    statusCode: number,
-    message: string,
-    code?: string,
-    errors?: Record<string, unknown>[],
-    stack?: string,
-    meta?: Record<string, unknown>
-  ) {
+  static error({
+    statusCode,
+    message,
+    code,
+    errors,
+    meta,
+  }: {
+    statusCode: number;
+    message: string;
+    code?: string;
+    errors?: ErrorDetail[];
+    meta?: Record<string, unknown>;
+  }) {
     return new HttpResponse({
       statusCode,
       success: false,
       message,
       code,
       errors,
-      stack,
       meta,
     });
   }
@@ -97,16 +89,13 @@ class HttpResponse<T = unknown> {
       res.redirect(this.statusCode, this.redirectUrl);
       return;
     }
-
     res.status(this.statusCode).json({
       success: this.success,
-      statusCode: this.statusCode,
       message: this.message,
-      code: this.code,
+      code: this.code ?? undefined,
       data: this.data ?? null,
-      meta: this.meta ?? null,
       errors: this.errors ?? null,
-      // ...(this.stack ? { stack: this.stack } : {}),
+      meta: this.meta ?? null,
     });
   }
 }

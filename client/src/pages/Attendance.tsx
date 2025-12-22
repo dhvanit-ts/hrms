@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Calendar, Clock, Home, Building } from 'lucide-react';
+import { Calendar, Clock, Home, Building, AlertCircle } from 'lucide-react';
 import {
   RiCheckboxCircleFill,
   RiErrorWarningFill,
@@ -30,8 +30,9 @@ const getAttendanceIcon = (attendance: attendanceApi.Attendance | null) => {
 
   const duration = attendance.duration || 0;
   const hours = duration / (1000 * 60 * 60);
+  const isLate = attendance.type?.includes('_LATE') || false;
 
-  if (hours >= 8) return <RiCheckboxCircleFill className="w-5 h-5 text-green-500" />; // Full day
+  if (hours >= 8) return <RiCheckboxCircleFill className={`w-5 h-5 ${isLate ? 'text-orange-500' : 'text-green-500'}`} />; // Full day
   if (hours >= 6) return <RiErrorWarningFill className="w-5 h-5 text-orange-500" />; // Partial day
   if (hours >= 4) return <RiIndeterminateCircleFill className="w-5 h-5 text-yellow-500" />; // Half day
   return <RiCloseCircleFill className="w-5 h-5 text-red-500" />; // Short day
@@ -45,11 +46,15 @@ const getStatusText = (attendance: attendanceApi.Attendance | null) => {
 
   const duration = attendance.duration || 0;
   const hours = duration / (1000 * 60 * 60);
+  const isLate = attendance.type?.includes('_LATE') || false;
 
-  if (hours >= 8) return 'Full Day';
-  if (hours >= 6) return 'Partial';
-  if (hours >= 4) return 'Half Day';
-  return 'Short Day';
+  let baseStatus = '';
+  if (hours >= 8) baseStatus = 'Full Day';
+  else if (hours >= 6) baseStatus = 'Partial';
+  else if (hours >= 4) baseStatus = 'Half Day';
+  else baseStatus = 'Short Day';
+
+  return isLate ? `${baseStatus} (Late)` : baseStatus;
 };
 
 // Helper function to format duration
@@ -421,6 +426,9 @@ export const AttendancePage: React.FC = () => {
                           <div className="flex items-center gap-1">
                             <Clock className="w-3 h-3 text-green-600" />
                             <span>In: {formatTime(attendance.checkIn)}</span>
+                            {attendance.type?.includes('_LATE') && (
+                              <AlertCircle className="w-3 h-3 text-amber-500" />
+                            )}
                           </div>
                           <div className="flex items-center gap-1">
                             <Clock className="w-3 h-3 text-red-600" />
@@ -432,12 +440,15 @@ export const AttendancePage: React.FC = () => {
                           </div>
                           {attendance.type && (
                             <div className="flex items-center gap-1">
-                              {attendance.type === 'WFH' ? (
+                              {attendance.type.includes('WFH') ? (
                                 <Home className="w-3 h-3 text-purple-600" />
                               ) : (
                                 <Building className="w-3 h-3 text-blue-600" />
                               )}
-                              <span>{attendance.type}</span>
+                              <span>{attendance.type.replace('_LATE', '')}</span>
+                              {attendance.type.includes('_LATE') && (
+                                <span className="text-xs text-amber-600">(Late)</span>
+                              )}
                             </div>
                           )}
                         </div>

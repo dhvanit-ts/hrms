@@ -4,6 +4,34 @@ import { ipValidationService } from "@/infra/services/ip-validation.service";
 import ApiError from "@/core/http/ApiError.js";
 import { AttendanceValidationService } from "./attendance-validation.service.js";
 
+/**
+ * Helper function to validate shift timing and determine if check-in is late
+ */
+function validateShiftTiming(shift: { startTime: string; endTime: string }, currentTime: Date) {
+  const currentHour = currentTime.getHours();
+  const currentMinute = currentTime.getMinutes();
+  const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+  const [shiftStartHour, shiftStartMinute] = shift.startTime.split(':').map(Number);
+  const shiftStartInMinutes = shiftStartHour * 60 + shiftStartMinute;
+
+  // Allow check-in 30 minutes before shift start
+  const allowedCheckInTime = shiftStartInMinutes - 30;
+
+  // Buffer time: 15 minutes after shift start time
+  const bufferEndTime = shiftStartInMinutes + 15;
+
+  return {
+    currentTimeInMinutes,
+    shiftStartInMinutes,
+    allowedCheckInTime,
+    bufferEndTime,
+    isEarly: currentTimeInMinutes < allowedCheckInTime,
+    isLate: currentTimeInMinutes > shiftStartInMinutes && currentTimeInMinutes <= bufferEndTime,
+    isBeyondBuffer: currentTimeInMinutes > bufferEndTime,
+  };
+}
+
 export async function checkIn(employeeId: string, ipAddress: string, date?: string) {
   const d = date ? new Date(date) : new Date();
   const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -44,6 +72,7 @@ export async function checkIn(employeeId: string, ipAddress: string, date?: stri
   const attendanceType = ipValidationService.getAttendanceType(ipAddress);
 
   // Validate shift timing if employee has a shift assigned
+  let isLateCheckIn = false;
   if (employee.shift) {
     const currentTime = new Date();
     const currentHour = currentTime.getHours();
@@ -56,12 +85,20 @@ export async function checkIn(employeeId: string, ipAddress: string, date?: stri
     // Allow check-in 30 minutes before shift start
     const allowedCheckInTime = shiftStartInMinutes - 30;
 
+    // Buffer time: 15 minutes after shift start time
+    const bufferEndTime = shiftStartInMinutes + 15;
+
     if (currentTimeInMinutes < allowedCheckInTime) {
       throw new ApiError({
         statusCode: 409,
         code: "EARLY_CHECK_IN",
         message: `Cannot check in before ${Math.floor(allowedCheckInTime / 60).toString().padStart(2, '0')}:${(allowedCheckInTime % 60).toString().padStart(2, '0')}. Your shift starts at ${employee.shift.startTime}.`,
       });
+    }
+
+    // Check if employee is checking in after buffer time (mark as late only after buffer period)
+    if (currentTimeInMinutes > bufferEndTime) {
+      isLateCheckIn = true;
     }
   }
 
@@ -70,7 +107,7 @@ export async function checkIn(employeeId: string, ipAddress: string, date?: stri
       where: { id: existing.id },
       data: {
         checkIn: new Date(),
-        type: attendanceType,
+        type: isLateCheckIn ? `${attendanceType}_LATE` : attendanceType,
         ipAddress: ipAddress,
         shiftId: employee.shiftId,
       },
@@ -80,11 +117,27 @@ export async function checkIn(employeeId: string, ipAddress: string, date?: stri
         employeeId: eid,
         date: day,
         checkIn: new Date(),
-        type: attendanceType,
+        type: isLateCheckIn ? `${attendanceType}_LATE` : attendanceType,
         ipAddress: ipAddress,
         shiftId: employee.shiftId,
       },
     });
+
+  // Calculate lateness details for audit log
+  let latenessMinutes = 0;
+  if (employee.shift && isLateCheckIn) {
+    const currentTime = new Date();
+    const currentHour = currentTime.getHours();
+    const currentMinute = currentTime.getMinutes();
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+    const [shiftStartHour, shiftStartMinute] = employee.shift.startTime.split(':').map(Number);
+    const shiftStartInMinutes = shiftStartHour * 60 + shiftStartMinute;
+    const bufferEndTime = shiftStartInMinutes + 15;
+
+    // Calculate lateness from buffer end time, not shift start time
+    latenessMinutes = currentTimeInMinutes - bufferEndTime;
+  }
 
   await writeAuditLog({
     action: "CHECK_IN",
@@ -94,6 +147,9 @@ export async function checkIn(employeeId: string, ipAddress: string, date?: stri
     metadata: {
       shiftId: employee.shiftId,
       shiftName: employee.shift?.name,
+      isLateCheckIn: isLateCheckIn,
+      latenessMinutes: latenessMinutes,
+      checkInTime: new Date().toTimeString(),
     },
   });
 

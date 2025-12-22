@@ -31,7 +31,6 @@ import { http } from '@/services/api/http';
 import * as departmentsApi from '@/services/api/departments';
 import * as jobRolesApi from '@/services/api/job-roles';
 import type { CreateEmployeeDTO } from '@/types/employee.dto';
-import { AssignShiftDialog } from '@/shared/components/AssignShiftDialog';
 
 const employeeSchema = z.object({
   name: z.string().min(1, "Full name is required"),
@@ -473,15 +472,6 @@ export const EmployeesPage: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => handleAssignShift(r)}
-                          >
-                            <RotateCcw className="h-3.5 w-3.5 mr-1" />
-                            Assign Shift
-                          </Button>
                           <Link to={`/dashboard/employees/${r.id}`}>
                             <Button variant="outline" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
                               <Edit3 className="h-3.5 w-3.5 mr-1" />
@@ -498,16 +488,6 @@ export const EmployeesPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* Assign Shift Dialog */}
-      {selectedEmployee && (
-        <AssignShiftDialog
-          open={assignShiftDialogOpen}
-          onOpenChange={setAssignShiftDialogOpen}
-          employee={selectedEmployee}
-          onShiftAssigned={handleShiftAssigned}
-        />
-      )}
     </div>
   );
 };

@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/shared/components/ui/table';
+import { Clock, AlertCircle, Info } from 'lucide-react';
 import {
   punchIn,
   punchOut,
@@ -41,6 +42,7 @@ export function AttendanceDashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<'punch-in' | 'punch-out' | 'start-break' | 'end-break' | null>(null);
+  const [shiftInfo, setShiftInfo] = useState<{ startTime: string; endTime: string; name: string } | null>(null);
 
   // Date filter state
   const [dateFilters, setDateFilters] = useState<AttendanceHistoryParams>({});
@@ -89,7 +91,15 @@ export function AttendanceDashboard() {
     } catch (err: any) {
       const errorMessage = extractErrorMessage(err);
       console.error('Failed to punch in:', err);
-      setError(errorMessage);
+
+      // Enhanced error messages for buffer time scenarios
+      if (err.response?.data?.code === 'EARLY_CHECK_IN') {
+        setError(`⏰ ${errorMessage}`);
+      } else if (errorMessage.includes('buffer')) {
+        setError(`⚠️ Late Check-in: ${errorMessage}`);
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setActionLoading(null);
     }
@@ -170,6 +180,31 @@ export function AttendanceDashboard() {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
+  };
+
+  const isLateCheckIn = (record: Attendance) => {
+    return record.type?.includes('_LATE') || false;
+  };
+
+  const getAttendanceTypeDisplay = (record: Attendance) => {
+    if (!record.type) return '-';
+
+    if (record.type.includes('_LATE')) {
+      const baseType = record.type.replace('_LATE', '');
+      return (
+        <div className="flex items-center gap-1">
+          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+            {baseType}
+          </Badge>
+          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-xs">
+            <AlertCircle className="w-3 h-3 mr-1" />
+            Late
+          </Badge>
+        </div>
+      );
+    }
+
+    return <Badge variant="outline">{record.type}</Badge>;
   };
 
   const handleFilterChange = (filters: AttendanceHistoryParams) => {
@@ -280,6 +315,22 @@ export function AttendanceDashboard() {
           ) : (
             <div className="space-y-4">
               <p className="text-muted-foreground">No active session</p>
+
+              {/* Shift timing info */}
+              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-start gap-2">
+                  <Info className="w-4 h-4 text-blue-600 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium text-blue-900">Check-in Guidelines</p>
+                    <ul className="text-blue-700 mt-1 space-y-1">
+                      <li>• You can check in 30 minutes before your shift</li>
+                      <li>• 15-minute buffer period after shift start time</li>
+                      <li>• Late check-ins are allowed but will be marked as late</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <Button
                   onClick={handlePunchIn}
@@ -370,13 +421,16 @@ export function AttendanceDashboard() {
                   <TableRow key={record.id}>
                     <TableCell>{formatDate(record.date)}</TableCell>
                     <TableCell>
-                      {record.type ? (
-                        <Badge variant="outline">{record.type}</Badge>
-                      ) : (
-                        '-'
-                      )}
+                      {getAttendanceTypeDisplay(record)}
                     </TableCell>
-                    <TableCell>{formatTime(record.checkIn)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        {formatTime(record.checkIn)}
+                        {isLateCheckIn(record) && (
+                          <AlertCircle className="w-3 h-3 text-amber-500" />
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>{formatTime(record.checkOut)}</TableCell>
                     <TableCell>{formatDuration(record.duration)}</TableCell>
                   </TableRow>

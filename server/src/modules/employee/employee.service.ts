@@ -55,6 +55,7 @@ export async function createEmployee(data: {
     include: {
       department: true,
       jobRole: true,
+      shift: true,
     }
   });
 
@@ -97,6 +98,7 @@ export async function updateEmployee(id: number, data: any) {
     include: {
       department: true,
       jobRole: true,
+      shift: true,
     }
   });
 

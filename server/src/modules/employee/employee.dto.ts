@@ -30,6 +30,12 @@ export const EmployeeWithRelationsSchema = EmployeeBaseSchema.extend({
     id: z.number(),
     title: z.string(),
   }).nullable(),
+  shift: z.object({
+    id: z.number(),
+    name: z.string(),
+    startTime: z.string(),
+    endTime: z.string(),
+  }).nullable(),
 });
 
 // Create Employee DTO Schema
@@ -76,6 +82,12 @@ export const EmployeeListItemSchema = z.object({
     id: z.number(),
     title: z.string(),
   }).nullable(),
+  shift: z.object({
+    id: z.number(),
+    name: z.string(),
+    startTime: z.string(),
+    endTime: z.string(),
+  }).nullable(),
   createdAt: z.string(),
 });
 
@@ -121,6 +133,12 @@ export class EmployeeDTO {
         id: employee.jobRole.id,
         title: employee.jobRole.title,
       } : null,
+      shift: employee.shift ? {
+        id: employee.shift.id,
+        name: employee.shift.name,
+        startTime: employee.shift.startTime,
+        endTime: employee.shift.endTime,
+      } : null,
     });
   }
 
@@ -141,6 +159,12 @@ export class EmployeeDTO {
       jobRole: employee.jobRole ? {
         id: employee.jobRole.id,
         title: employee.jobRole.title,
+      } : null,
+      shift: employee.shift ? {
+        id: employee.shift.id,
+        name: employee.shift.name,
+        startTime: employee.shift.startTime,
+        endTime: employee.shift.endTime,
       } : null,
       createdAt: employee.createdAt.toISOString(),
     });

@@ -44,6 +44,7 @@ import * as attendanceApi from '@/services/api/attendance';
 import * as leavesApi from '@/services/api/leaves';
 import * as departmentsApi from '@/services/api/departments';
 import * as jobRolesApi from '@/services/api/job-roles';
+import { shiftsApi, type Shift } from '@/services/api/shifts';
 import {
   type EmployeeProfile,
   type EmployeeFormData,
@@ -86,6 +87,7 @@ export const EmployeeProfilePage: React.FC = () => {
   const [profileStats, setProfileStats] = useState<ProfileStats | null>(null);
   const [departments, setDepartments] = useState<departmentsApi.Department[]>([]);
   const [jobRoles, setJobRoles] = useState<jobRolesApi.JobRole[]>([]);
+  const [shifts, setShifts] = useState<Shift[]>([]);
 
   const isAdminMode = employeeId && isAdmin;
   const isViewingOwnProfile = !employeeId && isEmployee;
@@ -97,12 +99,14 @@ export const EmployeeProfilePage: React.FC = () => {
   const loadDropdownData = async () => {
     if (isAdminMode && accessToken) {
       try {
-        const [deptRes, rolesRes] = await Promise.all([
+        const [deptRes, rolesRes, shiftsRes] = await Promise.all([
           departmentsApi.getDepartments(accessToken),
-          jobRolesApi.getJobRoles(accessToken)
+          jobRolesApi.getJobRoles(accessToken),
+          shiftsApi.getAll(false) // Only active shifts
         ]);
         setDepartments(deptRes.departments);
         setJobRoles(rolesRes.jobRoles);
+        setShifts(shiftsRes.shifts);
       } catch (error) {
         console.error('Failed to load dropdown data:', error);
       }
@@ -183,6 +187,7 @@ export const EmployeeProfilePage: React.FC = () => {
         if (editForm.dateOfBirth !== undefined) updateData.dateOfBirth = editForm.dateOfBirth || null;
         if (editForm.departmentId !== undefined) updateData.departmentId = editForm.departmentId || null;
         if (editForm.jobRoleId !== undefined) updateData.jobRoleId = editForm.jobRoleId || null;
+        if (editForm.shiftId !== undefined) updateData.shiftId = editForm.shiftId || null;
         if (editForm.hireDate !== undefined) updateData.hireDate = editForm.hireDate || null
 
         await http.patch(`/employees/${employeeId}`, updateData, {
@@ -645,6 +650,31 @@ export const EmployeeProfilePage: React.FC = () => {
                     <div className="bg-zinc-50 p-3 rounded-md">
                       {getStatusBadge(employee.status)}
                     </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-zinc-700 flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    Work Shift
+                  </label>
+                  {isAdminMode && isEditing ? (
+                    <select
+                      className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950"
+                      value={editForm.shiftId || ''}
+                      onChange={(e) => setEditForm({ ...editForm, shiftId: e.target.value ? Number(e.target.value) : null })}
+                    >
+                      <option value="">No Shift Assigned</option>
+                      {shifts?.map(shift => (
+                        <option key={shift.id} value={shift.id}>
+                          {shift.name} ({shift.startTime} - {shift.endTime})
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="text-zinc-900 bg-zinc-50 p-3 rounded-md">
+                      {employee.shift ? `${employee.shift.name} (${employee.shift.startTime} - ${employee.shift.endTime})` : 'No shift assigned'}
+                    </p>
                   )}
                 </div>
               </div>

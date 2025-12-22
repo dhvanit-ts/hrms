@@ -20,7 +20,8 @@ import {
   Shield,
   LucideIcon,
   Building2,
-  Target
+  Target,
+  RotateCcw
 } from 'lucide-react';
 
 // UI Components
@@ -111,6 +112,9 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
     ...(isSuperAdmin ? [
       { path: '/dashboard/departments', label: 'Departments', icon: Building2 },
       { path: '/dashboard/job-roles', label: 'Job Roles', icon: Briefcase },
+    ] : []),
+    ...(hasAdminAccess ? [
+      { path: '/dashboard/shifts', label: 'Shift Management', icon: RotateCcw },
     ] : []),
     ...(isSuperAdmin ? [
       { path: '/dashboard/users', label: 'User Management', icon: Shield },

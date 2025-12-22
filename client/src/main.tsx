@@ -21,6 +21,7 @@ import DashboardLayout from './shared/layouts/DashboardLayout';
 import DepartmentsPage from './pages/Departments';
 import JobRolesPage from './pages/JobRoles';
 import LeadsPage from './pages/Leads';
+import ShiftManagement from './pages/ShiftManagement';
 
 const router = createBrowserRouter([
   {
@@ -56,6 +57,7 @@ const router = createBrowserRouter([
           { path: "reports", element: <AuditReportsPage /> },
           { path: "departments", element: <DepartmentsPage /> },
           { path: "job-roles", element: <JobRolesPage /> },
+          { path: "shifts", element: <ShiftManagement /> },
           { path: "leads", element: <LeadsPage /> },
           { path: "settings", element: <SettingsPage /> },
         ]

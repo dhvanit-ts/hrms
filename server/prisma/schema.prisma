@@ -23,6 +23,7 @@ model AuditLog {
 model Attendance {
   id         Int       @id @default(autoincrement())
   employeeId Int
+  shiftId    Int?
   date       DateTime
   checkIn    DateTime?
   checkOut   DateTime?
@@ -33,11 +34,13 @@ model Attendance {
   updatedAt  DateTime  @updatedAt
 
   employee   Employee  @relation(fields: [employeeId], references: [id])
+  shift      Shift?    @relation(fields: [shiftId], references: [id])
   breaks     Break[]
 
   @@unique([employeeId, date])
   @@index([employeeId])
   @@index([date])
+  @@index([shiftId])
 }
 
 model Break {
@@ -78,6 +81,7 @@ model Employee {
   dateOfBirth        DateTime?
   departmentId       Int?
   jobRoleId          Int?
+  shiftId            Int?
   hireDate           DateTime?
   terminationDate    DateTime?
   status             EmployeeStatus  @default(active)
@@ -90,6 +94,7 @@ model Employee {
 department Department? @relation(fields: [departmentId], references: [id])
   managedDepartments Department[] @relation("DepartmentManager")
   jobRole            JobRole?        @relation(fields: [jobRoleId], references: [id])
+  shift              Shift?          @relation(fields: [shiftId], references: [id])
 
   payrolls           Payroll[]
   attendances        Attendance[]
@@ -100,6 +105,7 @@ department Department? @relation(fields: [departmentId], references: [id])
 
   @@index([departmentId])
   @@index([jobRoleId])
+  @@index([shiftId])
 }
 
 model JobRole {
@@ -212,6 +218,23 @@ model BankDetails {
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@index([employeeId])
+}
+
+model Shift {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  startTime   String   // Format: "HH:MM" (e.g., "09:00")
+  endTime     String   // Format: "HH:MM" (e.g., "17:00")
+  breakTime   Int      @default(60) // Break time in minutes
+  isActive    Boolean  @default(true)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  employees   Employee[]
+  attendances Attendance[]
+
+  @@index([isActive])
 }
 
 model Holiday {

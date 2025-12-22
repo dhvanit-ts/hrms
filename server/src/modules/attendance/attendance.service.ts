@@ -13,6 +13,20 @@ export async function checkIn(employeeId: string, ipAddress: string, date?: stri
   // Validate employee eligibility for attendance on this date
   await AttendanceValidationService.validateEmployeeAttendanceEligibility(eid, day);
 
+  // Get employee with shift information
+  const employee = await prisma.employee.findUnique({
+    where: { id: eid },
+    include: { shift: true },
+  });
+
+  if (!employee) {
+    throw new ApiError({
+      statusCode: 404,
+      code: "EMPLOYEE_NOT_FOUND",
+      message: "Employee not found",
+    });
+  }
+
   // Check for existing active session before creating record
   const existing = await prisma.attendance.findFirst({
     where: { employeeId: eid, date: day },
@@ -29,6 +43,28 @@ export async function checkIn(employeeId: string, ipAddress: string, date?: stri
   // Use IP validation service to determine attendance type
   const attendanceType = ipValidationService.getAttendanceType(ipAddress);
 
+  // Validate shift timing if employee has a shift assigned
+  if (employee.shift) {
+    const currentTime = new Date();
+    const currentHour = currentTime.getHours();
+    const currentMinute = currentTime.getMinutes();
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+    const [shiftStartHour, shiftStartMinute] = employee.shift.startTime.split(':').map(Number);
+    const shiftStartInMinutes = shiftStartHour * 60 + shiftStartMinute;
+
+    // Allow check-in 30 minutes before shift start
+    const allowedCheckInTime = shiftStartInMinutes - 30;
+
+    if (currentTimeInMinutes < allowedCheckInTime) {
+      throw new ApiError({
+        statusCode: 409,
+        code: "EARLY_CHECK_IN",
+        message: `Cannot check in before ${Math.floor(allowedCheckInTime / 60).toString().padStart(2, '0')}:${(allowedCheckInTime % 60).toString().padStart(2, '0')}. Your shift starts at ${employee.shift.startTime}.`,
+      });
+    }
+  }
+
   const record = existing
     ? await prisma.attendance.update({
       where: { id: existing.id },
@@ -36,6 +72,7 @@ export async function checkIn(employeeId: string, ipAddress: string, date?: stri
         checkIn: new Date(),
         type: attendanceType,
         ipAddress: ipAddress,
+        shiftId: employee.shiftId,
       },
     })
     : await prisma.attendance.create({
@@ -45,6 +82,7 @@ export async function checkIn(employeeId: string, ipAddress: string, date?: stri
         checkIn: new Date(),
         type: attendanceType,
         ipAddress: ipAddress,
+        shiftId: employee.shiftId,
       },
     });
 
@@ -53,6 +91,10 @@ export async function checkIn(employeeId: string, ipAddress: string, date?: stri
     entity: "Attendance",
     entityId: record.id.toString(),
     performedBy: employeeId,
+    metadata: {
+      shiftId: employee.shiftId,
+      shiftName: employee.shift?.name,
+    },
   });
 
   return record;
@@ -66,6 +108,20 @@ export async function checkOut(employeeId: string, date?: string) {
 
   // Validate employee eligibility for attendance on this date
   await AttendanceValidationService.validateEmployeeAttendanceEligibility(eid, day);
+
+  // Get employee with shift information
+  const employee = await prisma.employee.findUnique({
+    where: { id: eid },
+    include: { shift: true },
+  });
+
+  if (!employee) {
+    throw new ApiError({
+      statusCode: 404,
+      code: "EMPLOYEE_NOT_FOUND",
+      message: "Employee not found",
+    });
+  }
 
   // Verify active session exists before updating
   const item = await prisma.attendance.findFirst({
@@ -89,6 +145,24 @@ export async function checkOut(employeeId: string, date?: string) {
 
   const checkOutTime = new Date();
 
+  // Validate shift timing if employee has a shift assigned
+  if (employee.shift) {
+    const currentHour = checkOutTime.getHours();
+    const currentMinute = checkOutTime.getMinutes();
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+    const [shiftEndHour, shiftEndMinute] = employee.shift.endTime.split(':').map(Number);
+    const shiftEndInMinutes = shiftEndHour * 60 + shiftEndMinute;
+
+    // Allow check-out 30 minutes after shift end
+    const allowedCheckOutTime = shiftEndInMinutes + 30;
+
+    if (currentTimeInMinutes > allowedCheckOutTime) {
+      // This is just a warning, not blocking checkout
+      console.warn(`Late checkout detected for employee ${employee.employeeId} at ${checkOutTime.toTimeString()}`);
+    }
+  }
+
   // Calculate duration in minutes
   const duration = Math.floor(
     (checkOutTime.getTime() - item.checkIn.getTime()) / (1000 * 60)
@@ -108,6 +182,11 @@ export async function checkOut(employeeId: string, date?: string) {
     entity: "Attendance",
     entityId: updated.id.toString(),
     performedBy: employeeId,
+    metadata: {
+      shiftId: employee.shiftId,
+      shiftName: employee.shift?.name,
+      duration: duration,
+    },
   });
 
   return updated;

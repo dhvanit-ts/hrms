@@ -6,6 +6,7 @@ export async function listEmployees() {
     include: {
       department: true,
       jobRole: true,
+      shift: true,
     }
   });
 }
@@ -16,6 +17,7 @@ export async function getEmployee(id: number) {
     include: {
       department: true,
       jobRole: true,
+      shift: true,
     }
   });
 }

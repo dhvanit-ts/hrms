@@ -10,6 +10,7 @@ export interface EmployeeBase {
   dateOfBirth: string | null;
   departmentId: number | null;
   jobRoleId: number | null;
+  shiftId: number | null;
   hireDate: string | null;
   terminationDate: string | null;
   status: "active" | "inactive" | "terminated";
@@ -33,6 +34,12 @@ export interface JobRole {
 export interface EmployeeWithRelations extends EmployeeBase {
   department: Department | null;
   jobRole: JobRole | null;
+  shift: {
+    id: number;
+    name: string;
+    startTime: string;
+    endTime: string;
+  } | null;
 }
 
 export interface CreateEmployeeDTO {
@@ -56,6 +63,7 @@ export interface UpdateEmployeeDTO {
   dateOfBirth?: string | null;
   departmentId?: number | null;
   jobRoleId?: number | null;
+  shiftId?: number | null;
   hireDate?: string | null;
   terminationDate?: string | null;
   status?: "active" | "inactive" | "terminated";
@@ -93,6 +101,7 @@ export interface EmployeeFormData {
   dateOfBirth?: string | null; // HTML date input format (YYYY-MM-DD) or null
   departmentId?: number | null;
   jobRoleId?: number | null;
+  shiftId?: number | null;
   hireDate?: string | null;    // HTML date input format (YYYY-MM-DD) or null
   terminationDate?: string | null; // HTML date input format (YYYY-MM-DD) or null
   status?: "active" | "inactive" | "terminated";
@@ -181,6 +190,7 @@ export class EmployeeTransformer {
       dateOfBirth: employee.dateOfBirth ? this.toDateInputFormat(employee.dateOfBirth) : null,
       departmentId: employee.departmentId,
       jobRoleId: employee.jobRoleId,
+      shiftId: employee.shiftId,
       hireDate: employee.hireDate ? this.toDateInputFormat(employee.hireDate) : null,
       terminationDate: employee.terminationDate ? this.toDateInputFormat(employee.terminationDate) : null,
       status: employee.status,
@@ -203,6 +213,7 @@ export class EmployeeTransformer {
     }
     if (formData.departmentId !== undefined) result.departmentId = formData.departmentId;
     if (formData.jobRoleId !== undefined) result.jobRoleId = formData.jobRoleId;
+    if (formData.shiftId !== undefined) result.shiftId = formData.shiftId;
     if (formData.hireDate !== undefined) {
       result.hireDate = formData.hireDate ? this.fromDateInputFormat(formData.hireDate) : null;
     }

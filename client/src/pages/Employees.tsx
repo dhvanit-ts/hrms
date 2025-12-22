@@ -8,7 +8,8 @@ import {
   Mail,
   BadgeCheck,
   Building2,
-  Edit3
+  Edit3,
+  RotateCcw
 } from 'lucide-react';
 
 // UI Components
@@ -30,6 +31,7 @@ import { http } from '@/services/api/http';
 import * as departmentsApi from '@/services/api/departments';
 import * as jobRolesApi from '@/services/api/job-roles';
 import type { CreateEmployeeDTO } from '@/types/employee.dto';
+import { AssignShiftDialog } from '@/shared/components/AssignShiftDialog';
 
 const employeeSchema = z.object({
   name: z.string().min(1, "Full name is required"),
@@ -281,6 +283,10 @@ export const EmployeesPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Shift assignment dialog state
+  const [assignShiftDialogOpen, setAssignShiftDialogOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
+
   useEffect(() => {
     (async () => {
       try {
@@ -301,6 +307,27 @@ export const EmployeesPage: React.FC = () => {
     row.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     row.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleAssignShift = (employee: any) => {
+    setSelectedEmployee(employee);
+    setAssignShiftDialogOpen(true);
+  };
+
+  const handleShiftAssigned = () => {
+    // Refresh the employee list to show updated shift assignments
+    (async () => {
+      try {
+        const res = await http.get('/employees', { headers: { Authorization: `Bearer ${accessToken}` } });
+        if (res.data.employees) {
+          setRows(res.data.employees);
+        }
+      } catch (error) {
+        console.error("Failed to refresh employees", error);
+      }
+    })();
+    setAssignShiftDialogOpen(false);
+    setSelectedEmployee(null);
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -373,6 +400,7 @@ export const EmployeesPage: React.FC = () => {
                   <th className="h-10 px-6 py-3 font-medium">Employee</th>
                   <th className="h-10 px-6 py-3 font-medium">Contact</th>
                   <th className="h-10 px-6 py-3 font-medium">Role & Dept</th>
+                  <th className="h-10 px-6 py-3 font-medium">Shift</th>
                   <th className="h-10 px-6 py-3 font-medium">Status</th>
                   <th className="h-10 px-6 py-3 font-medium text-right">Actions</th>
                 </tr>
@@ -380,13 +408,13 @@ export const EmployeesPage: React.FC = () => {
               <tbody className="divide-y divide-zinc-200">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-zinc-500">
+                    <td colSpan={6} className="px-6 py-8 text-center text-zinc-500">
                       Loading directory...
                     </td>
                   </tr>
                 ) : filteredRows.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-zinc-500">
+                    <td colSpan={6} className="px-6 py-8 text-center text-zinc-500">
                       No employees found matching your search.
                     </td>
                   </tr>
@@ -431,10 +459,29 @@ export const EmployeesPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
+                        {r.shift ? (
+                          <div className="flex items-center gap-1.5">
+                            <RotateCcw className="h-3.5 w-3.5 text-indigo-500" />
+                            <span className="text-sm text-zinc-900">{r.shift.name}</span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-zinc-400">No shift assigned</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
                         {getStatusBadge(r.status)}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleAssignShift(r)}
+                          >
+                            <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                            Assign Shift
+                          </Button>
                           <Link to={`/dashboard/employees/${r.id}`}>
                             <Button variant="outline" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
                               <Edit3 className="h-3.5 w-3.5 mr-1" />
@@ -451,6 +498,16 @@ export const EmployeesPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Assign Shift Dialog */}
+      {selectedEmployee && (
+        <AssignShiftDialog
+          open={assignShiftDialogOpen}
+          onOpenChange={setAssignShiftDialogOpen}
+          employee={selectedEmployee}
+          onShiftAssigned={handleShiftAssigned}
+        />
+      )}
     </div>
   );
 };

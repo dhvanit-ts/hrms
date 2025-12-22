@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import type { ZodType } from "zod";
-import ApiError from "@/core/http/error";
+import { HttpError } from "@/core/http";
 
 export type ValidationDatasource = "body" | "query" | "params"
 type ValidateRequest = Request & { validated?: Record<string, unknown> };
@@ -20,14 +20,11 @@ export const validate =
           code: issue.code,
         }));
 
-        throw new ApiError({
-          statusCode: 400,
-          message:
-            formattedErrors.map((error) => error.message).join(", ") ||
-            "Validation Error",
-          code: "VALIDATION_ERROR",
-          errors: formattedErrors,
-        });
+        throw HttpError.badRequest(
+          formattedErrors.map((error) => error.message).join(", ") || "Validation Error",
+          {},
+          formattedErrors
+        );
       }
 
       // Attach validated data

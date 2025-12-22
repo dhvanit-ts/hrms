@@ -1,7 +1,7 @@
 import type { RequestHandler } from "express";
-import ApiError from "./error";
 import { HttpController } from "./types";
 import HttpResponse from "./response";
+import HttpError from "./error";
 
 function executeController(fn: HttpController): RequestHandler {
   return async (req, res, next) => {
@@ -33,9 +33,11 @@ export function UseController() {
 
     descriptor.value = executeController(async (req, res, next) => {
       if ("user" in req && req.user === undefined) {
-        throw ApiError.unauthorized("Unauthorized request", {
-          service: propertyKey,
-        });
+        throw HttpError.unauthorized(
+          "Unauthorized request",
+          "AUTH_TOKEN_MISSING",
+          { service: propertyKey }
+        );
       }
 
       return original(req, res, next);

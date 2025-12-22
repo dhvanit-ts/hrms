@@ -1,69 +1,46 @@
 import type { NextFunction, Request, Response } from "express";
 import { env } from "@/config/env";
-import { ApiError, ApiResponse } from "@/core/http";
+import HttpError from "@/core/http/error";
+import HttpResponse from "@/core/http/response";
 import logger from "@/core/logger";
 
 class ErrorMiddlewares {
   public generalErrorHandler = (
-    err: Error | ApiError,
+    err: unknown,
     _req: Request,
     res: Response,
     _next: NextFunction
   ): void => {
     const isDev = env.NODE_ENV === "development";
     const fallbackMessage = "Internal Server Error";
-    const fallbackErrorCode = "UNHANDLED_ERROR";
 
-    let error: ApiError;
+    let error: HttpError;
 
-    if (err instanceof ApiError) {
+    if (err instanceof HttpError) {
       error = err;
     } else {
-      const e = err as Error;
-      const msg = typeof e?.message === "string" ? e.message : String(err);
-      error = new ApiError({
+      logger.error("Unhandled exception", { err });
+
+      error = new HttpError({
         statusCode: 500,
-        message: msg || fallbackMessage,
-        code: fallbackErrorCode,
+        message: fallbackMessage,
+        code: "UNHANDLED_ERROR",
       });
     }
 
-    if (
-      error.statusCode === 401 &&
-      (error.message === "Access token not found" ||
-        error.message === "Access and refresh token not found")
-    ) {
-      const hasRefreshToken = error.message === "Access token not found";
+    const message =
+      error.isOperational || isDev
+        ? error.message
+        : fallbackMessage;
 
-      ApiResponse.error(
-        401,
-        "Unauthorized",
-        error.code || fallbackErrorCode,
-        error.errors,
-        error.stack,
-        { hasRefreshToken }
-      ).send(res);
-
-      return;
-    }
-
-    const baseErrorResponse = {
-      statusCode: error.statusCode,
-      message: error.message || fallbackMessage,
-      code: error.code || fallbackErrorCode,
-      errors: error.errors,
-    };
-
-    const apiRes = ApiResponse.error(
-      baseErrorResponse.statusCode,
-      baseErrorResponse.message,
-      baseErrorResponse.code,
-      baseErrorResponse.errors,
-      isDev ? error.stack : undefined
-    );
-
-    apiRes.send(res);
-    return;
+    HttpResponse.error(
+      error.statusCode,
+      message,
+      error.code,
+      error.errors,
+      isDev ? error.stack : undefined,
+      error.meta as Record<string, unknown> | undefined
+    ).send(res);
   };
 
   public notFoundErrorHandler = (
@@ -71,9 +48,19 @@ class ErrorMiddlewares {
     _res: Response,
     next: NextFunction
   ): void => {
-    const message = `Route ${req.originalUrl} not found`;
-    logger.warn(message, { method: req.method, path: req.originalUrl });
-    next(new ApiError({ statusCode: 404, message, code: "NOT_FOUND" }));
+    const message = `Route ${req.method} ${req.originalUrl} not found`;
+
+    logger.warn(message, {
+      method: req.method,
+      path: req.originalUrl,
+    });
+
+    next(
+      HttpError.notFound(
+        message,
+        "NOT_FOUND"
+      )
+    );
   };
 }
 

@@ -1,103 +1,124 @@
-class HttpError extends Error {
+// can take inspiration from here.
+
+export interface ErrorDetail {
+  field?: string;
+  message: string;
+  code?: string;
+}
+
+type HttpErrorParams = {
   statusCode: number;
+  message: string;
   code: string;
-  success: false;
-  errors?: Record<string, unknown>[];
-  data?: unknown;
-  isOperational: boolean;
+  errors?: ErrorDetail[];
+  meta?: unknown;
+  cause?: unknown;
+  isOperational?: boolean;
+};
+
+class HttpError extends Error {
+  readonly statusCode: number;
+  readonly code: string;
+  readonly errors?: ErrorDetail[];
+  readonly meta?: unknown;
+  readonly isOperational: boolean;
+  readonly cause?: unknown;
 
   constructor({
-    statusCode = 500,
-    message = "Something went wrong",
-    code = "GENERIC_ERROR",
+    statusCode,
+    message,
+    code,
     errors,
-    data,
-  }: {
-    statusCode?: number;
-    message?: string;
-    code?: string;
-    errors?: Record<string, unknown>[];
-    data?: unknown;
-  }) {
-    super(message);
+    meta,
+    cause,
+    isOperational = true,
+  }: HttpErrorParams) {
+    super(message, { cause });
 
+    Object.setPrototypeOf(this, new.target.prototype);
+
+    this.name = this.constructor.name;
     this.statusCode = statusCode;
     this.code = code;
-    this.success = false;
     this.errors = errors;
-    this.data = data;
-    this.isOperational = true;
+    this.meta = meta;
+    this.cause = cause;
+    this.isOperational = isOperational;
 
     Error.captureStackTrace(this, this.constructor);
   }
 
-  // TYPE CHECKER
+  // ---------- TYPE GUARD ----------
 
   static isHttpError(err: unknown): err is HttpError {
     return err instanceof HttpError;
   }
 
-  // FACTORIES
+  // ---------- SERIALIZATION ----------
+
+  toJSON() {
+    return {
+      success: false,
+      message: this.message,
+      code: this.code,
+      errors: this.errors,
+      meta: this.meta,
+    };
+  }
+
+  // ---------- FACTORY CORE ----------
+
+  private static create(
+    statusCode: number,
+    code: string,
+    message: string,
+    options?: Partial<Omit<HttpErrorParams, "statusCode" | "code" | "message">>
+  ) {
+    return new HttpError({
+      statusCode,
+      code,
+      message,
+      ...options,
+    });
+  }
+
+  // ---------- FACTORIES ----------
 
   static badRequest(
     message = "Bad request",
-    data?: unknown,
-    errors?: Record<string, unknown>[]
+    options?: Partial<HttpErrorParams>
   ) {
-    return new HttpError({
-      statusCode: 400,
-      code: "BAD_REQUEST",
-      message,
-      data,
-      errors,
-    });
+    return this.create(400, "BAD_REQUEST", message, options);
   }
 
   static unauthorized(
     message = "Unauthorized",
-    data?: unknown
+    options?: Partial<HttpErrorParams>
   ) {
-    return new HttpError({
-      statusCode: 401,
-      code: "UNAUTHORIZED",
-      message,
-      data,
-    });
+    return this.create(401, "UNAUTHORIZED", message, options);
   }
 
   static forbidden(
     message = "Forbidden",
-    data?: unknown
+    options?: Partial<HttpErrorParams>
   ) {
-    return new HttpError({
-      statusCode: 403,
-      code: "FORBIDDEN",
-      message,
-      data,
-    });
+    return this.create(403, "FORBIDDEN", message, options);
   }
 
   static notFound(
     message = "Resource not found",
-    data?: unknown
+    options?: Partial<HttpErrorParams>
   ) {
-    return new HttpError({
-      statusCode: 404,
-      code: "NOT_FOUND",
-      message,
-      data,
-    });
+    return this.create(404, "NOT_FOUND", message, options);
   }
 
   static internal(
     message = "Internal server error",
-    data?: unknown
+    options?: Partial<HttpErrorParams>
   ) {
-    return new HttpError({
-      statusCode: 500,
-      code: "INTERNAL_ERROR",
-      message,
-      data,
+    return this.create(500, "INTERNAL_ERROR", message, {
+      isOperational: false,
+      ...options,
     });
   }
 }

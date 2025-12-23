@@ -134,3 +134,96 @@ export async function logoutEmployee(employeeId: number) {
     },
   });
 }
+
+// Change employee password
+export async function changeEmployeePassword(
+  employeeId: number,
+  currentPassword: string,
+  newPassword: string
+) {
+  // Find employee
+  const employee = await prisma.employee.findUnique({
+    where: { id: employeeId },
+  });
+
+  if (!employee) {
+    throw new ApiError({
+      statusCode: 404,
+      code: "EMPLOYEE_NOT_FOUND",
+      message: "Employee not found",
+    });
+  }
+
+  if (!employee.passwordHash) {
+    throw new ApiError({
+      statusCode: 400,
+      code: "PASSWORD_NOT_SET",
+      message: "Password not set for this employee",
+    });
+  }
+
+  // Verify current password
+  const isCurrentPasswordValid = await verifyPassword(
+    currentPassword,
+    employee.passwordHash
+  );
+
+  if (!isCurrentPasswordValid) {
+    throw new ApiError({
+      statusCode: 400,
+      code: "INVALID_CURRENT_PASSWORD",
+      message: "Current password is incorrect",
+    });
+  }
+
+  // Hash new password
+  const newPasswordHash = await hashPassword(newPassword);
+
+  // Update password
+  await prisma.employee.update({
+    where: { id: employeeId },
+    data: { passwordHash: newPasswordHash },
+  });
+
+  logger.info("Employee password changed successfully", {
+    employeeId,
+    employeeEmail: employee.email,
+  });
+
+  return { success: true };
+}
+
+// Admin change employee password (no current password required)
+export async function adminChangeEmployeePassword(
+  employeeId: number,
+  newPassword: string
+) {
+  // Find employee
+  const employee = await prisma.employee.findUnique({
+    where: { id: employeeId },
+  });
+
+  if (!employee) {
+    throw new ApiError({
+      statusCode: 404,
+      code: "EMPLOYEE_NOT_FOUND",
+      message: "Employee not found",
+    });
+  }
+
+  // Hash new password
+  const newPasswordHash = await hashPassword(newPassword);
+
+  // Update password
+  await prisma.employee.update({
+    where: { id: employeeId },
+    data: { passwordHash: newPasswordHash },
+  });
+
+  logger.info("Employee password changed by admin", {
+    employeeId,
+    employeeEmail: employee.email,
+  });
+
+  return { success: true };
+}

@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/shared/context/AuthContext';
+import { changePassword as changeAdminPassword } from '@/services/api/auth';
+import { changePassword as changeEmployeePassword } from '@/services/api/employee-auth';
+import { extractErrorMessage } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -27,7 +30,7 @@ import {
 } from 'lucide-react';
 
 export function SettingsPage() {
-  const { user, employee, isAdmin, isEmployee } = useAuth();
+  const { user, employee, isAdmin, isEmployee, accessToken, employeeAccessToken } = useAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -91,16 +94,29 @@ export function SettingsPage() {
       return;
     }
 
+    if (!passwordForm.currentPassword || !passwordForm.newPassword) {
+      setMessage({ type: 'error', text: 'Please fill in all password fields.' });
+      return;
+    }
+
     setLoading(true);
     setMessage(null);
 
     try {
-      // TODO: Implement password change API call
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      if (isAdmin && accessToken) {
+        // Admin user password change
+        await changeAdminPassword(accessToken, passwordForm.currentPassword, passwordForm.newPassword);
+      } else if (isEmployee && employeeAccessToken) {
+        // Employee password change
+        await changeEmployeePassword(employeeAccessToken, passwordForm.currentPassword, passwordForm.newPassword);
+      } else {
+        throw new Error('Authentication required');
+      }
+
       setMessage({ type: 'success', text: 'Password changed successfully!' });
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to change password. Please try again.' });
+      setMessage({ type: 'error', text: extractErrorMessage(error) });
     } finally {
       setLoading(false);
     }
@@ -206,6 +222,7 @@ export function SettingsPage() {
                         value={profileForm.email}
                         onChange={(e) => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
                         className="pl-10"
+                        placeholder="example@email.com"
                         disabled={!isAdmin} // Only admins can change email
                       />
                     </div>
@@ -222,6 +239,7 @@ export function SettingsPage() {
                       <Input
                         id="name"
                         value={profileForm.name}
+                        placeholder="Your full name"
                         onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
                       />
                     </div>
@@ -290,6 +308,7 @@ export function SettingsPage() {
                       type={showCurrentPassword ? 'text' : 'password'}
                       value={passwordForm.currentPassword}
                       onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      placeholder='Enter current password'
                       required
                     />
                     <Button
@@ -312,6 +331,7 @@ export function SettingsPage() {
                       type={showNewPassword ? 'text' : 'password'}
                       value={passwordForm.newPassword}
                       onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                      placeholder='Enter new password'
                       required
                     />
                     <Button
@@ -337,6 +357,7 @@ export function SettingsPage() {
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={passwordForm.confirmPassword}
                       onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      placeholder='Re-enter new password'
                       required
                     />
                     <Button

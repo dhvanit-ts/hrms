@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
 import { loadEnv } from "@/config/env";
-import { loginEmployee, logoutEmployee, setupEmployeePassword } from "./employee-auth.service.js";
+import { loginEmployee, logoutEmployee, setupEmployeePassword, changeEmployeePassword, adminChangeEmployeePassword } from "./employee-auth.service.js";
 import {
   buildEmployeeRefreshCookie,
   rotateEmployeeRefreshToken,
@@ -11,6 +11,7 @@ import jwt from "jsonwebtoken";
 import prisma from "@/config/db.js";
 import asyncHandler from "@/core/http/asyncHandler.js";
 import ApiError from "@/core/http/ApiError.js";
+import { authenticateEmployee } from "@/core/middlewares/auth.js";
 
 export const employeeSetupPasswordSchema = z.object({
   body: z.object({
@@ -130,4 +131,50 @@ export const employeeRefresh = asyncHandler(async (req: Request, res: Response) 
   res
     .cookie(refreshCookie.name, refreshCookie.value, refreshCookie.options)
     .json({ accessToken });
+});
+
+export const employeeChangePasswordSchema = z.object({
+  body: z.object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z
+      .string()
+      .min(12, "Password must be at least 12 characters long")
+      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[0-9]/, "Password must contain at least one digit")
+      .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
+  }),
+});
+
+export const employeeChangePassword = asyncHandler(async (req: Request, res: Response) => {
+  const { currentPassword, newPassword } = req.body;
+  const employeeId = (req as any).employee.id; // From authenticateEmployee middleware
+
+  await changeEmployeePassword(employeeId, currentPassword, newPassword);
+
+  res.json({ message: "Password changed successfully" });
+});
+
+export const adminChangeEmployeePasswordSchema = z.object({
+  body: z.object({
+    newPassword: z
+      .string()
+      .min(12, "Password must be at least 12 characters long")
+      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[0-9]/, "Password must contain at least one digit")
+      .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
+  }),
+  params: z.object({
+    employeeId: z.string().transform(val => parseInt(val, 10)),
+  }),
+});
+
+export const adminChangeEmployeePasswordController = asyncHandler(async (req: Request, res: Response) => {
+  const { newPassword } = req.body;
+  const { employeeId } = req.params;
+
+  await adminChangeEmployeePassword(parseInt(employeeId, 10), newPassword);
+
+  res.json({ message: "Employee password changed successfully" });
 });

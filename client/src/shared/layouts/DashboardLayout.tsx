@@ -21,7 +21,7 @@ import {
   LucideIcon,
   Building2,
   Target,
-  RotateCcw
+  RotateCcw,
 } from 'lucide-react';
 
 // UI Components
@@ -153,7 +153,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
           <div className="flex h-14 items-center border-b border-zinc-200 px-6">
             <div className="flex items-center gap-2 font-bold text-zinc-900">
               <div className="flex h-6 w-6 items-center justify-center rounded bg-zinc-900 text-white">
-                <Briefcase className="h-3.5 w-3.5" />
+                <Users className="h-3.5 w-3.5" />
               </div>
               <span>HRMS</span>
             </div>

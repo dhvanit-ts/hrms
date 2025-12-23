@@ -36,7 +36,7 @@ import {
   AlertDialogTitle,
 } from '@/shared/components/ui/alert-dialog';
 import { useAuth } from '@/shared/context/AuthContext';
-import { employeeMe } from '@/services/api/employee-auth';
+import { employeeMe, changePassword, adminChangeEmployeePassword } from '@/services/api/employee-auth';
 import { http } from '@/services/api/http';
 import { ErrorAlert } from '@/shared/components/ui/error-alert';
 import { extractErrorMessage } from '@/lib/utils';
@@ -74,6 +74,11 @@ export const EmployeeProfilePage: React.FC = () => {
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [showAdminPasswordForm, setShowAdminPasswordForm] = useState(false);
+  const [adminPasswordForm, setAdminPasswordForm] = useState({
     newPassword: '',
     confirmPassword: ''
   });
@@ -236,10 +241,58 @@ export const EmployeeProfilePage: React.FC = () => {
       return;
     }
 
+    if (!passwordForm.currentPassword || !passwordForm.newPassword) {
+      setErrorMessage('Please fill in all password fields');
+      return;
+    }
+
+    if (!employeeAccessToken) {
+      setErrorMessage('Authentication required');
+      return;
+    }
+
     try {
+      await changePassword(
+        employeeAccessToken,
+        passwordForm.currentPassword,
+        passwordForm.newPassword
+      );
+
       setSuccessMessage('Password changed successfully');
       setShowPasswordForm(false);
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (error) {
+      setErrorMessage(extractErrorMessage(error));
+    }
+  };
+
+  const handleAdminChangePassword = async () => {
+    if (adminPasswordForm.newPassword !== adminPasswordForm.confirmPassword) {
+      setErrorMessage('New passwords do not match');
+      return;
+    }
+
+    if (!adminPasswordForm.newPassword) {
+      setErrorMessage('Please enter a new password');
+      return;
+    }
+
+    if (!accessToken || !employee) {
+      setErrorMessage('Authentication required');
+      return;
+    }
+
+    try {
+      await adminChangeEmployeePassword(
+        accessToken,
+        employee.id,
+        adminPasswordForm.newPassword
+      );
+
+      setSuccessMessage('Employee password changed successfully');
+      setShowAdminPasswordForm(false);
+      setAdminPasswordForm({ newPassword: '', confirmPassword: '' });
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
       setErrorMessage(extractErrorMessage(error));
@@ -693,7 +746,7 @@ export const EmployeeProfilePage: React.FC = () => {
 
         {/* Security Tab */}
         <TabsContent value="security">
-          <Card>
+          {employeeAccessToken && <Card>
             <CardHeader>
               <CardTitle>Security Settings</CardTitle>
               <CardDescription>Manage your account security and password</CardDescription>
@@ -793,7 +846,72 @@ export const EmployeeProfilePage: React.FC = () => {
                 </Card>
               )}
             </CardContent>
-          </Card>
+          </Card>}
+
+          {/* Admin Password Change Section */}
+          {isAdminMode && hasAdminAccess && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Admin Actions</CardTitle>
+                <CardDescription>Administrative password management for this employee</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Lock className="w-5 h-5 text-zinc-500" />
+                    <div>
+                      <h4 className="font-medium">Reset Employee Password</h4>
+                      <p className="text-sm text-zinc-500">Set a new password for this employee</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAdminPasswordForm(!showAdminPasswordForm)}
+                  >
+                    Reset Password
+                  </Button>
+                </div>
+
+                {showAdminPasswordForm && (
+                  <Card className="border-orange-200 bg-orange-50/50">
+                    <CardContent className="pt-6 space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">New Password</label>
+                        <Input
+                          type="password"
+                          value={adminPasswordForm.newPassword}
+                          onChange={(e) => setAdminPasswordForm({ ...adminPasswordForm, newPassword: e.target.value })}
+                          placeholder="Enter new password for employee"
+                        />
+                        <p className="text-xs text-zinc-500">
+                          Password must be at least 12 characters with uppercase, lowercase, number, and special character
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Confirm New Password</label>
+                        <Input
+                          type="password"
+                          value={adminPasswordForm.confirmPassword}
+                          onChange={(e) => setAdminPasswordForm({ ...adminPasswordForm, confirmPassword: e.target.value })}
+                          placeholder="Confirm new password"
+                        />
+                      </div>
+
+                      <div className="flex gap-2 pt-2">
+                        <Button onClick={handleAdminChangePassword} className="bg-orange-600 hover:bg-orange-700">
+                          Reset Employee Password
+                        </Button>
+                        <Button variant="outline" onClick={() => setShowAdminPasswordForm(false)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Statistics Tab */}

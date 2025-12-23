@@ -11,6 +11,10 @@ import {
   updateEmp,
   updateEmployeeSchema,
 } from "@/modules/employee/employee.controller";
+import {
+  adminChangeEmployeePasswordController,
+  adminChangeEmployeePasswordSchema,
+} from "@/modules/auth/employee-auth.controller";
 import { validate } from "@/core/middlewares/validate.js";
 
 const router = Router();
@@ -35,6 +39,12 @@ router.patch(
   requireRoles("HR", "ADMIN", "SUPER_ADMIN"),
   validate(updateEmployeeSchema),
   updateEmp
+);
+router.patch(
+  "/:employeeId/change-password",
+  requireRoles("HR", "ADMIN", "SUPER_ADMIN"),
+  validate(adminChangeEmployeePasswordSchema),
+  adminChangeEmployeePasswordController
 );
 router.delete("/:id", requireRoles("ADMIN", "SUPER_ADMIN"), removeEmp);
 

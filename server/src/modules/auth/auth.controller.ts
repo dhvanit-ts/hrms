@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
 import { loadEnv } from "@/config/env";
-import { loginUser, registerUser, logoutUser } from "./auth.service.js";
+import { loginUser, registerUser, logoutUser, changeUserPassword } from "./auth.service.js";
 import {
   buildRefreshCookie,
   rotateRefreshToken,
@@ -12,6 +12,7 @@ import prisma from "@/config/db.js";
 import asyncHandler from "@/core/http/asyncHandler.js";
 import ApiError from "@/core/http/ApiError.js";
 import { debug, logger } from "@/config/logger.js";
+import { authenticate } from "@/core/middlewares/auth.js";
 
 export const registerSchema = z.object({
   body: z.object({
@@ -139,4 +140,26 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
   res
     .cookie(refreshCookie.name, refreshCookie.value, refreshCookie.options)
     .json({ accessToken });
+});
+
+export const changePasswordSchema = z.object({
+  body: z.object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z
+      .string()
+      .min(12, "Password must be at least 12 characters long")
+      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[0-9]/, "Password must contain at least one digit")
+      .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
+  }),
+});
+
+export const changePassword = asyncHandler(async (req: Request, res: Response) => {
+  const { currentPassword, newPassword } = req.body;
+  const userId = parseInt((req as any).user.id); // From authenticate middleware
+
+  await changeUserPassword(userId, currentPassword, newPassword);
+
+  res.json({ message: "Password changed successfully" });
 });

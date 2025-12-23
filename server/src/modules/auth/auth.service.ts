@@ -107,3 +107,61 @@ export async function logoutUser(userId: number) {
     },
   });
 }
+
+// Change admin user password
+export async function changeUserPassword(
+  userId: number,
+  currentPassword: string,
+  newPassword: string
+) {
+  // Find user
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new ApiError({
+      statusCode: 404,
+      code: "USER_NOT_FOUND",
+      message: "User not found",
+    });
+  }
+
+  if (!user.isActive) {
+    throw new ApiError({
+      statusCode: 400,
+      code: "USER_INACTIVE",
+      message: "User account is inactive",
+    });
+  }
+
+  // Verify current password
+  const isCurrentPasswordValid = await verifyPassword(
+    currentPassword,
+    user.passwordHash
+  );
+
+  if (!isCurrentPasswordValid) {
+    throw new ApiError({
+      statusCode: 400,
+      code: "INVALID_CURRENT_PASSWORD",
+      message: "Current password is incorrect",
+    });
+  }
+
+  // Hash new password
+  const newPasswordHash = await hashPassword(newPassword);
+
+  // Update password
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash: newPasswordHash },
+  });
+
+  logger.info("Admin user password changed successfully", {
+    userId,
+    userEmail: user.email,
+  });
+
+  return { success: true };
+}

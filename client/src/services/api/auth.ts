@@ -27,3 +27,26 @@ export async function refresh() {
   const res = await http.post("/auth/refresh");
   return res.data as { accessToken: string };
 }
+
+export async function changePassword(
+  accessToken: string,
+  currentPassword: string,
+  newPassword: string
+) {
+  try {
+    const res = await http.patch("/auth/change-password", {
+      currentPassword,
+      newPassword
+    }, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return res.data;
+  } catch (error: any) {
+    if (error.response?.data) {
+      throw new Error(
+        error.response.data.message || "Failed to change password"
+      );
+    }
+    throw error;
+  }
+}

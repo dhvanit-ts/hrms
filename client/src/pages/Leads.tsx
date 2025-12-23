@@ -29,6 +29,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui
 import { CreateLeadDialog } from "../shared/components/CreateLeadDialog";
 import { EditLeadDialog } from "../shared/components/EditLeadDialog";
 import { LeadDetailsDialog } from "../shared/components/LeadDetailsDialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/shared/components/ui/alert-dialog";
 
 const statusColors = {
   new: "bg-blue-100 text-blue-800",
@@ -48,6 +49,7 @@ const priorityColors = {
 };
 
 export default function Leads() {
+  const [confirmDeleteLead, setConfirmDeleteLead] = useState(false)
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
@@ -102,13 +104,11 @@ export default function Leads() {
   };
 
   const handleDeleteLead = async (id: number) => {
-    if (confirm("Are you sure you want to delete this lead?")) {
-      try {
-        await leadsApi.deleteLead(id);
-        fetchLeads();
-      } catch (error) {
-        console.error("Failed to delete lead:", error);
-      }
+    try {
+      await leadsApi.deleteLead(id);
+      fetchLeads();
+    } catch (error) {
+      console.error("Failed to delete lead:", error);
     }
   };
 
@@ -202,92 +202,107 @@ export default function Leads() {
               </TableHeader>
               <TableBody>
                 {filteredLeads.map((lead) => (
-                  <TableRow key={lead.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{lead.name}</div>
-                        {lead.position && (
-                          <div className="text-sm text-gray-500">{lead.position}</div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {lead.company && (
-                        <div className="flex items-center gap-2">
-                          <Building className="h-4 w-4 text-gray-400" />
-                          {lead.company}
+                  <>
+                    <TableRow key={lead.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{lead.name}</div>
+                          {lead.position && (
+                            <div className="text-sm text-gray-500">{lead.position}</div>
+                          )}
                         </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Mail className="h-3 w-3 text-gray-400" />
-                          {lead.email}
-                        </div>
-                        {lead.phone && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <Phone className="h-3 w-3 text-gray-400" />
-                            {lead.phone}
+                      </TableCell>
+                      <TableCell>
+                        {lead.company && (
+                          <div className="flex items-center gap-2">
+                            <Building className="h-4 w-4 text-gray-400" />
+                            {lead.company}
                           </div>
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={statusColors[lead.status]}>
-                        {lead.status.replace("_", " ")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={priorityColors[lead.priority]}>
-                        {lead.priority}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {lead.value && `$${lead.value.toLocaleString()}`}
-                    </TableCell>
-                    <TableCell>
-                      {lead.followUpDate && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Calendar className="h-3 w-3 text-gray-400" />
-                          {new Date(lead.followUpDate).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Mail className="h-3 w-3 text-gray-400" />
+                            {lead.email}
+                          </div>
+                          {lead.phone && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Phone className="h-3 w-3 text-gray-400" />
+                              {lead.phone}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedLead(lead);
-                              setShowDetailsDialog(true);
-                            }}
-                          >
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedLead(lead);
-                              setShowEditDialog(true);
-                            }}
-                          >
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteLead(lead.id)}
-                            className="text-red-600"
-                          >
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={statusColors[lead.status]}>
+                          {lead.status.replace("_", " ")}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={priorityColors[lead.priority]}>
+                          {lead.priority}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {lead.value && `$${lead.value.toLocaleString()}`}
+                      </TableCell>
+                      <TableCell>
+                        {lead.followUpDate && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Calendar className="h-3 w-3 text-gray-400" />
+                            {new Date(lead.followUpDate).toLocaleDateString()}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedLead(lead);
+                                setShowDetailsDialog(true);
+                              }}
+                            >
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedLead(lead);
+                                setShowEditDialog(true);
+                              }}
+                            >
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-red-600"
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                    <AlertDialog onOpenChange={setConfirmDeleteLead} open={confirmDeleteLead}>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this lead?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteLead(lead.id)}>Continue</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
                 ))}
               </TableBody>
             </Table>

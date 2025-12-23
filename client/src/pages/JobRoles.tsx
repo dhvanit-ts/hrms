@@ -27,6 +27,7 @@ import { useAuth } from '@/shared/context/AuthContext';
 import * as jobRolesApi from '@/services/api/job-roles';
 import { ErrorAlert } from '@/shared/components/ui/error-alert';
 import { extractErrorMessage } from '@/lib/utils';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/shared/components/ui/alert-dialog';
 
 interface JobRoleFormData {
   title: string;
@@ -132,10 +133,6 @@ export const JobRolesPage: React.FC = () => {
   // Handle delete job role
   const handleDelete = async (jobRole: jobRolesApi.JobRole) => {
     if (!accessToken) return;
-
-    if (!window.confirm(`Are you sure you want to delete "${jobRole.title}"? This action cannot be undone.`)) {
-      return;
-    }
 
     try {
       await jobRolesApi.deleteJobRole(accessToken, jobRole.id);
@@ -313,15 +310,30 @@ export const JobRolesPage: React.FC = () => {
                     >
                       <Edit3 className="w-4 h-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(jobRole)}
-                      disabled={jobRole._count.employees > 0}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={jobRole._count.employees > 0}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "${jobRole.title}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(jobRole)}>Continue</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
                 {jobRole.description && (

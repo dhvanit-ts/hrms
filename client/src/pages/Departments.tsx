@@ -25,6 +25,7 @@ import { useAuth } from '@/shared/context/AuthContext';
 import * as departmentsApi from '@/services/api/departments';
 import { ErrorAlert } from '@/shared/components/ui/error-alert';
 import { extractErrorMessage } from '@/lib/utils';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/shared/components/ui/alert-dialog';
 
 interface DepartmentFormData {
   name: string;
@@ -122,10 +123,6 @@ export const DepartmentsPage: React.FC = () => {
   // Handle delete department
   const handleDelete = async (department: departmentsApi.Department) => {
     if (!accessToken) return;
-
-    if (!window.confirm(`Are you sure you want to delete "${department.name}"? This action cannot be undone.`)) {
-      return;
-    }
 
     try {
       await departmentsApi.deleteDepartment(accessToken, department.id);
@@ -268,15 +265,31 @@ export const DepartmentsPage: React.FC = () => {
                     >
                       <Edit3 className="w-4 h-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(department)}
-                      disabled={department._count.employees > 0}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={department._count.employees > 0}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "${department.name}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(department)}>Continue</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+
                   </div>
                 </div>
                 {department.description && (

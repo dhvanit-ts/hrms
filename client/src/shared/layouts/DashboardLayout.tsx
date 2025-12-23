@@ -109,18 +109,16 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
     ...(isEmployee ? [
       { path: '/dashboard/bank-details', label: 'Bank Details', icon: CreditCard },
     ] : []),
-    ...(isSuperAdmin ? [
+    ...(hasAdminAccess ? [
       { path: '/dashboard/departments', label: 'Departments', icon: Building2 },
       { path: '/dashboard/job-roles', label: 'Job Roles', icon: Briefcase },
-    ] : []),
-    ...(hasAdminAccess ? [
       { path: '/dashboard/shifts', label: 'Shift Management', icon: RotateCcw },
     ] : []),
     ...(isSuperAdmin ? [
       { path: '/dashboard/users', label: 'User Management', icon: Shield },
+      { path: '/dashboard/reports', label: 'Reports', icon: FileText },
     ] : []),
     ...(hasAdminAccess ? [
-      { path: '/dashboard/reports', label: 'Reports', icon: FileText },
       { path: '/dashboard/settings', label: 'Settings', icon: Settings },
     ] : []),
   ];

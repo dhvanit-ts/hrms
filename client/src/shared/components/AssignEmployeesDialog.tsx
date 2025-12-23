@@ -73,10 +73,34 @@ export function AssignEmployeesDialog({
     setError(null);
 
     try {
-      await shiftsApi.assignEmployees(shift.id, selectedEmployeeIds);
+      // Get currently assigned employees
+      const currentResponse = await shiftsApi.getEmployees(shift.id);
+      const currentlyAssignedIds = currentResponse.employees.map(emp => emp.id);
+
+      // Find employees to assign (selected but not currently assigned)
+      const toAssign = selectedEmployeeIds.filter(id => !currentlyAssignedIds.includes(id));
+
+      // Find employees to remove (currently assigned but not selected)
+      const toRemove = currentlyAssignedIds.filter(id => !selectedEmployeeIds.includes(id));
+
+      // Perform assignments and removals
+      const promises = [];
+
+      if (toAssign.length > 0) {
+        promises.push(shiftsApi.assignEmployees(shift.id, toAssign));
+      }
+
+      if (toRemove.length > 0) {
+        promises.push(shiftsApi.removeEmployees(toRemove));
+      }
+
+      if (promises.length > 0) {
+        await Promise.all(promises);
+      }
+
       onEmployeesAssigned();
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to assign employees");
+      setError(err.response?.data?.message || "Failed to update employee assignments");
     } finally {
       setLoading(false);
     }
@@ -98,7 +122,7 @@ export function AssignEmployeesDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh]">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="w-5 h-5" />

@@ -33,25 +33,41 @@ const createShiftSchema = z.object({
   breakTime: z.number().min(0, "Break time cannot be negative").max(480, "Break time cannot exceed 8 hours"),
   description: z.string().max(500, "Description too long").optional(),
 }).refine((data: any) => {
-  const startMinutes = timeToMinutes(data.startTime);
-  const endMinutes = timeToMinutes(data.endTime);
-  return endMinutes > startMinutes;
+  // Don't allow same start and end time
+  return data.startTime !== data.endTime;
 }, {
-  message: "End time must be after start time",
+  message: "Start time and end time cannot be the same",
   path: ["endTime"],
 }).refine((data: any) => {
-  const startMinutes = timeToMinutes(data.startTime);
-  const endMinutes = timeToMinutes(data.endTime);
-  const duration = endMinutes - startMinutes;
+  const duration = calculateShiftDuration(data.startTime, data.endTime);
   return duration >= 60; // At least 1 hour
 }, {
   message: "Shift duration must be at least 1 hour",
+  path: ["endTime"],
+}).refine((data: any) => {
+  const duration = calculateShiftDuration(data.startTime, data.endTime);
+  return duration <= 1440; // Max 24 hours
+}, {
+  message: "Shift duration cannot exceed 24 hours",
   path: ["endTime"],
 });
 
 function timeToMinutes(time: string): number {
   const [hours, minutes] = time.split(':').map(Number);
   return hours * 60 + minutes;
+}
+
+function calculateShiftDuration(startTime: string, endTime: string): number {
+  const startMinutes = timeToMinutes(startTime);
+  const endMinutes = timeToMinutes(endTime);
+
+  // If end time is less than start time, it's an overnight shift
+  if (endMinutes < startMinutes) {
+    // Add 24 hours (1440 minutes) to end time for overnight calculation
+    return (endMinutes + 1440) - startMinutes;
+  }
+
+  return endMinutes - startMinutes;
 }
 
 type CreateShiftFormData = z.infer<typeof createShiftSchema>;

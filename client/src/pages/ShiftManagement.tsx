@@ -10,6 +10,7 @@ import { CreateShiftDialog } from "@/shared/components/CreateShiftDialog";
 import { EditShiftDialog } from "@/shared/components/EditShiftDialog";
 import { DeleteShiftDialog } from "@/shared/components/DeleteShiftDialog";
 import { AssignEmployeesDialog } from "@/shared/components/AssignEmployeesDialog";
+import { Switch } from "@/shared/components/ui/switch";
 
 export default function ShiftManagement() {
   const [shifts, setShifts] = useState<Shift[]>([]);
@@ -99,7 +100,15 @@ export default function ShiftManagement() {
     const startMinutes = startHour * 60 + startMinute;
     const endMinutes = endHour * 60 + endMinute;
 
-    const durationMinutes = endMinutes - startMinutes;
+    // Handle overnight shifts
+    let durationMinutes;
+    if (endMinutes < startMinutes) {
+      // Add 24 hours (1440 minutes) to end time for overnight calculation
+      durationMinutes = (endMinutes + 1440) - startMinutes;
+    } else {
+      durationMinutes = endMinutes - startMinutes;
+    }
+
     const hours = Math.floor(durationMinutes / 60);
     const minutes = durationMinutes % 60;
 
@@ -139,13 +148,8 @@ export default function ShiftManagement() {
 
         <div className="flex items-center gap-4 mb-6">
           <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={includeInactive}
-              onChange={(e) => setIncludeInactive(e.target.checked)}
-              className="rounded"
-            />
             <span className="text-sm">Show inactive shifts</span>
+            <Switch checked={includeInactive} onCheckedChange={setIncludeInactive} />
           </label>
         </div>
 

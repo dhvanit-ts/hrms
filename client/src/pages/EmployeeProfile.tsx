@@ -192,9 +192,33 @@ export const EmployeeProfilePage: React.FC = () => {
         if (editForm.dateOfBirth !== undefined) updateData.dateOfBirth = editForm.dateOfBirth || null;
         if (editForm.departmentId !== undefined) updateData.departmentId = editForm.departmentId || null;
         if (editForm.jobRoleId !== undefined) updateData.jobRoleId = editForm.jobRoleId || null;
-        if (editForm.shiftId !== undefined) updateData.shiftId = editForm.shiftId || null;
-        if (editForm.hireDate !== undefined) updateData.hireDate = editForm.hireDate || null
+        if (editForm.hireDate !== undefined) updateData.hireDate = editForm.hireDate || null;
 
+        // Handle shift assignment changes
+        const currentShiftId = employee?.shiftId;
+        const newShiftId = editForm.shiftId;
+
+        // If shift is changing, handle the assignment/removal
+        if (currentShiftId !== newShiftId) {
+          const shiftPromises = [];
+
+          // Remove from current shift if employee was assigned to one
+          if (currentShiftId) {
+            shiftPromises.push(shiftsApi.removeEmployees([employee!.id]));
+          }
+
+          // Assign to new shift if one is selected
+          if (newShiftId) {
+            shiftPromises.push(shiftsApi.assignEmployees(newShiftId, [employee!.id]));
+          }
+
+          // Execute shift changes first
+          if (shiftPromises.length > 0) {
+            await Promise.all(shiftPromises);
+          }
+        }
+
+        // Update employee profile (excluding shiftId since it's handled above)
         await http.patch(`/employees/${employeeId}`, updateData, {
           headers: { Authorization: `Bearer ${accessToken}` }
         });

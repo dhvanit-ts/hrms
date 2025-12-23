@@ -36,6 +36,22 @@ function timeToMinutes(time: string): number {
 }
 
 /**
+ * Calculate shift duration in minutes, handling overnight shifts
+ */
+function calculateShiftDuration(startTime: string, endTime: string): number {
+  const startMinutes = timeToMinutes(startTime);
+  const endMinutes = timeToMinutes(endTime);
+
+  // If end time is less than start time, it's an overnight shift
+  if (endMinutes < startMinutes) {
+    // Add 24 hours (1440 minutes) to end time for overnight calculation
+    return (endMinutes + 1440) - startMinutes;
+  }
+
+  return endMinutes - startMinutes;
+}
+
+/**
  * Validate shift times
  */
 function validateShiftTimes(startTime: string, endTime: string): void {
@@ -55,19 +71,18 @@ function validateShiftTimes(startTime: string, endTime: string): void {
     });
   }
 
-  const startMinutes = timeToMinutes(startTime);
-  const endMinutes = timeToMinutes(endTime);
-
-  if (startMinutes >= endMinutes) {
+  // Don't allow same start and end time
+  if (startTime === endTime) {
     throw new ApiError({
       statusCode: 400,
       code: "INVALID_TIME_RANGE",
-      message: "End time must be after start time",
+      message: "Start time and end time cannot be the same",
     });
   }
 
   // Check for reasonable shift duration (at least 1 hour, max 24 hours)
-  const durationMinutes = endMinutes - startMinutes;
+  const durationMinutes = calculateShiftDuration(startTime, endTime);
+
   if (durationMinutes < 60) {
     throw new ApiError({
       statusCode: 400,
@@ -239,7 +254,7 @@ export async function updateShift(id: number, data: UpdateShiftData, performedBy
 }
 
 /**
- * Delete shift (soft delete by setting isActive to false)
+ * Delete shift (hard delete from database)
  */
 export async function deleteShift(id: number, performedBy: string) {
   const shift = await prisma.shift.findUnique({
@@ -270,9 +285,9 @@ export async function deleteShift(id: number, performedBy: string) {
     });
   }
 
-  const deletedShift = await prisma.shift.update({
+  // Hard delete the shift from database
+  const deletedShift = await prisma.shift.delete({
     where: { id },
-    data: { isActive: false },
   });
 
   await writeAuditLog({

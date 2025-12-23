@@ -105,7 +105,10 @@ export interface PendingLeave {
     createdAt: string;
     employee: {
         name: string;
-        department: string;
+        department: {
+            id: number;
+            name: string;
+        };
         email: string;
     };
 }

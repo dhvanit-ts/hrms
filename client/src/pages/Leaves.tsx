@@ -18,7 +18,7 @@ import {
   CardTitle
 } from '@/shared/components/ui/card';
 import { useAuth } from '@/shared/context/AuthContext';
-import { PendingLeavesTable, type PendingLeave } from '@/shared/components/PendingLeavesTable';
+import { PendingLeavesTable } from '@/shared/components/PendingLeavesTable';
 import * as leavesApi from '@/services/api/leaves';
 import { ErrorAlert } from '@/shared/components/ui/error-alert';
 import { extractErrorMessage } from '@/lib/utils';
@@ -46,7 +46,7 @@ export const LeavesPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   // Admin state
-  const [pendingLeaves, setPendingLeaves] = useState<PendingLeave[]>([]);
+  const [pendingLeaves, setPendingLeaves] = useState<leavesApi.PendingLeave[]>([]);
   const [isPendingLoading, setIsPendingLoading] = useState(false);
   const [filters, setFilters] = useState<{ department?: string; startDate?: string; endDate?: string }>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);

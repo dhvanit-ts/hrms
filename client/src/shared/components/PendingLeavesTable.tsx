@@ -32,7 +32,10 @@ export interface PendingLeave {
   createdAt: string;
   employee: {
     name: string;
-    department: string;
+    department: {
+      id: number;
+      name: string;
+    };
     email: string;
   };
 }
@@ -180,7 +183,7 @@ export const PendingLeavesTable: React.FC<PendingLeavesTableProps> = ({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{leave.employee.department}</Badge>
+                        <Badge variant="outline">{leave.employee.department.name}</Badge>
                       </TableCell>
                       <TableCell className="capitalize">{leave.type}</TableCell>
                       <TableCell>
@@ -222,7 +225,9 @@ export const PendingLeavesTable: React.FC<PendingLeavesTableProps> = ({
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Approve leave?</AlertDialogTitle>
-                                <AlertDialogDescription>Are you sure you want to approve leave to </AlertDialogDescription>
+                                <AlertDialogDescription>
+                                  Are you sure you want to approve this leave request for {leave.employee.name}?
+                                </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogAction onClick={() => handleApprove(leave.id)}>Approve</AlertDialogAction>

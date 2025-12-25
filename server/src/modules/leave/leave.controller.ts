@@ -8,6 +8,8 @@ import {
   getLeaveBalance,
   listMyLeaves,
   listPendingLeaves,
+  getCurrentLeaves,
+  getUpcomingLeaves,
   type LeaveStatus,
 } from "@/modules/leave/leave.service";
 
@@ -126,4 +128,23 @@ export async function rejectLeaveHandler(
 
   const updated = await rejectLeave(leaveId, approverId, reason);
   res.json({ leave: updated });
+}
+
+// Handler for GET /api/leaves/current - Get employees currently on leave (admin only)
+export async function currentLeavesHandler(
+  req: AuthenticatedRequest,
+  res: Response
+) {
+  const items = await getCurrentLeaves();
+  res.json({ leaves: items });
+}
+
+// Handler for GET /api/leaves/upcoming - Get upcoming approved leaves (admin only)
+export async function upcomingLeavesHandler(
+  req: AuthenticatedRequest,
+  res: Response
+) {
+  const days = req.query.days ? Number(req.query.days) : 7; // Default to next 7 days
+  const items = await getUpcomingLeaves(days);
+  res.json({ leaves: items });
 }

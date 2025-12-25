@@ -3,7 +3,9 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Plus
+  Plus,
+  Users,
+  Calendar
 } from 'lucide-react';
 
 // UI Components
@@ -47,7 +49,11 @@ export const LeavesPage: React.FC = () => {
 
   // Admin state
   const [pendingLeaves, setPendingLeaves] = useState<leavesApi.PendingLeave[]>([]);
+  const [currentLeaves, setCurrentLeaves] = useState<leavesApi.PendingLeave[]>([]);
+  const [upcomingLeaves, setUpcomingLeaves] = useState<leavesApi.PendingLeave[]>([]);
   const [isPendingLoading, setIsPendingLoading] = useState(false);
+  const [isCurrentLoading, setIsCurrentLoading] = useState(false);
+  const [isUpcomingLoading, setIsUpcomingLoading] = useState(false);
   const [filters, setFilters] = useState<{ department?: string; startDate?: string; endDate?: string }>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -86,9 +92,39 @@ export const LeavesPage: React.FC = () => {
     }
   }, [accessToken, hasAdminAccess, filters]);
 
+  const loadCurrentLeaves = useCallback(async () => {
+    if (!accessToken || !hasAdminAccess) return;
+    setIsCurrentLoading(true);
+    try {
+      const result = await leavesApi.getCurrentLeavesAdmin(accessToken);
+      setCurrentLeaves(result.leaves);
+    } catch (error) {
+      setErrorMessage(extractErrorMessage(error));
+    } finally {
+      setIsCurrentLoading(false);
+    }
+  }, [accessToken, hasAdminAccess]);
+
+  const loadUpcomingLeaves = useCallback(async () => {
+    if (!accessToken || !hasAdminAccess) return;
+    setIsUpcomingLoading(true);
+    try {
+      const result = await leavesApi.getUpcomingLeavesAdmin(accessToken, 7);
+      setUpcomingLeaves(result.leaves);
+    } catch (error) {
+      setErrorMessage(extractErrorMessage(error));
+    } finally {
+      setIsUpcomingLoading(false);
+    }
+  }, [accessToken, hasAdminAccess]);
+
   useEffect(() => {
     if (isEmployee) load();
-    if (hasAdminAccess) loadPendingLeaves();
+    if (hasAdminAccess) {
+      loadPendingLeaves();
+      loadCurrentLeaves();
+      loadUpcomingLeaves();
+    }
   }, [employeeAccessToken, accessToken, isEmployee, hasAdminAccess]);
 
   const submit = async (e: React.FormEvent) => {
@@ -123,8 +159,12 @@ export const LeavesPage: React.FC = () => {
       await leavesApi.approveLeaveAdmin(accessToken, leaveId);
       setSuccessMessage('Leave request approved successfully');
       setTimeout(() => setSuccessMessage(null), 3000);
-      // Refresh the list
-      await loadPendingLeaves();
+      // Refresh all lists
+      await Promise.all([
+        loadPendingLeaves(),
+        loadCurrentLeaves(),
+        loadUpcomingLeaves()
+      ]);
     } catch (error: any) {
       const errorMessage = extractErrorMessage(error);
       console.error("Failed to approve leave:", error);
@@ -145,8 +185,12 @@ export const LeavesPage: React.FC = () => {
       await leavesApi.rejectLeaveAdmin(accessToken, leaveId);
       setSuccessMessage('Leave request rejected successfully');
       setTimeout(() => setSuccessMessage(null), 3000);
-      // Refresh the list
-      await loadPendingLeaves();
+      // Refresh all lists
+      await Promise.all([
+        loadPendingLeaves(),
+        loadCurrentLeaves(),
+        loadUpcomingLeaves()
+      ]);
     } catch (error: any) {
       const errorMessage = extractErrorMessage(error);
       console.error("Failed to reject leave:", error);
@@ -197,15 +241,107 @@ export const LeavesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Admin View - Pending Leaves Table */}
+      {/* Admin View - Current and Upcoming Leaves + Pending Leaves Table */}
       {hasAdminAccess && (
-        <PendingLeavesTable
-          leaves={pendingLeaves}
-          isLoading={isPendingLoading}
-          onApprove={handleApprove}
-          onReject={handleReject}
-          onFilterChange={handleFilterChange}
-        />
+        <>
+          {/* Current and Upcoming Leaves Overview */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Current Leaves */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-emerald-600" />
+                  On Leave Today
+                </CardTitle>
+                <CardDescription>
+                  Employees currently on approved leave
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isCurrentLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-sm text-zinc-500">Loading...</div>
+                  </div>
+                ) : currentLeaves.length === 0 ? (
+                  <div className="text-center py-8 text-zinc-500">
+                    <Users className="w-12 h-12 mx-auto mb-2 text-zinc-300" />
+                    <p className="text-sm">No employees on leave today</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {currentLeaves.map((leave) => (
+                      <div key={leave.id} className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                        <div className="flex-1">
+                          <div className="font-medium text-zinc-900">{leave.employee.name}</div>
+                          <div className="text-sm text-zinc-600">{leave.employee.department.name}</div>
+                          <div className="text-xs text-emerald-700 capitalize">{leave.type} leave</div>
+                        </div>
+                        <div className="text-right text-sm text-zinc-600">
+                          <div>{new Date(leave.startDate).toLocaleDateString()}</div>
+                          <div className="text-xs text-zinc-500">
+                            to {new Date(leave.endDate).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Upcoming Leaves */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                  Upcoming Leaves (Next 7 Days)
+                </CardTitle>
+                <CardDescription>
+                  Approved leaves starting soon
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isUpcomingLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-sm text-zinc-500">Loading...</div>
+                  </div>
+                ) : upcomingLeaves.length === 0 ? (
+                  <div className="text-center py-8 text-zinc-500">
+                    <Calendar className="w-12 h-12 mx-auto mb-2 text-zinc-300" />
+                    <p className="text-sm">No upcoming leaves in the next 7 days</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {upcomingLeaves.map((leave) => (
+                      <div key={leave.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex-1">
+                          <div className="font-medium text-zinc-900">{leave.employee.name}</div>
+                          <div className="text-sm text-zinc-600">{leave.employee.department.name}</div>
+                          <div className="text-xs text-blue-700 capitalize">{leave.type} leave</div>
+                        </div>
+                        <div className="text-right text-sm text-zinc-600">
+                          <div>{new Date(leave.startDate).toLocaleDateString()}</div>
+                          <div className="text-xs text-zinc-500">
+                            to {new Date(leave.endDate).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Pending Leaves Table */}
+          <PendingLeavesTable
+            leaves={pendingLeaves}
+            isLoading={isPendingLoading}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            onFilterChange={handleFilterChange}
+          />
+        </>
       )}
 
       {/* Employee View - Balance Cards and Leave Application */}

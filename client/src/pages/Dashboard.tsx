@@ -200,39 +200,45 @@ const DashboardPage: React.FC = () => {
                 label: 'Total Employees',
                 value: stats.totalEmployees?.toString() || "N/A",
                 change: 'Active',
+                redirect: "/dashboard/employees",
                 icon: Users
               },
               {
                 label: 'On Leave',
                 value: stats.onLeave?.toString() || "N/A",
                 change: 'Today',
+                redirect: "/dashboard/leaves",
                 icon: Calendar
               },
               {
                 label: 'New Hires',
                 value: stats.newHires?.toString() || "N/A",
                 change: 'This month',
+                redirect: "/dashboard/employees",
                 icon: UserIcon
               },
               {
-                label: 'Open Roles',
+                label: 'Job Roles',
                 value: stats.openRoles?.toString() || "N/A",
                 change: 'Available',
+                redirect: "/dashboard/job-roles",
                 icon: Briefcase
               },
             ].map((stat, i) => (
-              <Card key={i}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between space-y-0 pb-2">
-                    <p className="text-sm font-medium text-zinc-500">{stat.label}</p>
-                    <stat.icon className="h-4 w-4 text-zinc-400" />
-                  </div>
-                  <div className="flex items-baseline gap-2 mt-2">
-                    <h3 className="text-2xl font-bold text-zinc-900">{stat.value}</h3>
-                    <span className="text-xs font-medium text-emerald-600">{stat.change}</span>
-                  </div>
-                </CardContent>
-              </Card>
+              <Link to={stat.redirect}>
+                <Card key={i}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between space-y-0 pb-2">
+                      <p className="text-sm font-medium text-zinc-500">{stat.label}</p>
+                      <stat.icon className="h-4 w-4 text-zinc-400" />
+                    </div>
+                    <div className="flex items-baseline gap-2 mt-2">
+                      <h3 className="text-2xl font-bold text-zinc-900">{stat.value}</h3>
+                      <span className="text-xs font-medium text-emerald-600">{stat.change}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))
           ) : (
             // Error state - show placeholder with dashes

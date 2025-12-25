@@ -11,6 +11,8 @@ import {
   leaveBalanceHandler,
   myLeavesHandler,
   pendingLeavesHandler,
+  currentLeavesHandler,
+  upcomingLeavesHandler,
 } from "./leave.controller.js";
 import { validate } from "../../core/middlewares/validate.js";
 
@@ -51,6 +53,20 @@ router.patch(
   requireRoles("HR", "MANAGER", "ADMIN", "SUPER_ADMIN"),
   validate(rejectLeaveSchema),
   rejectLeaveHandler
+);
+
+// GET /api/leaves/current - Get employees currently on leave (admin only)
+router.get(
+  "/current",
+  requireRoles("HR", "MANAGER", "ADMIN", "SUPER_ADMIN"),
+  currentLeavesHandler
+);
+
+// GET /api/leaves/upcoming - Get upcoming approved leaves (admin only)
+router.get(
+  "/upcoming",
+  requireRoles("HR", "MANAGER", "ADMIN", "SUPER_ADMIN"),
+  upcomingLeavesHandler
 );
 
 export default router;

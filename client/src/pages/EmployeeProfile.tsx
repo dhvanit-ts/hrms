@@ -134,6 +134,11 @@ export const EmployeeProfilePage: React.FC = () => {
         setEmployee(profileRes.data.employee);
         setEditForm(EmployeeTransformer.toFormData(profileRes.data.employee));
 
+        // Debug logging for shift information
+        console.log('Admin mode - Employee data:', profileRes.data.employee);
+        console.log('Admin mode - Employee shift:', profileRes.data.employee.shift);
+        console.log('Admin mode - Employee shiftId:', profileRes.data.employee.shiftId);
+
         // For admin mode, we might not load attendance stats for now
         // This could be extended later if needed
 
@@ -141,6 +146,11 @@ export const EmployeeProfilePage: React.FC = () => {
         const empProfileRes = await employeeMe(employeeAccessToken);
         setEmployee(empProfileRes.employee);
         setEditForm(EmployeeTransformer.toFormData(empProfileRes.employee));
+
+        // Debug logging for shift information
+        console.log('Employee mode - Employee data:', empProfileRes.employee);
+        console.log('Employee mode - Employee shift:', empProfileRes.employee.shift);
+        console.log('Employee mode - Employee shiftId:', empProfileRes.employee.shiftId);
 
         const currentYear = new Date().getFullYear();
         const yearStart = new Date(currentYear, 0, 1);
@@ -749,9 +759,23 @@ export const EmployeeProfilePage: React.FC = () => {
                       ))}
                     </select>
                   ) : (
-                    <p className="text-zinc-900 bg-zinc-50 p-3 rounded-md">
-                      {employee.shift ? `${employee.shift.name} (${employee.shift.startTime} - ${employee.shift.endTime})` : 'No shift assigned'}
-                    </p>
+                    <div className="text-zinc-900 bg-zinc-50 p-3 rounded-md">
+                      {employee.shift ? (
+                        <div>
+                          <p>{employee.shift.name} ({employee.shift.startTime} - {employee.shift.endTime})</p>
+                          {(employee.shift as any)?.isDefault && (
+                            <Badge variant="secondary" className="text-xs mt-1">Default Shift</Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <p>No shift assigned</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Employee ID: {employee.id}, Shift ID: {employee.shiftId || 'null'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

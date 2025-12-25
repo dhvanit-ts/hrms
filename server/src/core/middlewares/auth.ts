@@ -74,3 +74,57 @@ export function authenticateEmployee(
     return res.status(401).json({ error: "Unauthorized" });
   }
 }
+
+export interface CombinedAuthenticatedRequest extends Request {
+  user?: { id: string; email: string; roles: string[] };
+  employee?: { id: number; employeeId: string; email: string; departmentId?: number; jobRoleId?: number };
+  authType?: 'admin' | 'employee';
+}
+
+export function authenticateAny(
+  req: CombinedAuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) {
+  const env = loadEnv();
+  const header = req.headers.authorization;
+  if (!header?.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  const token = header.slice("Bearer ".length);
+
+  try {
+    const payload = jwt.verify(token, env.JWT_ACCESS_SECRET) as jwt.JwtPayload;
+
+    // Check if it's an admin token (has roles property)
+    if (payload.roles) {
+      req.user = {
+        id: payload.sub as string,
+        email: payload.email!,
+        roles: payload.roles || [],
+      };
+      req.authType = 'admin';
+      return next();
+    }
+
+    // Check if it's an employee token (has employeeId property)
+    if (payload.employeeId) {
+      req.employee = {
+        id: parseInt(payload.sub),
+        employeeId: payload.employeeId,
+        email: payload.email,
+        departmentId: payload.departmentId,
+        jobRoleId: payload.jobRoleId,
+      };
+      req.authType = 'employee';
+      return next();
+    }
+
+    // Log the payload for debugging
+    console.log('Token payload does not match expected format:', payload);
+    return res.status(401).json({ error: "Invalid token format" });
+  } catch (error) {
+    console.log('JWT verification failed:', error);
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+}

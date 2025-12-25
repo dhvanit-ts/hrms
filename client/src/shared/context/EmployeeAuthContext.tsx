@@ -16,6 +16,15 @@ type Employee = {
     email: string;
     departmentId: number | null;
     jobRoleId: number | null;
+    shiftId: number | null;
+    shift?: {
+        id: number;
+        name: string;
+        startTime: string;
+        endTime: string;
+        breakTime: number;
+        isDefault?: boolean;
+    } | null;
 };
 
 type EmployeeAuthContextValue = {

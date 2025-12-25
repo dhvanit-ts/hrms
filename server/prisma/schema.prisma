@@ -228,6 +228,7 @@ model Shift {
   breakTime   Int      @default(60) // Break time in minutes
   isActive    Boolean  @default(true)
   description String?
+  isDefault   Boolean? @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

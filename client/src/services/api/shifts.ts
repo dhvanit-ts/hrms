@@ -7,6 +7,7 @@ export interface Shift {
   endTime: string;
   breakTime: number;
   isActive: boolean;
+  isDefault?: boolean;
   description?: string;
   createdAt: string;
   updatedAt: string;
@@ -105,6 +106,12 @@ export const shiftsApi = {
     if (endDate) params.append("endDate", endDate);
 
     const response = await http.get(`/shifts/schedule?${params.toString()}`);
+    return response.data;
+  },
+
+  // Set default shift
+  setDefault: async (id: number): Promise<{ success: boolean; updatedDefaultShift: Shift }> => {
+    const response = await http.put(`/shifts/${id}/default`);
     return response.data;
   },
 };

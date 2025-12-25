@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/shared/components/ui/table';
-import { Clock, AlertCircle, Info } from 'lucide-react';
+import { Clock, AlertCircle, Info, RotateCcw } from 'lucide-react';
 import {
   punchIn,
   punchOut,
@@ -26,6 +26,7 @@ import {
   type BreakStatus,
   type AttendanceHistoryParams,
 } from '@/services/api/attendance';
+import { getEmployeeProfile, type EmployeeProfile } from '@/services/api/employee-profile';
 import { ErrorAlert } from '@/shared/components/ui/error-alert';
 import { extractErrorMessage } from '@/lib/utils';
 import { useEmployeeEmploymentDates } from '@/shared/hooks/useEmployeeEmploymentDates';
@@ -42,7 +43,7 @@ export function AttendanceDashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<'punch-in' | 'punch-out' | 'start-break' | 'end-break' | null>(null);
-  const [shiftInfo, setShiftInfo] = useState<{ startTime: string; endTime: string; name: string } | null>(null);
+  const [employeeProfile, setEmployeeProfile] = useState<EmployeeProfile | null>(null);
 
   // Date filter state
   const [dateFilters, setDateFilters] = useState<AttendanceHistoryParams>({});
@@ -61,15 +62,18 @@ export function AttendanceDashboard() {
     setError(null);
 
     try {
-      const [statusData, historyData, breakData] = await Promise.all([
+      const [statusData, historyData, breakData, profileData] = await Promise.all([
         getTodayStatus(accessToken),
         getAttendanceHistory(accessToken, filters),
         getBreakStatus(accessToken),
+        getEmployeeProfile(accessToken),
       ]);
 
       setTodayStatus(statusData);
       setHistory(historyData.attendances);
       setBreakStatus(breakData);
+      setEmployeeProfile(profileData.employee);
+
     } catch (err: any) {
       const errorMessage = extractErrorMessage(err);
       console.error('Failed to load attendance data:', err);
@@ -90,7 +94,7 @@ export function AttendanceDashboard() {
       await loadData();
     } catch (err: any) {
       const errorMessage = extractErrorMessage(err);
-      console.error('Failed to punch in:', err);
+      console.error('Failed to check in:', err);
 
       // Enhanced error messages for buffer time scenarios
       if (err.response?.data?.code === 'EARLY_CHECK_IN') {
@@ -116,7 +120,7 @@ export function AttendanceDashboard() {
       await loadData();
     } catch (err: any) {
       const errorMessage = extractErrorMessage(err);
-      console.error('Failed to punch out:', err);
+      console.error('Failed to check out:', err);
       setError(errorMessage);
     } finally {
       setActionLoading(null);
@@ -165,6 +169,14 @@ export function AttendanceDashboard() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const formatShiftTime = (time: string) => {
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -243,6 +255,38 @@ export function AttendanceDashboard() {
         />
       )}
 
+      {/* Shift Information Card */}
+      {employeeProfile?.shift && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5" />
+              Your Shift
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Shift Name</p>
+                <p className="font-semibold">{employeeProfile.shift.name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Start Time</p>
+                <p className="font-semibold">{formatShiftTime(employeeProfile.shift.startTime)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">End Time</p>
+                <p className="font-semibold">{formatShiftTime(employeeProfile.shift.endTime)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Break Time</p>
+                <p className="font-semibold">{employeeProfile.shift.breakTime} min</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Today's Attendance</CardTitle>
@@ -262,13 +306,13 @@ export function AttendanceDashboard() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Punch In</p>
+                  <p className="text-sm text-muted-foreground">Check In</p>
                   <p className="text-lg font-semibold">
                     {formatTime(todayStatus.attendance?.checkIn || null)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Punch Out</p>
+                  <p className="text-sm text-muted-foreground">Check Out</p>
                   <p className="text-lg font-semibold">
                     {formatTime(todayStatus.attendance?.checkOut || null)}
                   </p>
@@ -308,7 +352,7 @@ export function AttendanceDashboard() {
                   variant="outline"
                   className="w-full"
                 >
-                  {actionLoading === 'punch-out' ? 'Punching Out...' : 'Punch Out'}
+                  {actionLoading === 'punch-out' ? 'Checking Out...' : 'Check Out'}
                 </Button>
               </div>
             </div>
@@ -317,35 +361,57 @@ export function AttendanceDashboard() {
               <p className="text-muted-foreground">No active session</p>
 
               {/* Shift timing info */}
-              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex items-start gap-2">
-                  <Info className="w-4 h-4 text-blue-600 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-medium text-blue-900">Check-in Guidelines</p>
-                    <ul className="text-blue-700 mt-1 space-y-1">
-                      <li>• You can check in 30 minutes before your shift</li>
-                      <li>• 15-minute buffer period after shift start time</li>
-                      <li>• Late check-ins are allowed but will be marked as late</li>
-                    </ul>
+              {employeeProfile?.shift ? (
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-start gap-2">
+                    <Info className="w-4 h-4 text-blue-600 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-medium text-blue-900">Check-in Guidelines for {employeeProfile.shift.name}</p>
+                      <ul className="text-blue-700 mt-1 space-y-1">
+                        <li>• Shift: {formatShiftTime(employeeProfile.shift.startTime)} - {formatShiftTime(employeeProfile.shift.endTime)}</li>
+                        <li>• You can check in 30 minutes before your shift</li>
+                        <li>• 15-minute buffer period after shift start time</li>
+                        <li>• Late check-ins are allowed but will be marked as late</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-medium text-amber-900">No Shift Assigned</p>
+                      <p className="text-amber-700 mt-1">
+                        You need to be assigned to a shift before you can check in.
+                        Please contact your HR department or manager to assign you to a work shift.
+                      </p>
+                      {employeeProfile && (
+                        <div className="mt-2 text-xs text-amber-600">
+                          <p>Employee ID: {employeeProfile.employeeId}</p>
+                          <p>Name: {employeeProfile.name}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <Button
                   onClick={handlePunchIn}
-                  disabled={actionLoading !== null}
+                  disabled={actionLoading !== null || !employeeProfile?.shift}
                   className="w-full"
                 >
-                  {actionLoading === 'punch-in' ? 'Punching In...' : 'Punch In - Office'}
+                  {actionLoading === 'punch-in' ? 'Checking In...' : 'Check In - Office'}
                 </Button>
                 <Button
                   onClick={handlePunchIn}
-                  disabled={actionLoading !== null}
+                  disabled={actionLoading !== null || !employeeProfile?.shift}
                   variant="outline"
                   className="w-full"
                 >
-                  {actionLoading === 'punch-in' ? 'Punching In...' : 'Punch In - WFH'}
+                  {actionLoading === 'punch-in' ? 'Checking In...' : 'Check In - WFH'}
                 </Button>
               </div>
             </div>

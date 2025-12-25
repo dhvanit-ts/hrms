@@ -301,6 +301,51 @@ export async function deleteShift(id: number, performedBy: string) {
   return deletedShift;
 }
 
+export async function updateDefaultShiftHandler(
+  shiftId: number,
+  performedBy: string
+) {
+  return prisma.$transaction(async (tx) => {
+    const shift = await tx.shift.findUnique({
+      where: { id: shiftId }
+    })
+
+    if (!shift || !shift.isActive) {
+      throw new ApiError({
+        statusCode: 404,
+        code: "SHIFT_NOT_FOUND",
+        message: "Active shift not found",
+      })
+    }
+
+    if (shift.isDefault) {
+      return { success: true, updatedDefaultShift: shift }
+    }
+
+    await tx.shift.updateMany({
+      where: { isDefault: true, isActive: true },
+      data: { isDefault: false }
+    })
+
+    const updatedDefaultShift = await tx.shift.update({
+      where: { id: shiftId },
+      data: { isDefault: true }
+    })
+
+    await writeAuditLog({
+      action: "CHANGE_DEFAULT_SHIFT",
+      entity: "Shift",
+      entityId: shiftId.toString(),
+      performedBy,
+      metadata: {
+        shiftName: shift.name,
+      },
+    })
+
+    return { success: true, updatedDefaultShift }
+  })
+}
+
 /**
  * Assign employees to shift
  */

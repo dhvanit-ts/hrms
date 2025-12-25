@@ -10,6 +10,7 @@ export const EmployeeBaseSchema = z.object({
   dateOfBirth: z.string().nullable(),
   departmentId: z.number().nullable(),
   jobRoleId: z.number().nullable(),
+  shiftId: z.number().nullable(),
   hireDate: z.string().nullable(),
   terminationDate: z.string().nullable(),
   status: z.enum(["active", "inactive", "terminated"]),
@@ -35,6 +36,8 @@ export const EmployeeWithRelationsSchema = EmployeeBaseSchema.extend({
     name: z.string(),
     startTime: z.string(),
     endTime: z.string(),
+    breakTime: z.number(),
+    isDefault: z.boolean().optional(),
   }).nullable(),
 });
 
@@ -87,6 +90,8 @@ export const EmployeeListItemSchema = z.object({
     name: z.string(),
     startTime: z.string(),
     endTime: z.string(),
+    breakTime: z.number(),
+    isDefault: z.boolean().optional(),
   }).nullable(),
   createdAt: z.string(),
 });
@@ -117,6 +122,7 @@ export class EmployeeDTO {
       dateOfBirth: employee.dateOfBirth?.toISOString() ?? null,
       departmentId: employee.departmentId ?? null,
       jobRoleId: employee.jobRoleId ?? null,
+      shiftId: employee.shiftId ?? null,
       hireDate: employee.hireDate?.toISOString() ?? null,
       terminationDate: employee.terminationDate?.toISOString() ?? null,
       status: employee.status,
@@ -138,6 +144,8 @@ export class EmployeeDTO {
         name: employee.shift.name,
         startTime: employee.shift.startTime,
         endTime: employee.shift.endTime,
+        breakTime: employee.shift.breakTime,
+        isDefault: employee.shift.isDefault,
       } : null,
     });
   }
@@ -165,6 +173,8 @@ export class EmployeeDTO {
         name: employee.shift.name,
         startTime: employee.shift.startTime,
         endTime: employee.shift.endTime,
+        breakTime: employee.shift.breakTime,
+        isDefault: employee.shift.isDefault,
       } : null,
       createdAt: employee.createdAt.toISOString(),
     });

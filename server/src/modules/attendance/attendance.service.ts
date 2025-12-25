@@ -30,8 +30,8 @@ export async function checkIn(employeeId: string, ipAddress: string, date?: stri
   });
 
   if (existing?.checkIn) {
-    const code = existing.checkOut ? "DUPLICATE_ATTENDANCE" : "DUPLICATE_PUNCH_IN"
-    const message = existing.checkOut ? "Your attendance has already done today, You can't check in again." : "Already checked in today. Please check out before punching in again."
+    const code = existing.checkOut ? "DUPLICATE_ATTENDANCE" : "DUPLICATE_CHECK_IN"
+    const message = existing.checkOut ? "Your attendance has already done today, You can't check in again." : "Already checked in today. Please check out before checking in again."
     throw new ApiError({
       statusCode: 409,
       code,
@@ -66,6 +66,12 @@ export async function checkIn(employeeId: string, ipAddress: string, date?: stri
     if (currentTimeInMinutes > bufferEndTime) {
       isLateCheckIn = true;
     }
+  } else {
+    throw new ApiError({
+      statusCode: 400,
+      code: "NO_SHIFT_ASSIGNED",
+      message: "You don't have any assigned shift",
+    })
   }
 
   const record = existing
@@ -150,7 +156,7 @@ export async function checkOut(employeeId: string, date?: string) {
     throw new ApiError({
       statusCode: 409,
       code: "NO_ACTIVE_SESSION",
-      message: "No active punch session found. Please punch in first.",
+      message: "No active check session found. Please check in first.",
     });
   }
   if (item.checkOut) {
@@ -186,7 +192,7 @@ export async function checkOut(employeeId: string, date?: string) {
     (checkOutTime.getTime() - item.checkIn.getTime()) / (1000 * 60)
   );
 
-  // Update record with punch-out timestamp and duration
+  // Update record with check-out timestamp and duration
   const updated = await prisma.attendance.update({
     where: { id: item.id },
     data: {
@@ -332,7 +338,7 @@ export async function startBreak(employeeId: string) {
     throw new ApiError({
       statusCode: 409,
       code: "NO_ACTIVE_SESSION",
-      message: "No active punch session found. Please punch in first.",
+      message: "No active check session found. Please check in first.",
     });
   }
 

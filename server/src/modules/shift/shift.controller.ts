@@ -11,7 +11,12 @@ import {
   assignEmployeesToShift,
   removeEmployeesFromShift,
   getShiftSchedule,
+  updateDefaultShiftHandler,
 } from "./shift.service.js";
+
+const shiftIdSchema = z.object({
+  id: z.string().transform(val => parseInt(val, 10)),
+})
 
 export const createShiftSchema = z.object({
   body: z.object({
@@ -52,10 +57,12 @@ export const getShiftByIdHandler = asyncHandler(async (req: AuthenticatedRequest
   res.json({ shift });
 });
 
+export const updateDefaultShiftSchema = z.object({
+  params: shiftIdSchema
+})
+
 export const updateShiftSchema = z.object({
-  params: z.object({
-    id: z.string().transform(val => parseInt(val, 10)),
-  }),
+  params: shiftIdSchema,
   body: z.object({
     name: z.string().min(1).max(100).optional(),
     startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
@@ -99,6 +106,12 @@ export const assignEmployeesHandler = asyncHandler(async (req: AuthenticatedRequ
   const result = await assignEmployeesToShift(parseInt(id, 10), employeeIds, req.user!.id.toString());
   res.json(result);
 });
+
+export const updateDefaultShift = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const { id } = req.params as { id: string }
+  const result = await updateDefaultShiftHandler(parseInt(id, 10), req.user.id.toString())
+  res.json(result)
+})
 
 export const removeEmployeesSchema = z.object({
   body: z.object({

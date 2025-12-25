@@ -21,7 +21,8 @@ import DashboardLayout from './shared/layouts/DashboardLayout';
 import DepartmentsPage from './pages/Departments';
 import JobRolesPage from './pages/JobRoles';
 import LeadsPage from './pages/Leads';
-import ShiftManagement from './pages/ShiftManagement';
+import { ShiftManagementPage } from './pages/ShiftManagement';
+import { Toaster } from './shared/components/ui/toaster';
 
 const router = createBrowserRouter([
   {
@@ -57,7 +58,7 @@ const router = createBrowserRouter([
           { path: "reports", element: <AuditReportsPage /> },
           { path: "departments", element: <DepartmentsPage /> },
           { path: "job-roles", element: <JobRolesPage /> },
-          { path: "shifts", element: <ShiftManagement /> },
+          { path: "shifts", element: <ShiftManagementPage /> },
           { path: "leads", element: <LeadsPage /> },
           { path: "settings", element: <SettingsPage /> },
         ]
@@ -80,5 +81,6 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <RouterProvider router={router} />
+    <Toaster />
   </React.StrictMode>
 );

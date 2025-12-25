@@ -178,3 +178,45 @@ export const adminChangeEmployeePasswordController = asyncHandler(async (req: Re
 
   res.json({ message: "Employee password changed successfully" });
 });
+
+export const getEmployeeProfile = asyncHandler(async (req: Request, res: Response) => {
+  const employeeId = (req as any).employee.id; // From authenticateEmployee middleware
+
+  const employee = await prisma.employee.findUnique({
+    where: { id: employeeId },
+    include: {
+      department: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      jobRole: {
+        select: {
+          id: true,
+          title: true,
+        },
+      },
+      shift: {
+        select: {
+          id: true,
+          name: true,
+          startTime: true,
+          endTime: true,
+          breakTime: true,
+          isDefault: true,
+        },
+      },
+    },
+  });
+
+  if (!employee) {
+    throw new ApiError({
+      statusCode: 404,
+      code: "EMPLOYEE_NOT_FOUND",
+      message: "Employee not found",
+    });
+  }
+
+  res.json({ employee });
+});

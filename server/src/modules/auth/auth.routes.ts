@@ -16,6 +16,7 @@ import {
   employeeRefresh,
   setupPassword,
   employeeChangePassword,
+  getEmployeeProfile,
   employeeLoginSchema,
   employeeRefreshSchema,
   employeeSetupPasswordSchema,
@@ -39,5 +40,6 @@ router.post("/employee/login", validate(employeeLoginSchema), employeeLogin);
 router.post("/employee/logout", employeeLogout);
 router.post("/employee/refresh", validate(employeeRefreshSchema), employeeRefresh);
 router.patch("/employee/change-password", authenticateEmployee, validate(employeeChangePasswordSchema), employeeChangePassword);
+router.get("/employee/profile", authenticateEmployee, getEmployeeProfile);
 
 export default router;

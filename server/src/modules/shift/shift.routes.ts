@@ -19,6 +19,8 @@ import {
   removeEmployeesSchema,
   getScheduleHandler,
   getScheduleSchema,
+  updateDefaultShiftSchema,
+  updateDefaultShift,
 } from "./shift.controller.js";
 
 const router = Router();
@@ -38,6 +40,7 @@ router.get("/:id", validate(getShiftByIdSchema), getShiftByIdHandler);
 // Admin-only routes
 router.post("/", requireRoles("SUPER_ADMIN", "ADMIN", "HR"), validate(createShiftSchema), createShiftHandler);
 router.put("/:id", requireRoles("SUPER_ADMIN", "ADMIN", "HR"), validate(updateShiftSchema), updateShiftHandler);
+router.put("/:id/default", requireRoles("SUPER_ADMIN", "ADMIN", "HR"), validate(updateDefaultShiftSchema), updateDefaultShift);
 router.delete("/:id", requireRoles("SUPER_ADMIN", "ADMIN"), validate(deleteShiftSchema), deleteShiftHandler);
 
 // Employee assignment routes (Admin only)

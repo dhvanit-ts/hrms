@@ -474,7 +474,7 @@ export function SettingsPage() {
                   <div>
                     <p className="font-medium">Attendance Reminders</p>
                     <p className="text-sm text-muted-foreground">
-                      Reminders for punch-in/out and attendance tracking
+                      Reminders for check-in/out and attendance tracking
                     </p>
                   </div>
                   <Switch

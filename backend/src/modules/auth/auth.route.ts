@@ -1,6 +1,7 @@
 import { Router } from "express";
 import AuthController from "@/modules/auth/auth.controller";
 import { verifyUserJWT } from "@/core/middlewares";
+import { adminOnly } from "@/core/middlewares/compossed.middlewares";
 
 const router = Router();
 
@@ -127,6 +128,7 @@ router.use(verifyUserJWT);
  *       404:
  *         description: User doesn't exists
  */
-router.post("/logout", AuthController.logoutUser);
+
+router.post("/logout", adminOnly, AuthController.logoutUser);
 
 export default router;

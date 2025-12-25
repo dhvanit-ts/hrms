@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { env } from "@/config/env";
 import { HttpError } from "@/core/http";
@@ -13,10 +13,14 @@ interface AuthenticatedRequest extends Request {
 }
 
 const verifyUserJWT = middlewareHandler(
-  async (req: AuthenticatedRequest, _, next: NextFunction) => {
+  async (req, _, next) => {
+    const authHeader = req.header("Authorization");
+
     const token =
-      req.cookies?.accessToken ||
-      req.header("Authorization")?.replace("Bearer ", "");
+      req.cookies?.accessToken ??
+      (authHeader?.startsWith("Bearer ")
+        ? authHeader.slice(7)
+        : undefined);
 
     const hasRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
@@ -58,4 +62,5 @@ const verifyUserJWT = middlewareHandler(
   }
 );
 
-export { verifyUserJWT, AuthenticatedRequest };
+export { verifyUserJWT };
+export type { AuthenticatedRequest }

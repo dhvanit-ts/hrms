@@ -1,16 +1,25 @@
 {
 	"compilerOptions": {
 		"target": "ES2022",
-		"lib": ["ES2022"],
+		"lib": [
+			"ES2022"
+		],
 		"module": "ESNext",
 		"moduleResolution": "Node",
 		"outDir": "dist",
 		"rootDir": "./",
 		"baseUrl": "./src",
-    "paths": {
-      "@/*": ["*"]
-    },
-    "jsx": "react",
+		"typeRoots": [
+			"./types",
+			"./node_modules/@types"
+		],
+		"strict": true,
+		"paths": {
+			"@/*": [
+				"*"
+			]
+		},
+		"jsx": "react",
 		"esModuleInterop": true,
 		"resolveJsonModule": true,
 		"declaration": false,

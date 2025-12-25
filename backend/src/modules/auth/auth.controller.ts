@@ -1,5 +1,5 @@
 import { UseController, HttpError, HttpResponse } from "@/core/http";
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import AuthService from "./auth.service";
 import { AuthenticatedRequest } from "@/core/middlewares";
 import * as authSchemas from "@/modules/auth/auth.schema";

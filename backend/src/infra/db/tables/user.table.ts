@@ -10,6 +10,7 @@ export const users = pgTable("user", {
   password: text("password"),
   authType: AuthTypeEnum("authType").notNull().default("manual"),
   refreshToken: text("refreshToken"),
+  roles: RoleEnum("roles").array().default(["user"]).notNull(),
 
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),

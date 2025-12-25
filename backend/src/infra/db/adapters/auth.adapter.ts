@@ -1,7 +1,7 @@
 import type { User } from "@/shared/types/User";
 import { eq, or, sql } from "drizzle-orm";
 import db from "@/infra/db/index";
-import { UserTable } from "@/infra/db/tables/user.table";
+import { users as UserTable } from "@/infra/db/tables/user.table";
 import type { DB } from "@/infra/db/types";
 
 export const findById = async (userId: string, dbTx?: DB) => {
@@ -14,8 +14,8 @@ export const findById = async (userId: string, dbTx?: DB) => {
 };
 
 export const updateRefreshToken = async (
-  id: string, 
-  refreshToken: string, 
+  id: string,
+  refreshToken: string,
   dbTx?: DB
 ) => {
   const client = dbTx ?? db;

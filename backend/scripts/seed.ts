@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import db from "../src/infra/db/index";
-import { UserTable } from "../src/infra/db/tables/user.table";
+import { users } from "../src/infra/db/tables";
 import { hashPassword } from "../src/lib/crypto";
 
 async function run() {
@@ -9,13 +9,13 @@ async function run() {
 
   const existingUser = await db
     .select()
-    .from(UserTable)
-    .where(eq(UserTable.email, userEmail));
+    .from(users)
+    .where(eq(users.email, userEmail));
 
   if (existingUser.length === 0) {
     const passwordHash = await hashPassword(globalPassword);
 
-    await db.insert(UserTable).values({
+    await db.insert(users).values({
       email: userEmail,
       password: passwordHash,
       username: "defaultuser",

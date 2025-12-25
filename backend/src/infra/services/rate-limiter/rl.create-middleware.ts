@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { IRateLimiter } from "./rl.interface";
 import { RateLimiterRes } from "rate-limiter-flexible";
 

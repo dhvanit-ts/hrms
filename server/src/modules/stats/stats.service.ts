@@ -17,14 +17,17 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
   // Get employees currently on leave (approved leaves that are active today)
   const today = new Date();
+  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+
   const onLeave = await prisma.leaveRequest.count({
     where: {
       status: "approved",
       startDate: {
-        lte: today,
+        lte: endOfDay,
       },
       endDate: {
-        gte: today,
+        gte: startOfDay,
       },
     },
   });

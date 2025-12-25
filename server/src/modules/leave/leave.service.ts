@@ -584,3 +584,71 @@ export async function sendRejectionNotification(
     });
   }
 }
+
+// Get employees currently on leave (today)
+export async function getCurrentLeaves() {
+  const today = new Date();
+  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+
+  return prisma.leaveRequest.findMany({
+    where: {
+      status: "approved",
+      startDate: { lte: endOfDay },
+      endDate: { gte: startOfDay },
+    },
+    include: {
+      employee: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          employeeId: true,
+          departmentId: true,
+          department: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: { startDate: "asc" },
+  });
+}
+
+// Get upcoming approved leaves
+export async function getUpcomingLeaves(days: number = 7) {
+  const today = new Date();
+  const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+  const futureDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + days);
+
+  return prisma.leaveRequest.findMany({
+    where: {
+      status: "approved",
+      startDate: {
+        gte: tomorrow,
+        lte: futureDate,
+      },
+    },
+    include: {
+      employee: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          employeeId: true,
+          departmentId: true,
+          department: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: { startDate: "asc" },
+  });
+}

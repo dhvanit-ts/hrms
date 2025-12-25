@@ -39,6 +39,8 @@ export interface EmployeeWithRelations extends EmployeeBase {
     name: string;
     startTime: string;
     endTime: string;
+    breakTime: number;
+    isDefault: boolean;
   } | null;
 }
 

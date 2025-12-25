@@ -11,7 +11,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Badge } from '@/shared/components/ui/badge';
 import { useAuth } from '@/shared/context/AuthContext';
-import { holidaysApi, Holiday as ApiHoliday } from '@/services/api/holidays';
+import { holidaysApi, employeeHolidaysApi, Holiday as ApiHoliday } from '@/services/api/holidays';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/shared/components/ui/alert-dialog';
 
 interface Holiday {
@@ -23,7 +23,8 @@ interface Holiday {
 }
 
 export const HolidaysPage: React.FC = () => {
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, user, isEmployee, employeeAccessToken } = useAuth();
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
@@ -50,7 +51,18 @@ export const HolidaysPage: React.FC = () => {
       setLoading(true);
       setError(null);
       const year = currentDate.getFullYear();
-      const data = await holidaysApi.getAll(year);
+
+      let data: ApiHoliday[];
+      if (isEmployee && employeeAccessToken) {
+        // Use employee API for employee users
+        data = await employeeHolidaysApi.getAll(employeeAccessToken, year);
+      } else if (isAdmin) {
+        // Use admin API for admin users
+        data = await holidaysApi.getAll(year);
+      } else {
+        throw new Error('No valid authentication found');
+      }
+
       const mappedHolidays = (data || []).map(h => ({
         ...h,
         date: new Date(h.date),

@@ -269,3 +269,47 @@ export async function rejectLeaveAdmin(
         throw error;
     }
 }
+
+// Get employees currently on leave (admin only)
+export async function getCurrentLeavesAdmin(accessToken: string) {
+    try {
+        const res = await http.get("/leaves/current", {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        return res.data as { leaves: PendingLeave[] };
+    } catch (error: any) {
+        if (error.response?.status === 403) {
+            throw new Error("You do not have permission to view current leaves");
+        }
+        if (error.response?.data) {
+            throw new Error(
+                error.response.data.message || "Failed to fetch current leaves"
+            );
+        }
+        throw error;
+    }
+}
+
+// Get upcoming approved leaves (admin only)
+export async function getUpcomingLeavesAdmin(
+    accessToken: string,
+    days: number = 7
+) {
+    try {
+        const res = await http.get("/leaves/upcoming", {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            params: { days },
+        });
+        return res.data as { leaves: PendingLeave[] };
+    } catch (error: any) {
+        if (error.response?.status === 403) {
+            throw new Error("You do not have permission to view upcoming leaves");
+        }
+        if (error.response?.data) {
+            throw new Error(
+                error.response.data.message || "Failed to fetch upcoming leaves"
+            );
+        }
+        throw error;
+    }
+}

@@ -1,4 +1,5 @@
 import { http } from "./http";
+import { employeeHttp } from "./employee-http";
 
 export interface Holiday {
   id: number;
@@ -24,6 +25,7 @@ export interface UpdateHolidayData {
   isRecurring?: boolean;
 }
 
+// Admin API (for admin users)
 export const holidaysApi = {
   getAll: async (year?: number) => {
     const params = year ? { year } : {};
@@ -48,5 +50,24 @@ export const holidaysApi = {
 
   delete: async (id: number) => {
     await http.delete(`/holidays/${id}`);
+  },
+};
+
+// Employee API (for employee users)
+export const employeeHolidaysApi = {
+  getAll: async (accessToken: string, year?: number) => {
+    const params = year ? { year } : {};
+    const response = await employeeHttp.get<{ data: Holiday[] }>("/holidays", {
+      params,
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    return response.data.data;
+  },
+
+  getById: async (accessToken: string, id: number) => {
+    const response = await employeeHttp.get<{ data: Holiday }>(`/holidays/${id}`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    return response.data.data;
   },
 };

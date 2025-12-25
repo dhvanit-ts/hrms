@@ -38,6 +38,10 @@ export async function createEmployee(data: {
   const employeeCount = await prisma.employee.count();
   const employeeId = `E-${(employeeCount + 1).toString()}`;
 
+  const defaultShift = await prisma.shift.findFirst({
+    where: { isDefault: true, isActive: true }
+  })
+
   const created = await prisma.employee.create({
     data: {
       employeeId,
@@ -51,6 +55,7 @@ export async function createEmployee(data: {
       terminationDate: data.terminationDate ? new Date(data.terminationDate) : null,
       salary: data.salary,
       leaveAllowance: data.leaveAllowance || 20, // Default to 20 days
+      ...(defaultShift ? { shiftId: defaultShift.id } : {}),
     },
     include: {
       department: true,

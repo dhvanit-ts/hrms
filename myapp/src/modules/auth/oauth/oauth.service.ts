@@ -2,7 +2,7 @@ import axios from "axios";
 import { Request } from "express";
 import { env } from "@/config/env";
 import cache from "@/infra/services/cache/index";
-import * as authRepo from "@/modules/auth/auth.repo";
+import AuthRepo from "@/modules/auth/auth.repo";
 import tokenService from "@/modules/auth/tokens/token.service";
 import { HttpError } from "@/core/http";
 
@@ -35,7 +35,7 @@ class OAuthService {
     const user = userInfoRes.data;
 
     // 3. Check existing user
-    const existingUser = await authRepo.findByEmail(user.email);
+    const existingUser = await AuthRepo.CachedRead.findByEmail(user.email);
 
     let redirectUrl: string;
 
@@ -67,7 +67,7 @@ class OAuthService {
     username: string,
     req: Request
   ) => {
-    const createdUser = await authRepo.create({
+    const createdUser = await AuthRepo.Write.create({
       email,
       username,
       authType: "oauth",

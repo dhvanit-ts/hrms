@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import { Request } from "express";
 import { env } from "@/config/env";
 import { randomUUID } from "node:crypto";
-import * as authRepo from "@/modules/auth/auth.repo";
+import AuthRepo from "@/modules/auth/auth.repo";
 import { runTransaction } from "@/infra/db/transactions";
 import { DB } from "@/infra/db/types";
 
@@ -33,7 +33,7 @@ class TokenService {
       const accessToken = this.generateAccessToken(id, username);
       const refreshToken = this.generateRefreshToken(id, username);
 
-      await authRepo.updateRefreshToken(id, refreshToken, tx);
+      await AuthRepo.Write.updateRefreshToken(id, refreshToken, tx);
 
       return { accessToken, refreshToken };
     }, dbTx);

@@ -1,9 +1,9 @@
 import { HttpError } from "@/core/http";
-import * as authCached from "@/modules/auth/auth.cached-repo";
+import AuthRepo from "@/modules/auth/auth.repo";
 
 class UserService {
   static getUserByIdService = async (userId: string) => {
-    const user = await authCached.findById(userId);
+    const user = await AuthRepo.CachedRead.findById(userId);
 
     if (!user)
       throw HttpError.notFound("User doesn't exists", { code: "USER_NOT_FOUND", meta: { service: "authService.getUserByIdService" } });
@@ -12,7 +12,7 @@ class UserService {
   };
 
   static searchUsersService = async (query: string) => {
-    const users = await authCached.searchUsers(query);
+    const users = await AuthRepo.CachedRead.searchUsers(query);
     return users;
   };
 }

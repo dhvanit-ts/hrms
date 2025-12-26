@@ -3,8 +3,7 @@ import jwt from "jsonwebtoken";
 import { env } from "@/config/env";
 import { HttpError } from "@/core/http";
 import cache from "@/infra/services/cache/index";
-import * as authRepo from "@/modules/auth/auth.repo";
-import * as authCached from "@/modules/auth/auth.cached-repo";
+import AuthRepo from "@/modules/auth/auth.repo";
 import { hashPassword, verifyPassword } from "@/lib/crypto";
 import OAuthService from "@/modules/auth/oauth/oauth.service";
 import TokenService from "@/modules/auth/tokens/token.service";
@@ -15,9 +14,9 @@ import { invalidateUserCache } from "./auth.cache-keys";
 class AuthService {
   static options: CookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    ...(process.env.NODE_ENV === "production" ? {} : { domain: "localhost" }),
+    secure: env.NODE_ENV === "production",
+    sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+    ...(env.NODE_ENV === "production" ? {} : { domain: "localhost" }),
   };
 
   static setAuthCookies = (
@@ -58,12 +57,12 @@ class AuthService {
     username: string,
     password: string
   ) => {
-    const existingUser = await authCached.findByEmail(email);
+    const existingUser = await AuthRepo.CachedRead.findByEmail(email);
 
     if (existingUser)
       throw HttpError.badRequest("User with this email already exists", { code: "USER_ALREADY_EXISTS", meta: { service: "authService.initializeAuthService" } })
 
-    const usernameTaken = await authCached.findByUsername(username);
+    const usernameTaken = await AuthRepo.CachedRead.findByUsername(username);
     if (usernameTaken)
       throw HttpError.badRequest("Username is already taken", { code: "USERNAME_TAKEN", meta: { service: "authService.initializeAuthService" } });
 
@@ -90,7 +89,7 @@ class AuthService {
 
     const { createdUser, accessToken, refreshToken } = await runTransaction(
       async (tx) => {
-        const createdUser = await authRepo.create(
+        const createdUser = await AuthRepo.Write.create(
           {
             email,
             password: encryptedPassword,
@@ -131,7 +130,7 @@ class AuthService {
   };
 
   static loginAuthService = async (email: string, password: string, req: Request) => {
-    const user = await authCached.findByEmail(email);
+    const user = await AuthRepo.CachedRead.findByEmail(email);
 
     if (!user)
       throw HttpError.notFound("User doesn't exists", { code: "USER_NOT_FOUND", meta: { service: "authService.loginAuthService" } });
@@ -149,11 +148,11 @@ class AuthService {
   };
 
   static logoutAuthService = async (userId: string) => {
-    const user = await authRepo.findById(userId);
+    const user = await AuthRepo.Read.findById(userId);
     if (!user)
       throw HttpError.notFound("User doesn't exists", { code: "USER_NOT_FOUND", meta: { service: "authService.logoutAuthService" } });
 
-    await authRepo.updateRefreshToken(user.id, "");
+    await AuthRepo.Write.updateRefreshToken(user.id, "");
 
     await invalidateUserCache({ id: user.id })
   };
@@ -172,7 +171,7 @@ class AuthService {
     if (!decodedToken || typeof decodedToken === "string")
       throw HttpError.unauthorized("Invalid Access Token", { code: "AUTH_TOKEN_INVALID", meta: { service: "authService.refreshAccessTokenService" } });
 
-    const user = await authRepo.findById(decodedToken.id);
+    const user = await AuthRepo.Read.findById(decodedToken.id);
 
     if (!user || !user.refreshToken)
       throw HttpError.unauthorized("Invalid Refresh Token", { code: "AUTH_TOKEN_INVALID", meta: { service: "authService.refreshAccessTokenService" } });

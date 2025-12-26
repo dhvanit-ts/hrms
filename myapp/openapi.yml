@@ -1,0 +1,35 @@
+info:
+  title: My API
+  version: 1.0.0
+openapi: 3.0.0
+components:
+  schemas:
+    loginSchema:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+  parameters: {}
+paths:
+  /api/v1/auth/login:
+    post:
+      summary: Login a user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/loginSchema"
+      responses:
+        "200":
+          description: User logged in successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/loginSchema"
+webhooks: {}

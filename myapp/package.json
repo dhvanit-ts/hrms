@@ -20,6 +20,7 @@
     "lint:fix": "bun x biome check --write"
   },
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^8.2.0",
     "@react-email/components": "^1.0.2",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",

@@ -35,11 +35,7 @@ export const writeOpenApiSpec = (doc: OpenAPIObject) => {
   writeFileSync(outputPath, stringify(doc), { encoding: "utf8" });
 };
 
-export const registerApiDocs = (app: Application) => {
-  if (env.NODE_ENV === "production") return;
-
-  const openApiDoc = createOpenApiDocument();
-
+export const exposeDocs = (app: Application, openApiDoc: OpenAPIObject) => {
   app.get("/openapi.json", (_req, res) => {
     res.json(openApiDoc);
   });
@@ -51,7 +47,13 @@ export const registerApiDocs = (app: Application) => {
       explorer: true,
     })
   );
+}
 
-  // Only write the file in non-prod when the server actually boots
+export const setupApiDocs = (app: Application) => {
+  if (env.NODE_ENV === "production") return;
+
+  const openApiDoc = createOpenApiDocument();
+
+  exposeDocs(app, openApiDoc);
   writeOpenApiSpec(openApiDoc);
 };

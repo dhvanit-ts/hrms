@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser";
 import { errorMiddleware } from "@/core/middlewares";
 import { registerRoutes } from "@/routes/index";
 import applySecurity from "./config/security";
-import { registerApiDocs } from "../docs";
+import { setupApiDocs } from "../docs";
 
 const createApp = () => {
   const app = express();
@@ -19,7 +19,7 @@ const createApp = () => {
 
   applySecurity(app);
   registerRoutes(app);
-  registerApiDocs(app)
+  setupApiDocs(app)
 
   app.use(errorMiddleware.notFoundErrorHandler);
   app.use(errorMiddleware.generalErrorHandler);

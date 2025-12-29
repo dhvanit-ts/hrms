@@ -1,4 +1,4 @@
-import { RequestHandler, Request, Response, NextFunction } from "express";
+import type { RequestHandler, Request, Response, NextFunction } from "express";
 
 function compose(...middlewares: RequestHandler[]): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {

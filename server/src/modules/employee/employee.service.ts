@@ -33,7 +33,7 @@ export async function createEmployee(data: {
   terminationDate?: string | null;
   salary?: number | null;
   leaveAllowance?: number | null;
-}) {
+}, performedBy?: number) {
 
   const employeeCount = await prisma.employee.count();
   const employeeId = `E-${(employeeCount + 1).toString()}`;

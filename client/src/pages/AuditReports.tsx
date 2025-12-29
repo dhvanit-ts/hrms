@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Calendar, User, FileText, Eye } from 'lucide-react';
-import { auditApi, type AuditLog, type AuditFilters } from '@/services/api/audit';
+import { auditApi, type AuditLog, type AuditFilters, type UserDetails, type EntityDetails } from '@/services/api/audit';
 import { useAuth } from '@/shared/context/AuthContext';
 
 // UI Components
@@ -201,8 +201,7 @@ const AuditReportsPage: React.FC = () => {
                   <TableRow>
                     <TableHead>Timestamp</TableHead>
                     <TableHead>Action</TableHead>
-                    <TableHead>Entity</TableHead>
-                    <TableHead>Entity ID</TableHead>
+                    <TableHead>Entity Details</TableHead>
                     <TableHead>Performed By</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -225,13 +224,44 @@ const AuditReportsPage: React.FC = () => {
                             {log.action}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-medium">{log.entity}</TableCell>
-                        <TableCell className="font-mono text-sm">{log.entityId}</TableCell>
+                        <TableCell>
+                          {log.entityDetails ? (
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                <span className="font-medium">{log.entityDetails.entityName}</span>
+                              </div>
+                              <span className="text-xs text-gray-500">{log.entityDetails.entityDescription}</span>
+                              {log.entityDetails.additionalInfo && Object.keys(log.entityDetails.additionalInfo).length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {Object.entries(log.entityDetails.additionalInfo).map(([key, value]) => (
+                                    value && (
+                                      <Badge key={key} variant="secondary" className="text-xs">
+                                        {key}: {String(value)}
+                                      </Badge>
+                                    )
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4" />
+                              <span>{log.entity}</span>
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell>
                           {log.performedBy ? (
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-2">
                               <User className="h-4 w-4" />
-                              {log.performedBy}
+                              <div className="flex flex-col">
+                                <span className="font-medium">{log.performedBy.username}</span>
+                                <span className="text-xs text-gray-500">{log.performedBy.email}</span>
+                                <Badge variant="outline" className="text-xs w-fit">
+                                  {log.performedBy.userType}
+                                </Badge>
+                              </div>
                             </div>
                           ) : (
                             <span className="text-gray-400">System</span>

@@ -1,4 +1,4 @@
-import { UseController, HttpError, HttpResponse } from "@/core/http";
+import { AsyncController, HttpError, HttpResponse } from "@/core/http";
 import type { Request, Response } from "express";
 import AuthService from "./auth.service";
 import * as authSchemas from "@/modules/auth/auth.schema";
@@ -8,7 +8,7 @@ import { toInternalUser } from "../user/user.dto";
 class AuthController {
   static loginUser = withBodyValidation(authSchemas.loginSchema, this.loginUserHandler)
 
-  @UseController()
+  @AsyncController()
   static async loginUserHandler(req: Request, res: Response) {
     const { email, password } = req.body;
 
@@ -23,7 +23,7 @@ class AuthController {
     );
   }
 
-  @UseController()
+  @AsyncController()
   static async logoutUser(req: Request, res: Response) {
 
     await AuthService.logoutAuthService(req.user.id);
@@ -33,7 +33,7 @@ class AuthController {
     return HttpResponse.ok("User logged out successfully")
   }
 
-  @UseController()
+  @AsyncController()
   static async refreshAccessToken(req: Request, res: Response) {
     const incomingRefreshToken =
       req.cookies.refreshToken || req.body.refreshToken;
@@ -51,7 +51,7 @@ class AuthController {
 
   static sendOtp = withBodyValidation(authSchemas.otpSchema, this.sendOtpHandler)
 
-  @UseController()
+  @AsyncController()
   static async sendOtpHandler(req: Request) {
     const { email, username } = req.body;
 
@@ -65,7 +65,7 @@ class AuthController {
 
   static verifyOtp = withBodyValidation(authSchemas.verifyOtpSchema, this.verifyOtpHandler)
 
-  @UseController()
+  @AsyncController()
   static async verifyOtpHandler(req: Request) {
     const { email, otp } = req.body;
 

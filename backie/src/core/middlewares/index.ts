@@ -1,17 +1,9 @@
-import { verifyUserJWT } from "./auth.middleware";
-import { requirePermission } from "./requirePermission.middleware";
-import { requireRole } from "./requireRoles.middleware";
-import errorMiddleware from "./error.middleware";
-import rateLimitMiddleware from "./rate-limit.middleware";
-import { upload } from "./upload.middleware";
-import { validate } from "./validate.middleware";
+export { authenticate } from "./auth.middleware";
+export { requirePermission } from "./requirePermission.middleware";
+export { requireRole } from "./requireRoles.middleware";
+export { default as errorHandlers } from "./error.middleware";
+export { default as rateLimit } from "./rate-limit.middleware";
+export { multipartUpload } from "./upload.middleware";
+export { validateSchema } from "./validate.middleware";
 
-export {
-  verifyUserJWT,
-  rateLimitMiddleware,
-  requirePermission,
-  requireRole,
-  errorMiddleware,
-  upload,
-  validate,
-};
+export * as pipelines from "./pipelines";

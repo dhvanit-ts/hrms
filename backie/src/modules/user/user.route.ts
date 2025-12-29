@@ -1,6 +1,6 @@
 import { Router } from "express";
 import UserController from "@/modules/user/user.controller";
-import { verifyUserJWT } from "@/core/middlewares";
+import { authenticate } from "@/core/middlewares";
 
 const router = Router();
 
@@ -12,7 +12,7 @@ router.get("/google/callback", UserController.googleCallback);
 router.post("/oauth", UserController.handleUserOAuth);
 
 // Protected routes
-router.use(verifyUserJWT);
+router.use(authenticate);
 router.get("/me", UserController.getUserData);
 router.get("/id/:userId", UserController.getUserById);
 router.get("/search/:query", UserController.searchUsers);

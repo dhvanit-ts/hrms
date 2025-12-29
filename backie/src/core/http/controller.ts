@@ -31,7 +31,7 @@ export function middlewareHandler(fn: HttpMiddleware): RequestHandler {
 export function AsyncController() {
   return (
     _target: unknown,
-    propertyKey: string,
+    _propertyKey: string,
     descriptor: PropertyDescriptor
   ) => {
     const original = descriptor.value as HttpController;

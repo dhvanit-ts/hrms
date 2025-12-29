@@ -7,7 +7,7 @@ import { jwtPayloadSchema } from "@/shared/validators/auth.schema";
 import { middlewareHandler } from "../http/controller";
 import { toInternalUser } from "@/modules/user/user.dto";
 
-const verifyUserJWT = middlewareHandler(
+const authenticate = middlewareHandler(
   async (req: Request, _, next: NextFunction) => {
     const token =
       req.cookies?.accessToken ||
@@ -53,4 +53,4 @@ const verifyUserJWT = middlewareHandler(
   }
 );
 
-export { verifyUserJWT };
+export { authenticate };

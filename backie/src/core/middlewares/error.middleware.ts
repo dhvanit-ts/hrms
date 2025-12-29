@@ -4,8 +4,8 @@ import HttpError from "@/core/http/error";
 import HttpResponse from "@/core/http/response";
 import logger from "@/core/logger";
 
-class ErrorMiddlewares {
-  public generalErrorHandler = (
+const errorHandlers = {
+  general: (
     err: unknown,
     _req: Request,
     res: Response,
@@ -33,6 +33,9 @@ class ErrorMiddlewares {
         ? error.message
         : fallbackMessage;
 
+    const stack =
+      err instanceof Error ? err.stack : undefined;
+
     HttpResponse.error(
       {
         message,
@@ -40,13 +43,13 @@ class ErrorMiddlewares {
         errors: error.errors,
         code: error.code,
         meta: isDev
-          ? { ...error.meta, stack: (error as Error).stack }
+          ? { ...error.meta, stack }
           : error.meta as Record<string, unknown> | undefined,
       }
     ).send(res);
-  };
+  },
 
-  public notFoundErrorHandler = (
+  notFound: (
     req: Request,
     _res: Response,
     next: NextFunction
@@ -64,7 +67,7 @@ class ErrorMiddlewares {
         { code: "NOT_FOUND" }
       )
     );
-  };
+  }
 }
 
-export default Object.freeze(new ErrorMiddlewares());
+export default errorHandlers

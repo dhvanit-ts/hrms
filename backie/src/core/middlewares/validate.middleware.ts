@@ -5,7 +5,7 @@ import { HttpError } from "@/core/http";
 export type ValidationDatasource = "body" | "query" | "params"
 type ValidateRequest = Request & { validated?: Record<string, unknown> };
 
-export const validateSchema =
+export const validateRequest =
   <T>(schema: ZodType<T>, dataSource: ValidationDatasource = "body") =>
     (req: ValidateRequest, _res: Response, next: NextFunction) => {
       const data = req[dataSource];

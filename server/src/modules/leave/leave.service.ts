@@ -3,6 +3,7 @@ import { writeAuditLog } from "@/infra/services/audit.service";
 import ApiError from "@/core/http/ApiError.js";
 import mailService from "@/infra/services/mail";
 import { logger } from "@/config/logger";
+import { publishEvent } from "../notification/index.js";
 
 export type LeaveStatus = "pending" | "approved" | "rejected";
 
@@ -132,6 +133,19 @@ export async function applyLeave(params: {
     entity: "LeaveRequest",
     entityId: created.id.toString(),
     metadata: { type: params.type },
+  });
+
+  // Publish notification event
+  publishEvent({
+    type: "LEAVE_REQUESTED",
+    actorId: params.employeeId,
+    targetId: created.id.toString(),
+    targetType: "leave_request",
+    metadata: {
+      leaveType: params.type,
+      startDate: params.startDate,
+      endDate: params.endDate
+    }
   });
 
   return created;
@@ -342,6 +356,20 @@ export async function approveLeave(
     performedBy: approverId.toString(),
   });
 
+  // Publish notification event
+  publishEvent({
+    type: "LEAVE_APPROVED",
+    actorId: approverId,
+    targetId: leaveId.toString(),
+    targetType: "leave_request",
+    metadata: {
+      employeeId: leave.employeeId,
+      leaveType: leave.type,
+      startDate: leave.startDate.toISOString(),
+      endDate: leave.endDate.toISOString()
+    }
+  });
+
   // Trigger email notification (don't await - let it run in background)
   sendApprovalNotification(leaveId).catch((err) => {
     logger.error("Failed to send approval notification", {
@@ -388,6 +416,21 @@ export async function rejectLeave(
     entityId: leaveId.toString(),
     performedBy: approverId.toString(),
     metadata: reason ? { reason } : undefined,
+  });
+
+  // Publish notification event
+  publishEvent({
+    type: "LEAVE_REJECTED",
+    actorId: approverId,
+    targetId: leaveId.toString(),
+    targetType: "leave_request",
+    metadata: {
+      employeeId: leave.employeeId,
+      leaveType: leave.type,
+      startDate: leave.startDate.toISOString(),
+      endDate: leave.endDate.toISOString(),
+      reason
+    }
   });
 
   // Trigger email notification (don't await - let it run in background)

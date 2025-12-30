@@ -13,6 +13,7 @@ import departmentRoutes from "../modules/department/department.routes.js";
 import jobRoleRoutes from "../modules/job-role/job-role.routes.js";
 import shiftRoutes from "../modules/shift/shift.routes.js";
 import leadsRoutes from "../modules/leads/leads.routes.js";
+import notificationRoutes from "../modules/notification/notification.routes.js";
 
 const router = Router();
 
@@ -30,5 +31,6 @@ router.use("/shifts", shiftRoutes);
 router.use("/leads", leadsRoutes);
 router.use("/stats", statsRoutes);
 router.use("/audit", auditRoutes);
+router.use("/notifications", notificationRoutes);
 
 export default router;

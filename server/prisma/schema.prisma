@@ -333,3 +333,49 @@ enum ActivityType {
   note
   task
 }
+
+model Event {
+  id         Int      @id @default(autoincrement())
+  type       String   // "LEAVE_REQUESTED", "LEAVE_APPROVED", etc.
+  actorId    Int?     // Who performed the action
+  targetId   String   // ID of the target entity
+  targetType String   // "leave_request", "employee", etc.
+  metadata   Json?    // Additional context data
+  createdAt  DateTime @default(now())
+
+  @@index([type])
+  @@index([createdAt])
+  @@map("events")
+}
+
+model Notification {
+  id             Int      @id @default(autoincrement())
+  receiverId     Int      // Employee or User who should receive this
+  receiverType   String   // "employee" or "user"
+  type           String   // Same as event type
+  targetId       String
+  targetType     String
+  
+  actors         Json     @default("[]") // Array of actor names/IDs
+  count          Int      @default(1)    // Number of bundled events
+  
+  state          NotificationState @default(unread)
+  aggregationKey String   // Key for bundling similar notifications
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deliveredAt    DateTime?
+  seenAt         DateTime?
+
+  @@unique([receiverId, receiverType, aggregationKey])
+  @@index([receiverId, receiverType])
+  @@index([state])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+enum NotificationState {
+  unread
+  delivered
+  seen
+}

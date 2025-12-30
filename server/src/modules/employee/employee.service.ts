@@ -1,5 +1,6 @@
 import prisma from "@/config/db.js";
 import { writeAuditLog } from "@/infra/services/audit.service";
+import { publishEvent } from "../notification/index.js";
 
 export async function listEmployees() {
   return prisma.employee.findMany({
@@ -68,6 +69,20 @@ export async function createEmployee(data: {
     action: "CREATE",
     entity: "Employee",
     entityId: created.id.toString(),
+  });
+
+  // Publish notification event
+  publishEvent({
+    type: "EMPLOYEE_CREATED",
+    actorId: performedBy,
+    targetId: created.id.toString(),
+    targetType: "employee",
+    metadata: {
+      employeeName: created.name,
+      employeeId: created.employeeId,
+      departmentId: created.departmentId,
+      email: created.email
+    }
   });
 
   return created;

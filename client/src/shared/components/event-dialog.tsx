@@ -69,7 +69,7 @@ export function EventDialog({
 
   // Debug log to check what event is being passed
   useEffect(() => {
-    console.log("EventDialog received event:", event);
+    // Event validation happens here
   }, [event]);
 
   const resetForm = useCallback(() => {

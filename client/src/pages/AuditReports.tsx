@@ -209,7 +209,7 @@ const AuditReportsPage: React.FC = () => {
                 <TableBody>
                   {auditLogs.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={5} className="text-center py-8 text-gray-500">
                         No audit logs found
                       </TableCell>
                     </TableRow>

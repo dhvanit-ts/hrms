@@ -1,14 +1,14 @@
 import { HttpController } from "@/core/http/types";
-import { validate } from "@/core/middlewares";
+import { validateRequest } from "@/core/middlewares";
 import { ValidationDatasource } from "@/core/middlewares/validate.middleware";
-import { ZodTypeAny } from "zod";
+import { ZodType } from "zod";
 
-type MiddlewareChain = [ReturnType<typeof validate>, HttpController];
+type MiddlewareChain = [ReturnType<typeof validateRequest>, HttpController];
 
 const withValidation =
   (source: ValidationDatasource) =>
-    (schema: ZodTypeAny, handler: HttpController): MiddlewareChain => [
-      validate(schema, source),
+    (schema: ZodType, handler: HttpController): MiddlewareChain => [
+      validateRequest(schema, source),
       handler,
     ];
 

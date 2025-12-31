@@ -1,6 +1,8 @@
 import compose from "@/lib/compose";
-import { requireRole } from "./requireRoles.middleware";
-import { authenticate } from "./auth.middleware";
+import { requireRole } from "./auth/requireRoles.middleware";
+import { authenticate } from "./auth/authenticate.middleware";
+import { requireAuth } from "./auth/requireAuth.middleware";
 
-export const adminOnly = compose(authenticate, requireRole("admin"))
-export const adminsOnly = compose(authenticate, requireRole("superadmin", "admin"))
+export const requireAuthenticatedUser = compose(authenticate, requireAuth)
+export const adminOnly = compose(requireAuthenticatedUser, requireRole("admin"))
+export const adminsOnly = compose(requireAuthenticatedUser, requireRole("superadmin", "admin"))

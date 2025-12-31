@@ -122,7 +122,7 @@ class AuthService {
     return { user, accessToken, refreshToken };
   };
 
-  static logoutAuthService = async (userId: string) => {
+  static logoutUser = async (userId: string) => {
     const user = await AuthRepo.Read.findById(userId);
     if (!user)
       throw HttpError.notFound("User doesn't exists", { code: "USER_NOT_FOUND", meta: { service: "authService.logoutAuthService" } });

@@ -9,7 +9,7 @@ class AuthController {
   static loginUser = withBodyValidation(authSchemas.loginSchema, this.loginUserHandler)
 
   @AsyncController()
-  static async loginUserHandler(req: Request, res: Response) {
+  private static async loginUserHandler(req: Request, res: Response) {
     const { email, password } = req.body;
 
     const { user, accessToken, refreshToken } =
@@ -26,7 +26,7 @@ class AuthController {
   @AsyncController()
   static async logoutUser(req: Request, res: Response) {
 
-    await AuthService.logoutAuthService(req.user.id);
+    await AuthService.logoutUser(req.user.id);
 
     AuthService.clearAuthCookies(res);
 
@@ -52,7 +52,7 @@ class AuthController {
   static sendOtp = withBodyValidation(authSchemas.otpSchema, this.sendOtpHandler)
 
   @AsyncController()
-  static async sendOtpHandler(req: Request) {
+  private static async sendOtpHandler(req: Request) {
     const { email, username } = req.body;
 
     const { messageId } = await AuthService.sendOtp(email, username);
@@ -66,7 +66,7 @@ class AuthController {
   static verifyOtp = withBodyValidation(authSchemas.verifyOtpSchema, this.verifyOtpHandler)
 
   @AsyncController()
-  static async verifyOtpHandler(req: Request) {
+  private static async verifyOtpHandler(req: Request) {
     const { email, otp } = req.body;
 
     const isVerified = await AuthService.verifyOtp(email, otp);

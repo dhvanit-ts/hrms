@@ -1,9 +1,29 @@
-Ref: https://www.prisma.io/docs/getting-started/prisma-orm/quickstart/prisma-postgres
+# Changed files:
 
-also dont forget to update .gitignore to include src/generates/prisma
-
-Changed files:
+### Prisma change
 - prisma/schema.prisma
 - src/infra/db/index
+- .gitignore
 
-and refer to new steps, because the new setup is command driven
+**Node:** Refer to new steps from [prisma docs](https://www.prisma.io/docs/getting-started/prisma-orm/quickstart/prisma-postgres), because the new setup is command driven
+
+### auth middlewares fix
+- src/core/middlewares
+  - auth/*
+  - index.ts
+  - pipelines.ts
+- src/modules
+  - auth
+    - auth.controller.ts
+    - auth.route.ts
+    - auth.service.ts
+  - user
+    - user.route.ts
+
+### Bug fixes
+- src
+  - lib/validation.ts
+  - modules/auth
+    - auth.service.ts
+    - auth.controller.ts
+  - app.ts

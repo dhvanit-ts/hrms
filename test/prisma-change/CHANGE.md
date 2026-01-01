@@ -28,7 +28,7 @@
     - auth.controller.ts
   - app.ts
 
-### Logging
+### Logging & Rate limiting
 
 - src
   - modules
@@ -57,4 +57,6 @@
       - multipart-upload.middleware.ts
       - index.ts
       - pipelines.ts
-    - config/securiy.ts
+    - config
+      - securiy.ts
+      - cors.ts

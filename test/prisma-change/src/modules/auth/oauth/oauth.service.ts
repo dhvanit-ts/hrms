@@ -127,7 +127,7 @@ class OAuthService {
         provider: "google",
         email,
       });
-      throw HttpError.internal("Failed to create user", { code: "USER_CREATION_FAILED", meta: { service: "authService.handleUserOAuth" } });
+      throw HttpError.internal("Failed to create user", { code: "USER_CREATION_FAILED", meta: { source: "authService.handleUserOAuth" } });
     }
 
     const { accessToken, refreshToken } =
@@ -142,7 +142,7 @@ class OAuthService {
         userId: createdUser.id,
         provider: "google",
       });
-      throw HttpError.internal("Failed to generate access and refresh token", { code: "TOKEN_GENERATION_FAILED", meta: { service: "authService.handleUserOAuth" } });
+      throw HttpError.internal("Failed to generate access and refresh token", { code: "TOKEN_GENERATION_FAILED", meta: { source: "authService.handleUserOAuth" } });
     }
 
     logger.info("auth.user-oauth.success", {

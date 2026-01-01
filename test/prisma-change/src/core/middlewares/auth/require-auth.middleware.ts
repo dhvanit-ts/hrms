@@ -19,7 +19,7 @@ export function requireAuth(
     throw HttpError.unauthorized("Unauthorized request", {
       code: "AUTH_REQUIRED",
       meta: {
-        service: "authMiddleware.requireAuth",
+        source: "authMiddleware.requireAuth",
         hasRefreshToken
       }
     });

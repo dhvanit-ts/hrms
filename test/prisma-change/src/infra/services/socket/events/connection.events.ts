@@ -1,5 +1,5 @@
 import type { SocketEventModule } from "../types/SocketEvents";
-import { handleSocketError } from "../errors/handleSocketError";
+import { handleSocketError } from "../errors/handle-socket-error";
 
 const registerConnectionEvents: SocketEventModule = (socket) => {
   console.log(`Socket connected: ${socket.id}`);

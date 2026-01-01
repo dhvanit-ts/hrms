@@ -38,7 +38,7 @@ class AuthController {
     const incomingRefreshToken = req.cookies.refreshToken;
 
     if (!incomingRefreshToken)
-      throw HttpError.unauthorized("Unauthorized request", { code: "AUTH_TOKEN_MISSING", meta: { service: "authService.refreshAccessTokenService" } });
+      throw HttpError.unauthorized("Unauthorized request", { code: "AUTH_TOKEN_MISSING", meta: { source: "authService.refreshAccessTokenService" } });
 
     const { accessToken, refreshToken } =
       await AuthService.refreshSession(incomingRefreshToken, req);

@@ -59,7 +59,7 @@ class UserController {
 
     const tokens = await AuthService.redeemTempToken(tempToken);
     if (!tokens)
-      throw HttpError.badRequest("Invalid or expired token", { code: "INVALID_TEMP_TOKEN", meta: { service: "AuthService.handleTempToken" } });
+      throw HttpError.badRequest("Invalid or expired token", { code: "INVALID_TEMP_TOKEN", meta: { source: "AuthService.handleTempToken" } });
 
     const { accessToken, refreshToken } = tokens;
 
@@ -104,7 +104,7 @@ class UserController {
   @AsyncController()
   static async getUserData(req: Request) {
     if (!req.user || !req.user.id) {
-      throw HttpError.notFound("User not found", { code: "USER_NOT_FOUND", meta: { service: "AuthService.getUserDataService" } });
+      throw HttpError.notFound("User not found", { code: "USER_NOT_FOUND", meta: { source: "AuthService.getUserDataService" } });
     }
     return HttpResponse.ok("User fetched successfully!", req.user);
   }

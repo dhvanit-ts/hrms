@@ -33,7 +33,7 @@ export const authenticate = middlewareHandler(
 
       throw HttpError.unauthorized("Invalid Access Token", {
         code: "INVALID_ACCESS_TOKEN",
-        meta: { service: "authMiddleware.authenticate" }
+        meta: { source: "authMiddleware.authenticate" }
       });
     }
 
@@ -48,7 +48,7 @@ export const authenticate = middlewareHandler(
       });
       throw HttpError.unauthorized("User not found", {
         code: "USER_NOT_FOUND",
-        meta: { service: "authMiddleware.authenticate" }
+        meta: { source: "authMiddleware.authenticate" }
       });
     }
 

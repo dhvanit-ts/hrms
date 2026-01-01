@@ -14,7 +14,7 @@ export const requirePermission =
 
         throw HttpError.unauthorized("Unauthorized request", {
           code: "AUTH_REQUIRED",
-          meta: { service: "authMiddleware.requirePermission" }
+          meta: { source: "authMiddleware.requirePermission" }
         });
       }
 
@@ -41,7 +41,7 @@ export const requirePermission =
         throw HttpError.forbidden("Permission denied", {
           code: "PERMISSION_FORBIDDEN",
           meta: {
-            service: "authMiddleware.requirePermission",
+            source: "authMiddleware.requirePermission",
             required,
             actual: permissions
           }

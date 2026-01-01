@@ -11,7 +11,7 @@ export function requireActiveSession() {
 
       throw HttpError.unauthorized("Unauthorized request", {
         code: "AUTH_REQUIRED",
-        meta: { service: "authMiddleware.requireActiveSession" }
+        meta: { source: "authMiddleware.requireActiveSession" }
       });
     }
 
@@ -26,7 +26,7 @@ export function requireActiveSession() {
 
       throw HttpError.unauthorized("Session expired", {
         code: "SESSION_INVALID",
-        meta: { service: "authMiddleware.requireActiveSession" }
+        meta: { source: "authMiddleware.requireActiveSession" }
       });
     }
 

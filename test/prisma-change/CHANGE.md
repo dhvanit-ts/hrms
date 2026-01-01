@@ -34,6 +34,8 @@
   - modules
     - user
       - user.route.ts
+      - user.controller.ts
+      - user.service.ts
     - auth
       - auth.service.ts
       - auth.controller.ts
@@ -43,8 +45,11 @@
   - types/express/index.d.ts
   - routes/index.ts
   - lib/cached.ts
-  - infra/services/rate-limiter/*
+  - infra/services
+    - rate-limiter/*
+    - socket/errors/*
   - core
+    - http/error.ts
     - logger
       - context.ts (new)
       - logger.ts

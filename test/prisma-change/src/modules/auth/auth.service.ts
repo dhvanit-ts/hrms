@@ -1,4 +1,4 @@
-import { CookieOptions, Request, Response } from "express";
+import { Request } from "express";
 import jwt from "jsonwebtoken";
 import { env } from "@/config/env";
 import { HttpError } from "@/core/http";
@@ -49,7 +49,7 @@ class AuthService {
         username,
         reason: "email_exists",
       });
-      throw HttpError.badRequest("User with this email already exists", { code: "USER_ALREADY_EXISTS", meta: { service: "authService.initializeAuthService" } })
+      throw HttpError.badRequest("User with this email already exists", { code: "USER_ALREADY_EXISTS", meta: { source: "authService.initializeAuthService" } })
     }
 
     const usernameTaken = await AuthRepo.CachedRead.findByUsername(username);
@@ -59,7 +59,7 @@ class AuthService {
         username,
         reason: "username_taken",
       });
-      throw HttpError.badRequest("Username is already taken", { code: "USERNAME_TAKEN", meta: { service: "authService.initializeAuthService" } });
+      throw HttpError.badRequest("Username is already taken", { code: "USERNAME_TAKEN", meta: { source: "authService.initializeAuthService" } });
     }
 
     const user = { email: email.toLowerCase(), username, password };
@@ -69,7 +69,7 @@ class AuthService {
       logger.error("auth.initialize.cache_failed", {
         email,
       });
-      throw HttpError.internal("Failed to set user in cache", { code: "CACHE_ERROR", meta: { service: "authService.initializeAuthService" } });
+      throw HttpError.internal("Failed to set user in cache", { code: "CACHE_ERROR", meta: { source: "authService.initializeAuthService" } });
     }
 
     return email;
@@ -80,7 +80,7 @@ class AuthService {
     const user = await cache.get(`pending:${email}`);
     if (!user) {
       logger.warn("auth.register.pending_missing", { email });
-      throw HttpError.notFound("User doesn't exists", { code: "USER_NOT_FOUND", meta: { service: "authService.completeRegistration" } })
+      throw HttpError.notFound("User doesn't exists", { code: "USER_NOT_FOUND", meta: { source: "authService.completeRegistration" } })
     }
 
     const { password, username } = user as {
@@ -105,7 +105,7 @@ class AuthService {
 
         if (!createdUser) {
           logger.error("auth.register.user_creation_failed", { email });
-          throw HttpError.internal("Failed to create user", { code: "USER_CREATION_FAILED", meta: { service: "authService.completeRegistration" } });
+          throw HttpError.internal("Failed to create user", { code: "USER_CREATION_FAILED", meta: { source: "authService.completeRegistration" } });
         }
 
         const { accessToken, refreshToken } =
@@ -118,7 +118,7 @@ class AuthService {
 
         if (!accessToken || !refreshToken) {
           logger.error("auth.register.token_generation_failed", { email });
-          throw HttpError.internal("Failed to generate access and refresh token", { code: "TOKEN_GENERATION_ERROR", meta: { service: "authService.completeRegistration" } });
+          throw HttpError.internal("Failed to generate access and refresh token", { code: "TOKEN_GENERATION_ERROR", meta: { source: "authService.completeRegistration" } });
         }
 
         await cache.del(
@@ -152,14 +152,14 @@ class AuthService {
         email,
         reason: "user_not_found"
       });
-      throw HttpError.notFound("User doesn't exists", { code: "USER_NOT_FOUND", meta: { service: "authService.authenticateUser" } });
+      throw HttpError.notFound("User doesn't exists", { code: "USER_NOT_FOUND", meta: { source: "authService.authenticateUser" } });
     }
     if (!user.password) {
       logger.warn("auth.login.failed", {
         email,
         reason: "password_missing",
       });
-      throw HttpError.badRequest("Password not set", { code: "PASSWORD_NOT_SET", meta: { service: "authService.authenticateUser" } });
+      throw HttpError.badRequest("Password not set", { code: "PASSWORD_NOT_SET", meta: { source: "authService.authenticateUser" } });
     }
 
     const passwordValid = await verifyPassword(password, user.password);
@@ -168,7 +168,7 @@ class AuthService {
         email,
         reason: "password_invalid"
       });
-      throw HttpError.badRequest("Invalid password", { code: "INVALID_PASSWORD", meta: { service: "authService.authenticateUser" } });
+      throw HttpError.badRequest("Invalid password", { code: "INVALID_PASSWORD", meta: { source: "authService.authenticateUser" } });
     }
 
     const { accessToken, refreshToken } =
@@ -183,7 +183,7 @@ class AuthService {
     const user = await AuthRepo.Read.findById(userId);
     if (!user) {
       logger.warn("auth.logout.user_missing", { user_id: userId });
-      throw HttpError.notFound("User doesn't exists", { code: "USER_NOT_FOUND", meta: { service: "authService.authenticateUser" } });
+      throw HttpError.notFound("User doesn't exists", { code: "USER_NOT_FOUND", meta: { source: "authService.authenticateUser" } });
     }
 
     logger.info("auth.logout", {
@@ -204,7 +204,7 @@ class AuthService {
         reason: "missing_token"
       });
 
-      throw HttpError.unauthorized("Unauthorized request", { code: "AUTH_TOKEN_MISSING", meta: { service: "authService.refreshSession" } });
+      throw HttpError.unauthorized("Unauthorized request", { code: "AUTH_TOKEN_MISSING", meta: { source: "authService.refreshSession" } });
     }
 
     const decodedToken = jwt.verify(
@@ -215,7 +215,7 @@ class AuthService {
       logger.warn("auth.refresh.failed", {
         reason: "invalid_jwt"
       });
-      throw HttpError.unauthorized("Invalid Access Token", { code: "AUTH_TOKEN_INVALID", meta: { service: "authService.refreshSession" } });
+      throw HttpError.unauthorized("Invalid Access Token", { code: "AUTH_TOKEN_INVALID", meta: { source: "authService.refreshSession" } });
     }
 
     const user = await AuthRepo.Read.findById(decodedToken.id);
@@ -224,14 +224,14 @@ class AuthService {
       logger.warn("auth.refresh.failed", {
         reason: "refresh_token_missing",
       });
-      throw HttpError.unauthorized("Invalid Refresh Token", { code: "AUTH_TOKEN_INVALID", meta: { service: "authService.refreshSession" } });
+      throw HttpError.unauthorized("Invalid Refresh Token", { code: "AUTH_TOKEN_INVALID", meta: { source: "authService.refreshSession" } });
     }
 
     if (!user.refreshToken.includes(incomingRefreshToken)) {
       logger.warn("auth.refresh.failed", {
         reason: "token_mismatch",
       });
-      throw HttpError.unauthorized("Refresh token is invalid or not recognized", { code: "AUTH_TOKEN_INVALID", meta: { service: "authService.refreshSession" } });
+      throw HttpError.unauthorized("Refresh token is invalid or not recognized", { code: "AUTH_TOKEN_INVALID", meta: { source: "authService.refreshSession" } });
     }
 
     const { accessToken, refreshToken } =

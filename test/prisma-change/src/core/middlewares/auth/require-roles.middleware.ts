@@ -13,7 +13,7 @@ export const requireRole =
 
         throw HttpError.unauthorized("Unauthorized request", {
           code: "AUTH_REQUIRED",
-          meta: { service: "authMiddleware.requireRole" }
+          meta: { source: "authMiddleware.requireRole" }
         });
       }
 
@@ -34,7 +34,7 @@ export const requireRole =
         throw HttpError.forbidden("Insufficient role", {
           code: "ROLE_FORBIDDEN",
           meta: {
-            service: "authMiddleware.requireRole",
+            source: "authMiddleware.requireRole",
             required: allowed,
             actual: userRoles
           }

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import UserController from "@/modules/user/user.controller";
-import { pipelines } from "@/core/middlewares";
+import { ensureRatelimit, pipelines } from "@/core/middlewares";
 
 const router = Router();
 
@@ -12,6 +12,7 @@ router.get("/google/callback", UserController.googleCallback);
 router.post("/oauth", UserController.handleUserOAuth);
 
 // Protected routes
+router.use(ensureRatelimit.auth)
 router.use(pipelines.requireAuthenticatedUser);
 router.get("/me", UserController.getUserData);
 router.get("/id/:userId", UserController.getUserById);

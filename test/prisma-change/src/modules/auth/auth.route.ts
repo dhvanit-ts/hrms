@@ -1,6 +1,6 @@
 import { Router } from "express";
 import AuthController from "@/modules/auth/auth.controller";
-import { pipelines } from "@/core/middlewares";
+import { ensureRatelimit, pipelines } from "@/core/middlewares";
 
 const router = Router();
 
@@ -11,6 +11,7 @@ router.post("/otp/send", AuthController.sendOtp);
 router.post("/otp/verify", AuthController.verifyOtp);
 
 // Protected routes
+router.use(ensureRatelimit.auth)
 router.use(pipelines.requireAuthenticatedUser);
 router.post("/logout", AuthController.logoutUser);
 

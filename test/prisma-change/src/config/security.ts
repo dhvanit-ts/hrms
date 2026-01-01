@@ -2,6 +2,7 @@ import type { Application } from "express";
 import cors, { type CorsOptions } from "cors";
 import { env } from "./env";
 import helmet from "helmet";
+import { ensureRatelimit } from "@/core/middlewares";
 
 export const applySecurity = (app: Application) => {
   app.disable("x-powered-by");
@@ -14,6 +15,7 @@ export const applySecurity = (app: Application) => {
     optionsSuccessStatus: 200,
   };
   app.use(cors(corsOptions));
+  app.use(ensureRatelimit.api)
 };
 
 export default applySecurity;

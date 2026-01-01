@@ -31,16 +31,19 @@
 ### Logging
 
 - src
-  - modules/auth
-    - auth.service.ts
-    - auth.controller.ts
-    - auth.repo.ts
-    - oauth/oauth.service.ts
-    - otp/otp.service.ts
+  - modules
+    - user
+      - user.route.ts
+    - auth
+      - auth.service.ts
+      - auth.controller.ts
+      - auth.repo.ts
+      - oauth/oauth.service.ts
+      - otp/otp.service.ts
   - types/express/index.d.ts
   - routes/index.ts
   - lib/cached.ts
-  - infra/services/rate-limiter
+  - infra/services/rate-limiter/*
   - core
     - logger
       - context.ts (new)
@@ -54,3 +57,4 @@
       - multipart-upload.middleware.ts
       - index.ts
       - pipelines.ts
+    - config/securiy.ts

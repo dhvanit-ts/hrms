@@ -6,6 +6,7 @@ import AuthRepo from "@/modules/auth/auth.repo";
 import { jwtPayloadSchema } from "@/shared/validators/auth.schema";
 import { middlewareHandler } from "../../http/controller";
 import { toInternalUser } from "@/modules/user/user.dto";
+import logger from "@/core/logger";
 
 export const authenticate = middlewareHandler(
   async (req: Request, _: Response, next: NextFunction) => {
@@ -26,6 +27,10 @@ export const authenticate = middlewareHandler(
         env.ACCESS_TOKEN_SECRET
       ) as JwtPayload;
     } catch {
+      logger.warn("auth.middleware.invalid_access_token", {
+        source: "authenticate",
+      });
+
       throw HttpError.unauthorized("Invalid Access Token", {
         code: "INVALID_ACCESS_TOKEN",
         meta: { service: "authMiddleware.authenticate" }
@@ -37,6 +42,10 @@ export const authenticate = middlewareHandler(
     const user = await AuthRepo.CachedRead.findById(parsed.id);
 
     if (!user) {
+      logger.warn("auth.middleware.user_not_found", {
+        source: "authenticate",
+        user_id: parsed.id
+      });
       throw HttpError.unauthorized("User not found", {
         code: "USER_NOT_FOUND",
         meta: { service: "authMiddleware.authenticate" }

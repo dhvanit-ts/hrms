@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import type { ZodType } from "zod";
 import { HttpError } from "@/core/http";
+import logger from "../logger";
 
 export type ValidationDatasource = "body" | "query" | "params"
 type ValidateRequest = Request & { validated?: Record<string, unknown> };
@@ -13,22 +14,29 @@ export const validateRequest =
       const result = schema.safeParse(data);
 
       if (!result.success) {
-        // Use result.error.issues directly
-        const formattedErrors = result.error.issues.map((issue) => ({
-          field: issue.path.join("."),
-          message: issue.message,
-          code: issue.code,
+        const formattedErrors = result.error.issues.map(i => ({
+          field: i.path.join("."),
+          message: i.message,
+          code: i.code,
         }));
 
+        logger.warn("request.validation_failed", {
+          source: dataSource,
+          route: req.method + " " + req.originalUrl,
+          issues: result.error.issues.map(i => ({
+            path: i.path.join("."),
+            code: i.code,
+          })),
+        });
+
         throw HttpError.badRequest(
-          formattedErrors.map((error) => error.message).join(", ") || "Validation Error",
+          formattedErrors.map(e => e.message).join(", ") || "Validation Error",
           {
             errors: formattedErrors,
           },
         );
       }
 
-      // Attach validated data
       req.validated = req.validated || {};
       req.validated[dataSource] = result.data;
 

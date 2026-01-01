@@ -2,11 +2,16 @@ import type { Request, Response, NextFunction } from "express";
 import { getUserPermissions } from "@/core/security/rbac";
 import { Permission } from "@/config/roles";
 import { HttpError } from "@/core/http";
+import logger from "@/core/logger";
 
 export const requirePermission =
   (...required: Permission[]) =>
     (req: Request, _: Response, next: NextFunction) => {
       if (!req.user) {
+        logger.warn("auth.middleware.permission_auth_required", {
+          source: "requirePermission",
+        });
+
         throw HttpError.unauthorized("Unauthorized request", {
           code: "AUTH_REQUIRED",
           meta: { service: "authMiddleware.requirePermission" }
@@ -26,6 +31,13 @@ export const requirePermission =
       );
 
       if (!hasAll) {
+        logger.warn("auth.middleware.permission_denied", {
+          source: "requirePermission",
+          userId: req.user.id,
+          required,
+          actual: permissions,
+        });
+
         throw HttpError.forbidden("Permission denied", {
           code: "PERMISSION_FORBIDDEN",
           meta: {

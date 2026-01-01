@@ -21,7 +21,7 @@ class AuthController {
       "User logged in successfully!",
       toInternalUser(user),
     );
-  }
+  };
 
   @AsyncController()
   static async logoutUser(req: Request, res: Response) {
@@ -30,13 +30,12 @@ class AuthController {
 
     AuthService.clearAuthCookies(res);
 
-    return HttpResponse.ok("User logged out successfully")
-  }
+    return HttpResponse.ok("User logged out successfully");
+  };
 
   @AsyncController()
   static async refreshAccessToken(req: Request, res: Response) {
-    const incomingRefreshToken =
-      req.cookies.refreshToken || req.body.refreshToken;
+    const incomingRefreshToken = req.cookies.refreshToken;
 
     if (!incomingRefreshToken)
       throw HttpError.unauthorized("Unauthorized request", { code: "AUTH_TOKEN_MISSING", meta: { service: "authService.refreshAccessTokenService" } });
@@ -47,9 +46,9 @@ class AuthController {
     AuthService.setAuthCookies(res, accessToken, refreshToken);
 
     return HttpResponse.ok("Access token refreshed successfully");
-  }
+  };
 
-  static sendOtp = withBodyValidation(authSchemas.otpSchema, this.sendOtpHandler)
+  static sendOtp = withBodyValidation(authSchemas.otpSchema, this.sendOtpHandler);
 
   @AsyncController()
   private static async sendOtpHandler(req: Request) {
@@ -61,9 +60,9 @@ class AuthController {
       "OTP sent successfully",
       { messageId },
     );
-  }
+  };
 
-  static verifyOtp = withBodyValidation(authSchemas.verifyOtpSchema, this.verifyOtpHandler)
+  static verifyOtp = withBodyValidation(authSchemas.verifyOtpSchema, this.verifyOtpHandler);
 
   @AsyncController()
   private static async verifyOtpHandler(req: Request) {
@@ -75,7 +74,7 @@ class AuthController {
       isVerified ? "OTP verified successfully" : "Invalid OTP",
       { isVerified },
     );
-  }
+  };
 }
 
 export default AuthController;

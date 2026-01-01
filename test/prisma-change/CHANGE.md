@@ -27,3 +27,27 @@
     - auth.service.ts
     - auth.controller.ts
   - app.ts
+
+### Logging
+
+- src
+  - modules/auth
+    - auth.service.ts
+    - auth.controller.ts
+    - auth.repo.ts
+    - oauth/oauth.service.ts
+    - otp/otp.service.ts
+  - types/express/index.d.ts
+  - routes/index.ts
+  - lib/cached.ts
+  - infra/services/rate-limiter/rl.create-middleware.ts
+  - core/middlewares
+    - logger
+      - context.ts (new)
+      - logger.ts
+    - middlewares
+      - auth/*
+      - logger/*
+      - error.middleware.ts
+      - rateLimit.middleware.ts
+      - validate.middleware.ts

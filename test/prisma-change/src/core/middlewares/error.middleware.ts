@@ -17,9 +17,13 @@ const errorHandlers = {
     let error: HttpError;
 
     if (err instanceof HttpError) {
+      logger.warn("request.failed", {
+        statusCode: err.statusCode,
+        code: err.code,
+      });
       error = err;
     } else {
-      logger.error("Unhandled exception", { err });
+      logger.error("request.unhandled_exception", { err });
 
       error = new HttpError({
         statusCode: 500,

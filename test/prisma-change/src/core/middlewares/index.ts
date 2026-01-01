@@ -5,7 +5,7 @@ export { requirePermission } from "./auth/require-permission.middleware";
 export { requireRole } from "./auth/require-roles.middleware";
 export { default as errorHandlers } from "./error.middleware";
 export { default as rateLimit } from "./rate-limit.middleware";
-export { multipartUpload } from "./upload.middleware";
-export { validateRequest } from "./validate.middleware";
+export { multipartUpload } from "./multipart-upload.middleware";
+export { validateRequest } from "./validate-request.middleware";
 
 export * as pipelines from "./pipelines";

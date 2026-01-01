@@ -50,6 +50,7 @@
       - logger/*
       - error.middleware.ts
       - rate-liimit.middleware.ts
-      - validate.middleware.ts
+      - validate-request.middleware.ts
+      - multipart-upload.middleware.ts
       - index.ts
       - pipelines.ts

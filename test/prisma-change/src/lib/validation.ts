@@ -1,6 +1,6 @@
 import { HttpController } from "@/core/http/types";
 import { validateRequest } from "@/core/middlewares";
-import { ValidationDatasource } from "@/core/middlewares/validate.middleware";
+import { ValidationDatasource } from "@/core/middlewares/validate-request.middleware";
 import { ZodType } from "zod";
 
 type MiddlewareChain = [ReturnType<typeof validateRequest>, HttpController];

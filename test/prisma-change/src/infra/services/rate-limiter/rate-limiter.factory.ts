@@ -1,8 +1,8 @@
 import { RateLimiterRedis } from "rate-limiter-flexible";
 import cache from "@/infra/services/cache";
-import { IRateLimiter } from "./rate-limiter.interface";
+import { RateLimiter } from "./rate-limiter.interface";
 
-export class RedisLimiter implements IRateLimiter {
+export class RedisLimiter implements RateLimiter {
   constructor(private rl: RateLimiterRedis) { }
 
   async consume(key: string) {

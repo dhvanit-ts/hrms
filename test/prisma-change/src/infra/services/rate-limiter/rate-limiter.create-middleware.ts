@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from "express";
-import { IRateLimiter } from "./rate-limiter.interface";
+import { RateLimiter } from "./rate-limiter.interface";
 import { RateLimiterRes } from "rate-limiter-flexible";
 import logger from "@/core/logger";
 
-export const createRateLimiterMiddleware = (limiter: IRateLimiter) => {
+export const createRateLimiterMiddleware = (limiter: RateLimiter) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const key = req.ip;

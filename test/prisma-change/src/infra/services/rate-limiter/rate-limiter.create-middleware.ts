@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { IRateLimiter } from "./rl.interface";
+import { IRateLimiter } from "./rate-limiter.interface";
 import { RateLimiterRes } from "rate-limiter-flexible";
 import logger from "@/core/logger";
 

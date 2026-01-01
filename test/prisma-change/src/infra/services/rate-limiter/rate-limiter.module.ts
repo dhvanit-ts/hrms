@@ -1,4 +1,4 @@
-import { createLimiter } from "./rl.factory";
+import { createLimiter } from "./rate-limiter.factory";
 
 export const limiters = {
   api: createLimiter("rl_api", 100, 5 * 60),

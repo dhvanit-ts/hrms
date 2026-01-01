@@ -40,8 +40,8 @@
   - types/express/index.d.ts
   - routes/index.ts
   - lib/cached.ts
-  - infra/services/rate-limiter/rl.create-middleware.ts
-  - core/middlewares
+  - infra/services/rate-limiter
+  - core
     - logger
       - context.ts (new)
       - logger.ts
@@ -49,5 +49,7 @@
       - auth/*
       - logger/*
       - error.middleware.ts
-      - rateLimit.middleware.ts
+      - rate-liimit.middleware.ts
       - validate.middleware.ts
+      - index.ts
+      - pipelines.ts

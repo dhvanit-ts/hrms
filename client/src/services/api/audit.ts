@@ -1,11 +1,27 @@
 import { http } from "./http";
 
+export interface UserDetails {
+  userId: number;
+  username: string;
+  email: string;
+  userType: 'admin' | 'employee';
+}
+
+export interface EntityDetails {
+  entityId: string;
+  entityType: string;
+  entityName: string;
+  entityDescription?: string;
+  additionalInfo?: Record<string, any>;
+}
+
 export interface AuditLog {
   id: number;
   action: string;
   entity: string;
   entityId: string;
-  performedBy: number | null;
+  performedBy: UserDetails | null;
+  entityDetails: EntityDetails | null;
   timestamp: string;
   metadata: Record<string, unknown> | null;
 }

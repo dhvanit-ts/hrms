@@ -1,12 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { RouterProvider, createBrowserRouter } from 'react-router-dom';
+import { RouterProvider, createBrowserRouter, Outlet } from 'react-router-dom';
 import './index.css';
 import { Login } from './pages/Login';
 import { AdminLogin } from './pages/AdminLogin';
 import { Register } from './pages/Register';
 import { DashboardPage } from './pages/Dashboard';
 import { AuthProvider } from './shared/context/AuthContext';
+import { NotificationProvider } from './shared/context/NotificationContext';
 import { AuthGuard } from './routes/AuthGuard';
 import { EmployeesPage } from './pages/Employees';
 import { LeavesPage } from './pages/Leaves';
@@ -27,7 +28,13 @@ import { Toaster } from './shared/components/ui/toaster';
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <AuthProvider />,
+    element: (
+      <AuthProvider>
+        <NotificationProvider>
+          <Outlet />
+        </NotificationProvider>
+      </AuthProvider>
+    ),
     children: [
       // Employee routes (at root)
       { index: true, element: <Login /> },

@@ -30,6 +30,7 @@ import { Input } from '@/shared/components/ui/input';
 
 // Hooks
 import { useAuth } from '@/shared/context/AuthContext';
+import { NotificationBell } from '@/components/NotificationBell';
 
 /* ----------------------------------------------------------------------------------
  * SIDEBAR COMPONENTS
@@ -223,9 +224,7 @@ export const DashboardLayout: React.FC = () => {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
               <Input className="w-64 pl-9 bg-zinc-50" placeholder="Search..." />
             </div>
-            <Button variant="ghost" size="icon">
-              <Bell className="h-5 w-5 text-zinc-500" />
-            </Button>
+            <NotificationBell />
           </div>
         </header>
 

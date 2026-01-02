@@ -1,6 +1,6 @@
 import prisma from "@/config/db.js";
 import { writeAuditLog } from "@/infra/services/audit.service";
-import { publishEvent } from "../notification/index.js";
+import { publishEvent } from "../notification-rejected/index.js";
 
 export async function listEmployees() {
   return prisma.employee.findMany({

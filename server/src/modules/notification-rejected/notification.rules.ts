@@ -9,6 +9,42 @@ export interface NotificationRule {
 }
 
 // Helper functions for common receiver patterns
+const getAllAdmins = async () => {
+  const adminUsers = await db.user.findMany({
+    where: {
+      isActive: true
+    }
+  });
+
+  // Filter admin users in JavaScript since JSON queries can be database-specific
+  return adminUsers.filter(user => {
+    try {
+      const roles = Array.isArray(user.roles) ? user.roles : JSON.parse(user.roles as string);
+      return roles.includes("ADMIN");
+    } catch {
+      return false;
+    }
+  }).map(user => ({ id: user.id, type: "user" as const }));
+};
+
+const getAllManagers = async () => {
+  const managerUsers = await db.user.findMany({
+    where: {
+      isActive: true
+    }
+  });
+
+  // Filter manager users in JavaScript
+  return managerUsers.filter(user => {
+    try {
+      const roles = Array.isArray(user.roles) ? user.roles : JSON.parse(user.roles as string);
+      return roles.includes("MANAGER");
+    } catch {
+      return false;
+    }
+  }).map(user => ({ id: user.id, type: "user" as const }));
+};
+
 const getEmployeeManagers = async (employeeId: number) => {
   const employee = await db.employee.findUnique({
     where: { id: employeeId },
@@ -21,19 +57,18 @@ const getEmployeeManagers = async (employeeId: number) => {
 
   const receivers: Array<{ id: number; type: "employee" | "user" }> = [];
 
+  // Add department manager if exists
   if (employee?.department?.manager) {
     receivers.push({ id: employee.department.manager.id, type: "employee" });
   }
 
-  // Also notify admin users
-  const adminUsers = await db.user.findMany({
-    where: {
-      isActive: true,
-      roles: { path: "$", array_contains: "ADMIN" }
-    }
-  });
+  // Add all admin users
+  const admins = await getAllAdmins();
+  receivers.push(...admins);
 
-  receivers.push(...adminUsers.map(user => ({ id: user.id, type: "user" as const })));
+  // Add all manager users (HR managers, etc.)
+  const managers = await getAllManagers();
+  receivers.push(...managers);
 
   return receivers;
 };

@@ -3,7 +3,7 @@ import { writeAuditLog } from "@/infra/services/audit.service";
 import ApiError from "@/core/http/ApiError.js";
 import mailService from "@/infra/services/mail";
 import { logger } from "@/config/logger";
-import { publishEvent } from "../notification/index.js";
+import { publishEvent } from "../notification-rejected/index.js";
 
 export type LeaveStatus = "pending" | "approved" | "rejected";
 

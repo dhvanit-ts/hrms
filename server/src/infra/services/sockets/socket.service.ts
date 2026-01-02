@@ -1,6 +1,6 @@
 import { loadEnv } from "@/config/env.js";
 import { logger } from "@/config/logger.js";
-import { notificationSystem } from "@/modules/notification/index.js";
+import { notificationSystem } from "@/modules/notification-rejected/index.js";
 import { Server } from "node:http";
 import { Socket, Server as SocketIOServer } from 'socket.io';
 

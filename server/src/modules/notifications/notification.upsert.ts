@@ -2,7 +2,7 @@ import prisma from "@/config/db"
 import { DomainEvent } from "./notification.interface"
 import { ApiError } from "@/core/http"
 
-// TODO: Improve this code, consdier handling edge cases
+// TODO: Improve this code, consider handling edge cases
 
 export const upsertNotificationSafely = async (event: DomainEvent, receiver: { id: number, type: string }, aggregationKey: string) => {
   // if (notification exists for aggregationKey) {

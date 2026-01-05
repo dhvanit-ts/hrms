@@ -15,3 +15,5 @@ const publishEvent = async (event: Omit<DomainEvent, "id">) => {
     console.log(error)
   }
 }
+
+export default publishEvent

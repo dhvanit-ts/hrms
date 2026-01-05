@@ -1,8 +1,8 @@
 import prisma from "@/config/db"
-import { DomainEvent } from "./notification.interface"
+import { PublishDomainEvent } from "./notification.interface"
 import { InputJsonValue } from "@prisma/client/runtime/library"
 
-const publishEvent = async (event: Omit<DomainEvent, "id">) => {
+const publishEvent = async (event: PublishDomainEvent) => {
   try {
     const createdEvent = await prisma.event.create({
       data: {
@@ -11,6 +11,8 @@ const publishEvent = async (event: Omit<DomainEvent, "id">) => {
         metadata: event.metadata as unknown as InputJsonValue ?? {},
       }
     })
+
+    return createdEvent
   } catch (error) {
     console.log(error)
   }

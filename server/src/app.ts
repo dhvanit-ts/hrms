@@ -7,12 +7,14 @@ import swaggerUi from "swagger-ui-express";
 import YAML from "yaml";
 import fs from "node:fs";
 import path from "node:path";
+import SSE from "./infra/services/SSE/index.js";
 
 export function createApp() {
   const app = express();
   app.use(express.json());
   app.use(cookieParser());
   applySecurity(app);
+  SSE.init(app)
 
   const openapiPath = path.join(process.cwd(), "openapi.yaml");
   if (fs.existsSync(openapiPath)) {

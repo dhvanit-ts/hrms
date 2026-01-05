@@ -3,7 +3,9 @@ import { writeAuditLog } from "@/infra/services/audit.service";
 import ApiError from "@/core/http/ApiError.js";
 import mailService from "@/infra/services/mail";
 import { logger } from "@/config/logger";
-import { publishEvent } from "../notification-rejected/index.js";
+import publishEvent from "../notifications/event-bus";
+import { handleEvent } from "../notifications/notification.orchestrator";
+import { PublishDomainEvent } from "../notifications/notification.interface";
 
 export type LeaveStatus = "pending" | "approved" | "rejected";
 
@@ -136,17 +138,21 @@ export async function applyLeave(params: {
   });
 
   // Publish notification event
-  publishEvent({
-    type: "LEAVE_REQUESTED",
+  const event: PublishDomainEvent = {
     actorId: params.employeeId,
     targetId: created.id.toString(),
     targetType: "leave_request",
+    type: "LEAVE_REQUESTED",
+    createdAt: new Date(),
     metadata: {
       leaveType: params.type,
       startDate: params.startDate,
       endDate: params.endDate
     }
-  });
+  }
+
+  const createdEvent = await publishEvent(event);
+  await handleEvent({ ...createdEvent, metadata: createdEvent.metadata as Record<string, unknown> })
 
   return created;
 }
@@ -357,18 +363,22 @@ export async function approveLeave(
   });
 
   // Publish notification event
-  publishEvent({
+  const event: PublishDomainEvent = {
     type: "LEAVE_APPROVED",
     actorId: approverId,
     targetId: leaveId.toString(),
     targetType: "leave_request",
+    createdAt: new Date(),
     metadata: {
       employeeId: leave.employeeId,
       leaveType: leave.type,
       startDate: leave.startDate.toISOString(),
       endDate: leave.endDate.toISOString()
     }
-  });
+  }
+
+  const createdEvent = await publishEvent(event);
+  await handleEvent({ ...createdEvent, metadata: createdEvent.metadata as Record<string, unknown> })
 
   // Trigger email notification (don't await - let it run in background)
   sendApprovalNotification(leaveId).catch((err) => {
@@ -419,11 +429,12 @@ export async function rejectLeave(
   });
 
   // Publish notification event
-  publishEvent({
+  const event: PublishDomainEvent = {
     type: "LEAVE_REJECTED",
     actorId: approverId,
     targetId: leaveId.toString(),
     targetType: "leave_request",
+    createdAt: new Date(),
     metadata: {
       employeeId: leave.employeeId,
       leaveType: leave.type,
@@ -431,7 +442,10 @@ export async function rejectLeave(
       endDate: leave.endDate.toISOString(),
       reason
     }
-  });
+  }
+
+  const createdEvent = await publishEvent(event);
+  await handleEvent({ ...createdEvent, metadata: createdEvent.metadata as Record<string, unknown> })
 
   // Trigger email notification (don't await - let it run in background)
   sendRejectionNotification(leaveId, reason).catch((err) => {

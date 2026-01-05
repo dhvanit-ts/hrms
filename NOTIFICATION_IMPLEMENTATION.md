@@ -96,6 +96,7 @@ import { publishEvent } from "../notification/index.js";
 publishEvent({
   type: "LEAVE_REQUESTED",
   actorId: employeeId,
+  createdAt: new Date(),
   targetId: leaveId.toString(),
   targetType: "leave_request",
   metadata: { leaveType, startDate, endDate }

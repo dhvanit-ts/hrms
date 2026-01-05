@@ -4,7 +4,7 @@ import { ApiError } from "@/core/http"
 
 // TODO: Improve this code, consider handling edge cases
 
-export const upsertNotificationSafely = async (event: DomainEvent, receiver: { id: number, type: string }, aggregationKey: string) => {
+export const upsertNotification = async (event: DomainEvent, receiver: { id: number, type: string }, aggregationKey: string) => {
   // if (notification exists for aggregationKey) {
   //   update:
   //     - add actor if new

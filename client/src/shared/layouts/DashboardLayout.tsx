@@ -31,6 +31,7 @@ import { Input } from '@/shared/components/ui/input';
 // Hooks
 import { useAuth } from '@/shared/context/AuthContext';
 import { NotificationBell } from '@/components/NotificationBell';
+import { SSEDebugInfo } from '@/components/SSEDebugInfo';
 
 /* ----------------------------------------------------------------------------------
  * SIDEBAR COMPONENTS
@@ -233,6 +234,9 @@ export const DashboardLayout: React.FC = () => {
             <Outlet />
           </div>
         </main>
+
+        {/* SSE Debug Info - Only in development */}
+        <SSEDebugInfo />
       </div>
     </div>
   );

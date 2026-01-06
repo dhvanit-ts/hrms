@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { io, Socket } from "socket.io-client";
 import { useAuth } from "./AuthContext.js";
 import * as notificationApi from "../../services/api/notifications.js";
 import type { Notification } from "../../services/api/notifications.js";
@@ -43,7 +42,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   // Track if we've already fetched notifications to prevent duplicate calls
   const hasFetchedRef = useRef(false);
   const lastUserIdRef = useRef<number | string | undefined>(null);
-  const socketRef = useRef<Socket | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   const fetchNotifications = useCallback(async () => {
     if (!currentUserId) return;
@@ -160,84 +159,106 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     await markAsSeen();
   }, [markAsSeen]);
 
-  // Socket.IO connection - optimized to prevent unnecessary reconnections
+  // SSE connection - replaces Socket.IO
   useEffect(() => {
     if (!currentUserId || !currentToken) {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
       }
       return;
     }
 
-    // Don't reconnect if we already have a connected socket for the same user
-    if (socketRef.current && socketRef.current.connected) {
+    // Don't reconnect if we already have a connected EventSource for the same user
+    if (eventSourceRef.current && eventSourceRef.current.readyState === EventSource.OPEN) {
       return;
     }
 
     const apiUrl = (import.meta as any).env?.VITE_API_URL || "http://localhost:4000";
 
-    const newSocket = io(apiUrl, {
-      auth: {
-        userId: currentUserId,
-        userType: currentUserType,
-        token: currentToken
+    // Create EventSource with authentication token as query parameter
+    const eventSource = new EventSource(`${apiUrl}/api/events?token=${encodeURIComponent(currentToken)}`);
+
+    eventSource.onopen = () => {
+      console.log("✅ SSE connection established");
+    };
+
+    eventSource.onerror = (error) => {
+      console.error("❌ SSE connection error:", error);
+
+      // Attempt to reconnect after a delay if the connection fails
+      if (eventSource.readyState === EventSource.CLOSED) {
+        setTimeout(() => {
+          if (currentUserId && currentToken) {
+            // Trigger a reconnection by clearing the ref
+            eventSourceRef.current = null;
+          }
+        }, 5000);
       }
-    });
+    };
 
-    newSocket.on("connect", () => {
-      // Connection successful - no logging needed in production
-    });
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
 
-    newSocket.on("connect_error", (error) => {
-      console.error("❌ Socket connection error:", error);
-    });
+        switch (data.type) {
+          case 'connected':
+            console.log("🔗 SSE client connected:", data.clientId);
+            break;
 
-    newSocket.on("disconnect", (reason) => {
-      // Disconnection - only log errors
-      if (reason !== "io client disconnect") {
-        console.log("🔌 Disconnected from notification socket:", reason);
-      }
-    });
+          case 'ping':
+            // Handle keep-alive pings (no action needed)
+            break;
 
-    newSocket.on("notification", (notification: any) => {
-      // Validate notification object
-      if (!notification || typeof notification !== 'object') {
-        console.warn("Invalid notification received:", notification);
-        return;
-      }
+          case 'notification':
+            // Handle new notification
+            if (data.notification) {
+              // Add new notification to the list
+              setNotifications(prev => {
+                if (!Array.isArray(prev)) {
+                  console.warn("Previous notifications state is not an array, resetting:", prev);
+                  return [data.notification];
+                }
+                return [data.notification, ...prev];
+              });
 
-      // Add new notification to the list - ensure prev is always an array
-      setNotifications(prev => {
-        if (!Array.isArray(prev)) {
-          console.warn("Previous notifications state is not an array, resetting:", prev);
-          return [notification];
+              setUnreadCount(prev => (typeof prev === 'number' ? prev + 1 : 1));
+
+              // Show browser notification if permission granted
+              if (Notification.permission === "granted") {
+                new Notification("HRMS Notification", {
+                  body: data.notification.message || "New notification",
+                  icon: "/favicon.ico"
+                });
+              }
+            }
+            break;
+
+          case 'unread-count':
+            // Handle unread count update
+            const count = typeof data.unreadCount === 'number' ? data.unreadCount : 0;
+            setUnreadCount(count);
+            break;
+
+          case 'broadcast':
+            // Handle broadcast messages (if needed)
+            console.log("📢 Broadcast message:", data);
+            break;
+
+          default:
+            console.log("📨 SSE message:", data);
         }
-        return [notification, ...prev];
-      });
-
-      setUnreadCount(prev => (typeof prev === 'number' ? prev + 1 : 1));
-
-      // Show browser notification if permission granted
-      if (Notification.permission === "granted") {
-        new Notification("HRMS Notification", {
-          body: notification.message || "New notification",
-          icon: "/favicon.ico"
-        });
+      } catch (error) {
+        console.error("Failed to parse SSE message:", event.data, error);
       }
-    });
+    };
 
-    newSocket.on("unread-count", (data: { unreadCount: number }) => {
-      const count = typeof data?.unreadCount === 'number' ? data.unreadCount : 0;
-      setUnreadCount(count);
-    });
-
-    socketRef.current = newSocket;
+    eventSourceRef.current = eventSource;
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
       }
     };
   }, [currentUserId, currentUserType, currentToken]);

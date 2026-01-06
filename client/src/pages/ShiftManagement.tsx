@@ -9,6 +9,7 @@ import { shiftsApi, type Shift, type CreateShiftData, type UpdateShiftData } fro
 
 // UI Components
 import { Button } from '@/shared/components/ui/button';
+import { RefreshButton } from '@/shared/components/ui/refresh-button';
 import {
   Card,
   CardContent,
@@ -367,6 +368,12 @@ const ShiftManagementPage: React.FC = () => {
           <p className="text-gray-600">Manage work shifts and schedules</p>
         </div>
         <div className="flex items-center gap-4">
+          <RefreshButton
+            onRefresh={fetchShifts}
+            isLoading={loading}
+            showText={true}
+            variant="outline"
+          />
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>
               <Button>

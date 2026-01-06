@@ -24,6 +24,7 @@ import {
   DialogTrigger
 } from '@/shared/components/ui/dialog';
 import { useAuth } from '@/shared/context/AuthContext';
+import { RefreshButton } from '@/shared/components/ui/refresh-button';
 import * as jobRolesApi from '@/services/api/job-roles';
 import { ErrorAlert } from '@/shared/components/ui/error-alert';
 import { extractErrorMessage } from '@/lib/utils';
@@ -193,59 +194,67 @@ export const JobRolesPage: React.FC = () => {
           <h2 className="text-xl font-semibold text-zinc-900">Job Role Management</h2>
           <p className="text-sm text-zinc-500">Manage job roles and their details</p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Job Role
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Job Role</DialogTitle>
-              <DialogDescription>Add a new job role to your organization</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Job Title</label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="e.g. Software Engineer, Marketing Manager"
-                />
+        <div className="flex items-center gap-2">
+          <RefreshButton
+            onRefresh={loadJobRoles}
+            isLoading={isLoading}
+            showText={true}
+            variant="outline"
+          />
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Job Role
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Job Role</DialogTitle>
+                <DialogDescription>Add a new job role to your organization</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Job Title</label>
+                  <Input
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="e.g. Software Engineer, Marketing Manager"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Level</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={formData.level}
+                    onChange={(e) => setFormData({ ...formData, level: parseInt(e.target.value) || 1 })}
+                    placeholder="Job level (1-10)"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="isActive"
+                    checked={formData.isActive}
+                    onCheckedChange={(checked: boolean) => setFormData({ ...formData, isActive: checked })}
+                  />
+                  <label htmlFor="isActive" className="text-sm font-medium">
+                    Active Role
+                  </label>
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button onClick={handleCreate} disabled={isSubmitting || !formData.title.trim()}>
+                    {isSubmitting ? 'Creating...' : 'Create Job Role'}
+                  </Button>
+                  <Button variant="outline" onClick={closeDialogs}>
+                    Cancel
+                  </Button>
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Level</label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={formData.level}
-                  onChange={(e) => setFormData({ ...formData, level: parseInt(e.target.value) || 1 })}
-                  placeholder="Job level (1-10)"
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="isActive"
-                  checked={formData.isActive}
-                  onCheckedChange={(checked: boolean) => setFormData({ ...formData, isActive: checked })}
-                />
-                <label htmlFor="isActive" className="text-sm font-medium">
-                  Active Role
-                </label>
-              </div>
-              <div className="flex gap-2 pt-4">
-                <Button onClick={handleCreate} disabled={isSubmitting || !formData.title.trim()}>
-                  {isSubmitting ? 'Creating...' : 'Create Job Role'}
-                </Button>
-                <Button variant="outline" onClick={closeDialogs}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Search and Filters */}

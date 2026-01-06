@@ -11,6 +11,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Badge } from '@/shared/components/ui/badge';
 import { useAuth } from '@/shared/context/AuthContext';
+import { RefreshButton } from '@/shared/components/ui/refresh-button';
 import { holidaysApi, employeeHolidaysApi, Holiday as ApiHoliday } from '@/services/api/holidays';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/shared/components/ui/alert-dialog';
 
@@ -232,9 +233,17 @@ export const HolidaysPage: React.FC = () => {
             View company holidays and plan your time off
           </p>
         </div>
-        <Button onClick={goToToday} variant="outline">
-          Today
-        </Button>
+        <div className="flex items-center gap-2">
+          <RefreshButton
+            onRefresh={fetchHolidays}
+            isLoading={loading}
+            showText={true}
+            variant="outline"
+          />
+          <Button onClick={goToToday} variant="outline">
+            Today
+          </Button>
+        </div>
       </div>
 
       {error && (

@@ -21,6 +21,7 @@ import {
 } from '@/shared/components/ui/card';
 import { useAuth } from '@/shared/context/AuthContext';
 import { PendingLeavesTable } from '@/shared/components/PendingLeavesTable';
+import { RefreshButton } from '@/shared/components/ui/refresh-button';
 import * as leavesApi from '@/services/api/leaves';
 import { ErrorAlert } from '@/shared/components/ui/error-alert';
 import { extractErrorMessage } from '@/lib/utils';
@@ -199,6 +200,19 @@ export const LeavesPage: React.FC = () => {
     }
   };
 
+  const refreshAllData = async () => {
+    if (isEmployee) {
+      await load();
+    }
+    if (hasAdminAccess) {
+      await Promise.all([
+        loadPendingLeaves(),
+        loadCurrentLeaves(),
+        loadUpcomingLeaves()
+      ]);
+    }
+  };
+
   const handleFilterChange = (newFilters: any) => {
     setFilters(prev => {
       const same =
@@ -239,6 +253,12 @@ export const LeavesPage: React.FC = () => {
               : 'Manage your leave requests and view balance.'}
           </p>
         </div>
+        <RefreshButton
+          onRefresh={refreshAllData}
+          isLoading={isPendingLoading || isCurrentLoading || isUpcomingLoading || isLoading}
+          showText={true}
+          variant="outline"
+        />
       </div>
 
       {/* Admin View - Current and Upcoming Leaves + Pending Leaves Table */}

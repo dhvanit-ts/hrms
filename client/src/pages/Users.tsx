@@ -10,6 +10,7 @@ import {
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Badge } from "@/shared/components/ui/badge";
+import { RefreshButton } from '@/shared/components/ui/refresh-button';
 import { usersApi, User } from "@/services/api/users";
 import { useAuth } from "@/shared/context/AuthContext";
 
@@ -152,10 +153,18 @@ export const UsersPage: React.FC = () => {
             Manage system users and their roles
           </p>
         </div>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add User
-        </Button>
+        <div className="flex items-center gap-2">
+          <RefreshButton
+            onRefresh={fetchUsers}
+            isLoading={loading}
+            showText={true}
+            variant="outline"
+          />
+          <Button onClick={() => setShowForm(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add User
+          </Button>
+        </div>
       </div>
 
       {error && (

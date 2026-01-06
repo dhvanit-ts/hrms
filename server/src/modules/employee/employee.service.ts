@@ -1,6 +1,8 @@
 import prisma from "@/config/db.js";
 import { writeAuditLog } from "@/infra/services/audit.service";
-import { publishEvent } from "../notification/index.js";
+import { PublishDomainEvent } from "../notifications/notification.interface.js";
+import publishEvent from "../notifications/event-bus.js";
+import { handleEvent } from "../notifications/notification.orchestrator.js";
 
 export async function listEmployees() {
   return prisma.employee.findMany({
@@ -72,18 +74,22 @@ export async function createEmployee(data: {
   });
 
   // Publish notification event
-  publishEvent({
+  const event: PublishDomainEvent = {
     type: "EMPLOYEE_CREATED",
     actorId: performedBy,
     targetId: created.id.toString(),
     targetType: "employee",
+    createdAt: new Date(),
     metadata: {
       employeeName: created.name,
       employeeId: created.employeeId,
       departmentId: created.departmentId,
       email: created.email
     }
-  });
+  }
+
+  const createdEvent = await publishEvent(event);
+  await handleEvent({ ...createdEvent, metadata: createdEvent.metadata as Record<string, unknown> })
 
   return created;
 }

@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useAuth } from '@/shared/context/AuthContext';
 import { AttendanceDashboard } from '@/shared/components/AttendanceDashboard';
 import { LeaveManagement } from '@/shared/components/LeaveManagement';
+import { SSETestPanel } from '@/components/SSETestPanel';
 import { statsApi, type DashboardStats } from '@/services/api/stats';
 
 // UI Components Imports
@@ -299,6 +300,11 @@ const DashboardPage: React.FC = () => {
                 </Button>
               </CardContent>
             </Card>
+
+            {/* SSE Test Panel - Only in development */}
+            {process.env.NODE_ENV !== "production" && (
+              <SSETestPanel />
+            )}
           </div>
         </div>
       )}

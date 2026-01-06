@@ -1,66 +1,63 @@
-Fine. Let’s do this properly, not “rewrite some functions and call it architecture”.
+Fine. You want **simpler**, not “same thing with different buzzwords”. And you want **SSE instead of WebSockets**, which is correct unless you enjoy unnecessary pain.
 
-I’m going to give you a **clean notification system design** that:
+I’ll strip this to the **minimum system that still counts as real architecture**, not a toy.
 
-* puts complexity in design, not code
-* scales without heroics
-* fails predictably
-* makes sockets optional
-* makes bundling inevitable, not an afterthought
-
-No fluff. No frameworks. Just structure.
+No fluff. Fewer boxes. Fewer concepts. Same guarantees.
 
 ---
 
-# Step 0: Reset your mental model
+## The mental model (even simpler)
 
-Your old model:
+Stop thinking:
 
-> “Send a notification”
+> “Notify user”
 
-Wrong abstraction.
+Think:
 
-Correct model:
+> **“Something happened. Remember it. Maybe show it later.”**
 
-> **“Record that something happened, then derive who should know about it, then decide how to deliver it.”**
-
-Notifications are a **projection of events**, not first-class truths.
+That’s it. Notifications are **stored facts**, not live messages.
 
 ---
 
-# Step 1: Define the primitives (this is the real work)
+## The absolute minimum pieces
 
-## 1. Domain Event (immutable)
+You only need **three things**.
 
-This is the source of truth.
+![Image](https://cdn.sa.net/2024/05/19/CmPLtgZHhRWqcuw.png)
+
+![Image](https://docs.oracle.com/cd/E41507_01/epm91pbr3/eng/epm/eewe/img/i-1de106ban-7f52.png)
+
+![Image](https://ucarecdn.com/6057a5a8-2aed-4e79-92bf-d0d5d54ec7f7/)
+
+### 1. Event (immutable, boring, sacred)
+
+This is the **only truth**.
 
 ```ts
 Event {
   id
-  type: "POST_UPVOTED" | "COMMENT_REPLIED" | ...
+  type        // POST_UPVOTED, COMMENT_REPLIED
   actorId
   targetId
-  targetType: "post" | "comment"
-  metadata
   createdAt
 }
 ```
 
 Rules:
 
+* append-only
 * never updated
-* never deleted
-* no receiverId
+* no receiver
 * no UI text
-* no sockets
 
-If you can’t replay your system from events, it’s not a system.
+If you delete or mutate this, congratulations, you built a lie.
 
 ---
 
-## 2. Notification (derived, mutable)
+### 2. Notification (derived, mutable)
 
-This is what users see.
+This is what users actually see.
 
 ```ts
 Notification {
@@ -68,38 +65,36 @@ Notification {
   receiverId
   type
   targetId
-  targetType
 
-  actors: string[]        // usernames or IDs
+  actors: string[]   // who did it
   count: number
 
-  state: "unread" | "delivered" | "seen"
-  aggregationKey: string
+  state: "unread" | "seen"
+  aggregationKey
 
-  createdAt
   updatedAt
 }
 ```
 
-This is where **bundling lives**, permanently.
+Important downgrade from your original:
 
-No deletes. No merging after the fact.
+* **No delivered state**
+* **No sockets logic**
+* **No timing hacks**
+
+Seen is the only state that matters.
 
 ---
 
-# Step 2: Make bundling a first-class rule
+### 3. Rule (tiny, dumb, explicit)
 
-Bundling is not logic.
-Bundling is **policy**.
-
-Define rules per event type:
+This decides **who gets notified and how bundling works**.
 
 ```ts
-NotificationRule {
-  eventType: "POST_UPVOTED"
-  receiverResolver(event): userId[]
-  aggregationKey(event): string
-  aggregationWindowMs: number
+Rule {
+  eventType
+  resolveReceivers(event): userId[]
+  aggregationKey(event, receiverId): string
 }
 ```
 
@@ -109,175 +104,171 @@ Example:
 aggregationKey = `${receiverId}:POST_UPVOTED:${postId}`
 ```
 
-Now bundling happens **at write-time**:
-
-* if notification exists and window is open → update it
-* else → create a new one
-
-No cleanup jobs. No deleteIds arrays. No regret.
+That’s the whole policy. No windows. No timers. No cleanup cron.
 
 ---
 
-# Step 3: Split the system into boring parts
+## The flow (now readable by humans)
 
-## 1. Event Producer
-
-Used by business logic.
+### Step 1: Business logic emits an event
 
 ```ts
 EventBus.publish({
   type: "POST_UPVOTED",
   actorId,
-  targetId: postId,
+  targetId: postId
 })
 ```
 
-That’s it. No notification logic here. Ever.
+Business logic stops here.
+No notification code. No SSE. No “if user online”.
 
 ---
 
-## 2. Notification Processor (the brain)
+### Step 2: Processor converts events → notifications
 
-Consumes events and applies rules.
-
-Responsibilities:
-
-* resolve receivers
-* compute aggregation key
-* upsert notification
-* update actors + count
-
-This is pure orchestration + DB writes.
-
-No sockets. No cache. No HTTP.
-
----
-
-## 3. Delivery Service (optional sugar)
-
-Triggered by:
-
-* notification created
-* notification updated
-
-Responsibilities:
-
-* check online users
-* push socket message
-* mark `deliveredAt`
-
-If this dies, nothing breaks.
-
-Sockets are **side effects**, not infrastructure.
-
----
-
-## 4. Read Model (frontend-facing)
-
-Frontend never sees raw notifications.
-
-It sees:
+This can be a worker, cron, or inline async task.
 
 ```ts
-GET /notifications
-→ already bundled
-→ already sorted
-→ already shaped
-```
+for (event of events) {
+  rule = rules[event.type]
 
-No flags. No `populate=true`. No dynamic shapes.
-
----
-
-# Step 4: Explicit state machine
-
-Notifications have states. Enforce them.
-
-```
-unread → delivered → seen
-```
-
-Rules:
-
-* socket delivery ≠ seen
-* seen is explicit user action
-* unread count comes from state, not guesses
-
-You never infer state from time. Ever.
-
----
-
-# Step 5: Failure scenarios (this is where design proves itself)
-
-Let’s test it.
-
-### Socket server down?
-
-* events still recorded
-* notifications still created
-* users see them later
-
-### Duplicate events?
-
-* aggregationKey collapses them
-* idempotency achieved
-
-### Rebuild notifications?
-
-* replay events
-* deterministic output
-
-Your old system fails all three.
-
----
-
-# Step 6: Minimal implementation shape (not full code)
-
-```ts
-// business logic
-EventBus.publish(event)
-
-// async worker
-for (event of EventBus.consume()) {
-  rules = NotificationRules[event.type]
-  for (receiver of rules.resolve(event)) {
-    upsertNotification(receiver, event)
+  for (receiver of rule.resolveReceivers(event)) {
+    upsertNotification({
+      receiver,
+      aggregationKey,
+      actorId: event.actorId
+    })
   }
 }
 ```
 
-That’s it. That’s the core.
+Bundling happens **here**:
 
-Everything else is plumbing.
+* same aggregationKey → update count + actors
+* otherwise → create new notification
 
----
-
-# What you must NOT do again
-
-* ❌ emitting sockets inside business logic
-* ❌ bundling by deleting records
-* ❌ using cache as truth
-* ❌ inferring state from timestamps
-* ❌ letting frontend decide semantics
+No deletes. Ever.
 
 ---
 
-# Reality check
+### Step 3: Client reads notifications
 
-This design will feel:
+```http
+GET /notifications
+```
 
-* boring to implement
-* slower at first
-* heavier in schema
+Response is already:
 
-Good.
+* bundled
+* sorted
+* shaped
 
-That’s what real systems feel like.
+Frontend does **zero thinking**.
 
-Your old notification system was “complex” because it was fragile.
-This one is complex because **the domain actually is**.
+---
 
-Design first.
-Then write the dumbest possible code to satisfy it.
+## Replacing WebSockets with SSE (good call)
 
-You’re ready for this refactor.
+You do **not** need bidirectional communication.
+Notifications are server → client only.
+
+### SSE setup
+
+Client opens one connection:
+
+```http
+GET /notifications/stream
+```
+
+Server does:
+
+```ts
+res.setHeader("Content-Type", "text/event-stream")
+
+onNotificationChange(userId, notification) {
+  res.write(`data: ${JSON.stringify(notification)}\n\n`)
+}
+```
+
+That’s it.
+
+### Why SSE is better here
+
+* automatic reconnect
+* no connection state hell
+* works with load balancers
+* easier auth
+* fewer edge cases
+
+If the SSE connection dies:
+
+* notifications are still stored
+* client fetches them later
+
+Nothing breaks. Which is the point.
+
+---
+
+## State model (simplified, correct)
+
+```
+unread → seen
+```
+
+Rules:
+
+* SSE delivery does NOT change state
+* opening the page does NOT change state
+* only explicit user action marks seen
+
+Unread count = `WHERE state = 'unread'`
+
+No guessing. No timestamps. No vibes.
+
+---
+
+## Failure scenarios (still solid)
+
+**SSE server down?**
+
+* notifications still written
+* users fetch later
+
+**Duplicate events?**
+
+* aggregationKey collapses them
+
+**Need to rebuild?**
+
+* replay events
+* deterministic output
+
+Still works. Still boring. Still correct.
+
+---
+
+## What you successfully avoided this time
+
+* no WebSocket infra
+* no “real-time first” stupidity
+* no deleting notifications to bundle
+* no cache pretending to be truth
+* no frontend deciding meaning
+
+---
+
+## Final reality check
+
+This version:
+
+* is easy to draw on paper
+* fits in one service
+* can be coded in a weekend
+* still scales cleanly
+
+If a system can’t survive **being simplified**, it was never designed.
+This one survives.
+
+Now go implement it with the dumbest possible code and resist the urge to “optimize”.
+That urge is how bad architectures are born.

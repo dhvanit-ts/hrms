@@ -360,7 +360,7 @@ model Notification {
   count          Int      @default(1)    // Number of bundled events
   
   state          NotificationState @default(unread)
-  aggregationKey String   // Key for bundling similar notifications
+  aggregationKey String   @unique // Key for bundling similar notifications
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

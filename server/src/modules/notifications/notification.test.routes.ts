@@ -16,6 +16,12 @@ router.post("/test-sse", authenticateAny, asyncHandlerCb(async (req: CombinedAut
     throw new ApiError({ statusCode: 401, message: "Authentication required" });
   }
 
+  // Handle both string (admin) and number (employee) IDs
+  const normalizedUserId = userType === "user" ? userId as string : userId as number;
+
+  // Get current client count before sending
+  const clientsBefore = SSE.getClientsForUser(normalizedUserId, userType).length;
+
   // Send a test notification
   const testNotification = {
     notification: {
@@ -28,21 +34,38 @@ router.post("/test-sse", authenticateAny, asyncHandlerCb(async (req: CombinedAut
       state: "unread",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      message: "This is a test notification from SSE!"
+      message: `🧪 Test notification sent at ${new Date().toLocaleTimeString()}`
     }
   };
 
-  // Handle both string (admin) and number (employee) IDs
-  const normalizedUserId = userType === "user" ? userId as string : userId as number;
-  SSE.notifyUser(normalizedUserId, userType, testNotification);
+  try {
+    SSE.notifyUser(normalizedUserId, userType, testNotification);
 
-  return ApiResponse.ok(res, {
-    message: "Test notification sent via SSE",
-    clientCount: SSE.getClientCount(),
-    userClients: SSE.getClientsForUser(normalizedUserId, userType).length,
-    userId: normalizedUserId,
-    userType
-  });
+    // Get client count after sending
+    const clientsAfter = SSE.getClientsForUser(normalizedUserId, userType).length;
+
+    return ApiResponse.ok(res, {
+      message: "Test notification sent via SSE",
+      success: true,
+      data: {
+        clientCount: SSE.getClientCount(),
+        userClients: clientsAfter,
+        userId: normalizedUserId,
+        userType,
+        notificationSent: true,
+        timestamp: new Date().toISOString(),
+        clientsBefore,
+        clientsAfter
+      }
+    });
+  } catch (error) {
+    console.error("Failed to send SSE notification:", error);
+    throw new ApiError({
+      statusCode: 500,
+      message: "Failed to send test notification",
+      code: "SSE_SEND_FAILED"
+    });
+  }
 }));
 
 // Get SSE connection stats
@@ -50,14 +73,73 @@ router.get("/sse-stats", authenticateAny, asyncHandlerCb(async (req: CombinedAut
   const userId = req.user?.id || req.employee?.id;
   const userType = req.user ? "user" : "employee";
 
+  if (!userId) {
+    throw new ApiError({ statusCode: 401, message: "Authentication required" });
+  }
+
   const normalizedUserId = userType === "user" ? userId as string : userId as number;
+  const userClients = SSE.getClientsForUser(normalizedUserId, userType);
 
   return ApiResponse.ok(res, {
     totalClients: SSE.getClientCount(),
-    userClients: userId ? SSE.getClientsForUser(normalizedUserId, userType).length : 0,
+    userClients: userClients.length,
     userId: normalizedUserId,
-    userType
+    userType,
+    timestamp: new Date().toISOString(),
+    clientDetails: userClients.map(client => ({
+      id: client.id,
+      lastPing: client.lastPing,
+      connected: true
+    }))
   });
+}));
+
+// Test endpoint to broadcast to all clients
+router.post("/broadcast", authenticateAny, asyncHandlerCb(async (req: CombinedAuthenticatedRequest, res: Response) => {
+  const { message = "Test broadcast message" } = req.body;
+
+  const broadcastData = {
+    message,
+    timestamp: new Date().toISOString(),
+    sender: req.user?.email || req.employee?.email || "System"
+  };
+
+  try {
+    SSE.broadcast(broadcastData);
+
+    return ApiResponse.ok(res, {
+      message: "Broadcast sent to all clients",
+      clientCount: SSE.getClientCount(),
+      broadcastData
+    });
+  } catch (error) {
+    console.error("Failed to broadcast:", error);
+    throw new ApiError({
+      statusCode: 500,
+      message: "Failed to send broadcast",
+      code: "SSE_BROADCAST_FAILED"
+    });
+  }
+}));
+
+// Health check endpoint for SSE service
+router.get("/health", asyncHandlerCb(async (req: any, res: Response) => {
+  try {
+    const stats = {
+      totalClients: SSE.getClientCount(),
+      timestamp: new Date().toISOString(),
+      status: "healthy"
+    };
+
+    return ApiResponse.ok(res, stats);
+  } catch (error) {
+    console.error("SSE health check failed:", error);
+    throw new ApiError({
+      statusCode: 500,
+      message: "SSE service unhealthy",
+      code: "SSE_UNHEALTHY"
+    });
+  }
 }));
 
 export default router;

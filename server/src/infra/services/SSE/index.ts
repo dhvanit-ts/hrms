@@ -58,7 +58,15 @@ class SSE {
         }
       } catch (error) {
         console.log('JWT verification failed:', error);
-        res.status(401).json({ error: "Invalid token" });
+
+        // Provide specific error messages for different JWT errors
+        if (error.name === 'TokenExpiredError') {
+          res.status(401).json({ error: "Token expired", code: "TOKEN_EXPIRED" });
+        } else if (error.name === 'JsonWebTokenError') {
+          res.status(401).json({ error: "Invalid token", code: "INVALID_TOKEN" });
+        } else {
+          res.status(401).json({ error: "Token verification failed", code: "TOKEN_VERIFICATION_FAILED" });
+        }
         return;
       }
 
@@ -82,6 +90,8 @@ class SSE {
       };
 
       this.clients.set(clientId, client);
+
+      console.log(`SSE client connected: ${clientId} (${userType} ${userId})`);
 
       // Send initial connection message
       res.write(`data: ${JSON.stringify({ type: 'connected', clientId, userId, userType })}\n\n`);

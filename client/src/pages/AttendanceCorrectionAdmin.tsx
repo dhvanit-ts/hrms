@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { Badge } from "@/shared/components/ui/badge";
-import { Clock, Users, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { AttendanceCorrectionReview } from "@/components/AttendanceCorrectionReview";
+import { RefreshButton } from "@/shared/components/ui/refresh-button";
 
 export function AttendanceCorrectionAdmin() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -23,74 +24,29 @@ export function AttendanceCorrectionAdmin() {
         </div>
       </div>
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <AlertCircle className="h-8 w-8 text-yellow-600" />
-              <div>
-                <p className="text-2xl font-bold">-</p>
-                <p className="text-xs text-muted-foreground">Pending Review</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-              <div>
-                <p className="text-2xl font-bold">-</p>
-                <p className="text-xs text-muted-foreground">Approved Today</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <XCircle className="h-8 w-8 text-red-600" />
-              <div>
-                <p className="text-2xl font-bold">-</p>
-                <p className="text-xs text-muted-foreground">Rejected Today</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <Users className="h-8 w-8 text-blue-600" />
-              <div>
-                <p className="text-2xl font-bold">-</p>
-                <p className="text-xs text-muted-foreground">Total Requests</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Main Content */}
       <Tabs defaultValue="pending" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="pending" className="flex items-center space-x-2">
-            <AlertCircle className="h-4 w-4" />
-            <span>Pending Review</span>
-          </TabsTrigger>
-          <TabsTrigger value="approved" className="flex items-center space-x-2">
-            <CheckCircle className="h-4 w-4" />
-            <span>Approved</span>
-          </TabsTrigger>
-          <TabsTrigger value="rejected" className="flex items-center space-x-2">
-            <XCircle className="h-4 w-4" />
-            <span>Rejected</span>
-          </TabsTrigger>
-          <TabsTrigger value="all" className="flex items-center space-x-2">
-            <Clock className="h-4 w-4" />
-            <span>All Requests</span>
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex justify-between">
+          <TabsList>
+            <TabsTrigger value="pending" className="flex items-center space-x-2">
+              <AlertCircle className="h-4 w-4" />
+              <span>Pending Review</span>
+            </TabsTrigger>
+            <TabsTrigger value="approved" className="flex items-center space-x-2">
+              <CheckCircle className="h-4 w-4" />
+              <span>Approved</span>
+            </TabsTrigger>
+            <TabsTrigger value="rejected" className="flex items-center space-x-2">
+              <XCircle className="h-4 w-4" />
+              <span>Rejected</span>
+            </TabsTrigger>
+            <TabsTrigger value="all" className="flex items-center space-x-2">
+              <Clock className="h-4 w-4" />
+              <span>All Requests</span>
+            </TabsTrigger>
+          </TabsList>
+          <RefreshButton onRefresh={handleRefresh} showText />
+        </div>
 
         <TabsContent value="pending" className="space-y-4">
           <Card>

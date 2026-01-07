@@ -1,4 +1,12 @@
-import { PostUpvotedRule, LeaveRequestedRule, LeaveApprovedRule, LeaveRejectedRule } from "./notification.rules";
+import {
+  PostUpvotedRule,
+  LeaveRequestedRule,
+  LeaveApprovedRule,
+  LeaveRejectedRule,
+  AttendanceCorrectionRequestedRule,
+  AttendanceCorrectionApprovedRule,
+  AttendanceCorrectionRejectedRule
+} from "./notification.rules";
 import { NotificationRule } from "./notification.rules-interface";
 
 const RULES = {
@@ -6,6 +14,9 @@ const RULES = {
   LEAVE_REQUESTED: LeaveRequestedRule,
   LEAVE_APPROVED: LeaveApprovedRule,
   LEAVE_REJECTED: LeaveRejectedRule,
+  ATTENDANCE_CORRECTION_REQUESTED: AttendanceCorrectionRequestedRule,
+  ATTENDANCE_CORRECTION_APPROVED: AttendanceCorrectionApprovedRule,
+  ATTENDANCE_CORRECTION_REJECTED: AttendanceCorrectionRejectedRule,
   // COMMENT_REPLIED: CommentRepliedRule
 }
 

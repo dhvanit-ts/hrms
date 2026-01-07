@@ -33,9 +33,10 @@ model Attendance {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  employee   Employee  @relation(fields: [employeeId], references: [id])
-  shift      Shift?    @relation(fields: [shiftId], references: [id])
-  breaks     Break[]
+  employee          Employee                      @relation(fields: [employeeId], references: [id])
+  shift             Shift?                        @relation(fields: [shiftId], references: [id])
+  breaks            Break[]
+  correctionRequests AttendanceCorrectionRequest[]
 
   @@unique([employeeId, date])
   @@index([employeeId])
@@ -102,6 +103,7 @@ department Department? @relation(fields: [departmentId], references: [id])
   approvals          LeaveRequest[]  @relation("EmployeeApprovals")
   refreshTokens      EmployeeRefreshToken[]
   bankDetails        BankDetails?
+  attendanceCorrectionRequests AttendanceCorrectionRequest[]
 
   @@index([departmentId])
   @@index([jobRoleId])
@@ -169,6 +171,7 @@ model User {
   refreshTokens RefreshToken[]
   leads         Lead[]
   leadActivities LeadActivity[]
+  attendanceCorrectionReviews AttendanceCorrectionRequest[]
 
   @@index([email])
   @@index([isActive])
@@ -348,6 +351,34 @@ model Event {
   @@map("events")
 }
 
+model AttendanceCorrectionRequest {
+  id                Int                           @id @default(autoincrement())
+  employeeId        Int
+  attendanceId      Int
+  requestType       AttendanceCorrectionType
+  requestedCheckIn  DateTime?
+  requestedCheckOut DateTime?
+  currentCheckIn    DateTime?
+  currentCheckOut   DateTime?
+  reason            String                        @db.Text
+  status            AttendanceCorrectionStatus    @default(pending)
+  reviewerId        Int?
+  reviewerNotes     String?                       @db.Text
+  createdAt         DateTime                      @default(now())
+  updatedAt         DateTime                      @updatedAt
+  reviewedAt        DateTime?
+
+  employee          Employee                      @relation(fields: [employeeId], references: [id])
+  attendance        Attendance                    @relation(fields: [attendanceId], references: [id])
+  reviewer          User?                         @relation(fields: [reviewerId], references: [id])
+
+  @@index([employeeId])
+  @@index([attendanceId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("attendance_correction_requests")
+}
+
 model Notification {
   id             Int      @id @default(autoincrement())
   receiverId     Int      // Employee or User who should receive this
@@ -378,4 +409,18 @@ enum NotificationState {
   unread
   delivered
   seen
+}
+
+enum AttendanceCorrectionType {
+  CHECK_IN_TIME
+  CHECK_OUT_TIME
+  BOTH_TIMES
+  MISSING_CHECK_IN
+  MISSING_CHECK_OUT
+}
+
+enum AttendanceCorrectionStatus {
+  pending
+  approved
+  rejected
 }

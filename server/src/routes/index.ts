@@ -14,6 +14,9 @@ import jobRoleRoutes from "../modules/job-role/job-role.routes.js";
 import shiftRoutes from "../modules/shift/shift.routes.js";
 import leadsRoutes from "../modules/leads/leads.routes.js";
 import notificationRoutes from "../modules/notifications/notification.routes.js";
+import { attendanceCorrectionEmployeeRoutes, attendanceCorrectionAdminRoutes } from "../modules/attendance-correction/attendance-correction.routes.js";
+import { authenticate } from "../core/middlewares/auth.js";
+import { requireRoles } from "../core/middlewares/rbac.js";
 
 const router = Router();
 
@@ -32,5 +35,9 @@ router.use("/leads", leadsRoutes);
 router.use("/stats", statsRoutes);
 router.use("/audit", auditRoutes);
 router.use("/notifications", notificationRoutes);
+
+// Attendance correction routes
+router.use("/attendance-corrections", authenticate, attendanceCorrectionEmployeeRoutes);
+router.use("/admin/attendance-corrections", authenticate, requireRoles("HR", "ADMIN", "SUPER_ADMIN", "MANAGER"), attendanceCorrectionAdminRoutes);
 
 export default router;

@@ -22,6 +22,7 @@ import {
   Building2,
   Target,
   RotateCcw,
+  Edit,
 } from 'lucide-react';
 
 // UI Components
@@ -105,7 +106,11 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
     { path: '/dashboard/leaves', label: 'Leaves', icon: Calendar },
     ...(isEmployee ? [
       { path: '/dashboard/attendance', label: 'Attendance', icon: Clock },
+      { path: '/dashboard/attendance-corrections', label: 'Attendance Corrections', icon: Edit },
       { path: '/dashboard/profile', label: 'My Profile', icon: Users },
+    ] : []),
+    ...(hasAdminAccess ? [
+      { path: '/dashboard/attendance-corrections-admin', label: 'Correction Requests', icon: Edit },
     ] : []),
     { path: '/dashboard/holidays', label: 'Holidays', icon: Calendar },
     ...(isEmployee ? [

@@ -82,6 +82,20 @@ function generateMessage(notification: any): string {
     case "LEAVE_REJECTED":
       return "Your leave request has been rejected";
 
+    case "ATTENDANCE_CORRECTION_REQUESTED":
+      if (count === 1) {
+        return actors.length > 0
+          ? `${actors[0]} requested attendance correction`
+          : "New attendance correction request submitted";
+      }
+      return `${count} new attendance correction requests submitted`;
+
+    case "ATTENDANCE_CORRECTION_APPROVED":
+      return "Your attendance correction request has been approved";
+
+    case "ATTENDANCE_CORRECTION_REJECTED":
+      return "Your attendance correction request has been rejected";
+
     case "EMPLOYEE_CREATED":
       if (count === 1) {
         return actors.length > 0

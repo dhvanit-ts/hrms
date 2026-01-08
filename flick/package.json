@@ -1,0 +1,21 @@
+{
+  "name": "flick",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "build": "pnpm -r run build",
+    "clean": "pnpm -r run clean",
+    "lint": "pnpm -r run lint",
+    "test": "pnpm -r run test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.26.2",
+  "dependencies": {
+    "uuid": "^13.0.0"
+  }
+}

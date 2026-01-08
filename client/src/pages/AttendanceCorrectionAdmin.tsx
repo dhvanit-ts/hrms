@@ -122,7 +122,7 @@ export function AttendanceCorrectionAdmin() {
             <p>All requests will be displayed here</p>
           </div>
         </TabsContent>
-      </Tabs>
-    </div>
+      </Tabs >
+    </div >
   );
 }

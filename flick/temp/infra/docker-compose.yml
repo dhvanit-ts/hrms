@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: temp
+      POSTGRES_DB: break
     ports:
       - "5432:5432"
     volumes:

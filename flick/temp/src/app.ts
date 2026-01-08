@@ -3,7 +3,7 @@ import { setupApiDocs } from "../docs";
 import http from "node:http";
 import socketService from "@/infra/services/socket";
 import cookieParser from "cookie-parser";
-import { errorMiddleware } from "@/core/middlewares";
+import { errorHandlers } from "@/core/middlewares";
 import { registerRoutes } from "@/routes/index";
 import applySecurity from "./config/security";
 
@@ -21,8 +21,8 @@ const createApp = () => {
   registerRoutes(app);
   setupApiDocs(app);
 
-  app.use(errorMiddleware.notFoundErrorHandler);
-  app.use(errorMiddleware.generalErrorHandler);
+  app.use(errorHandlers.notFound);
+  app.use(errorHandlers.general);
 
   return server;
 };

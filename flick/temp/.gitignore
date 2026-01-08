@@ -9,6 +9,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# prisma
+/src/generated/prisma
+
 # Runtime data
 pids
 *.pid

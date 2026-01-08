@@ -16,7 +16,7 @@ export const cached = async <T>(
   const hit = cache.get<T>(key);
 
   if (hit !== undefined) {
-    logger.debug(`CACHE HIT → ${key}`);
+    logger.debug(`cache.hit.${key}`);
     return hit;
   }
 
@@ -24,7 +24,7 @@ export const cached = async <T>(
     return inFlight.get(key) as Promise<T>;
   }
 
-  logger.debug(`CACHE MISS → ${key}`);
+  logger.debug(`cache.miss.${key}`);
 
   const promise = (async () => {
     const result = await fetcher();
@@ -52,7 +52,7 @@ export const withCache = <T>(
   } = {}
 ): Promise<T> => {
   if (options.dbTx) {
-    logger.debug(`CACHE BYPASS (transaction) → ${key}`);
+    logger.debug(`cache.bypass.${key}`);
     return fetcher();
   }
 

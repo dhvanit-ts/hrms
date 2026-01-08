@@ -1,17 +1,16 @@
 import UserService from "./user.service";
 import AuthService from "@/modules/auth/auth.service";
 import type { Request, Response } from "express";
-import type { AuthenticatedRequest } from "@/core/middlewares";
 import { toPublicUser } from "./user.dto";
 import * as authSchemas from "@/modules/user/user.schema";
-import { HttpError, HttpResponse, UseController } from "@/core/http";
+import { HttpError, HttpResponse, AsyncController } from "@/core/http";
 import { withBodyValidation, withParamsValidation, withQueryValidation } from "@/lib/validation";
 
 class UserController {
 
   static getUserById = withParamsValidation(authSchemas.userIdSchema, this.getUserByIdHandler)
 
-  @UseController()
+  @AsyncController()
   static async getUserByIdHandler(req: Request) {
     const { userId } = req.params;
     const user = await UserService.getUserByIdService(userId);
@@ -20,7 +19,7 @@ class UserController {
 
   static searchUsers = withParamsValidation(authSchemas.searchQuerySchema, this.searchUsersHandler)
 
-  @UseController()
+  @AsyncController()
   static async searchUsersHandler(req: Request) {
     const { query } = req.params;
     const users = await UserService.searchUsersService(query);
@@ -29,7 +28,7 @@ class UserController {
 
   static googleCallback = withQueryValidation(authSchemas.googleCallbackSchema, this.googleCallbackHandler)
 
-  @UseController()
+  @AsyncController()
   static async googleCallbackHandler(req: Request) {
     const code = req.query.code as string;
     const { redirectUrl } = await AuthService.handleGoogleOAuth(code, req);
@@ -38,12 +37,12 @@ class UserController {
 
   static handleUserOAuth = withBodyValidation(authSchemas.userOAuthSchema, this.handleUserOAuthHandler)
 
-  @UseController()
+  @AsyncController()
   static async handleUserOAuthHandler(req: Request, res: Response) {
     const { email, username } = req.body;
 
     const { createdUser, accessToken, refreshToken } =
-      await AuthService.handleUserOAuth(email, username, req);
+      await AuthService.createUserFromOAuth(email, username, req);
 
     AuthService.setAuthCookies(res, accessToken, refreshToken);
     return HttpResponse.created(
@@ -54,13 +53,13 @@ class UserController {
 
   static handleTempToken = withBodyValidation(authSchemas.tempTokenSchema, this.redeemTempToken)
 
-  @UseController()
+  @AsyncController()
   static async redeemTempToken(req: Request, res: Response) {
     const { tempToken } = req.body;
 
     const tokens = await AuthService.redeemTempToken(tempToken);
     if (!tokens)
-      throw HttpError.badRequest("Invalid or expired token", { code: "INVALID_TEMP_TOKEN", meta: { service: "AuthService.handleTempToken" } });
+      throw HttpError.badRequest("Invalid or expired token", { code: "INVALID_TEMP_TOKEN", meta: { source: "AuthService.handleTempToken" } });
 
     const { accessToken, refreshToken } = tokens;
 
@@ -70,11 +69,11 @@ class UserController {
 
   static initializeUser = withBodyValidation(authSchemas.initializeUserSchema, this.initializeUserHandler)
 
-  @UseController()
+  @AsyncController()
   static async initializeUserHandler(req: Request) {
     const { email, username, password } = req.body;
 
-    const savedEmail = await AuthService.initializeAuthService(
+    const savedEmail = await AuthService.initializeAuth(
       email,
       username,
       password
@@ -88,12 +87,12 @@ class UserController {
 
   static registerUser = withBodyValidation(authSchemas.registrationSchema, this.registerUserHandler)
 
-  @UseController()
+  @AsyncController()
   static async registerUserHandler(req: Request, res: Response) {
     const { email } = req.body;
 
     const { createdUser, accessToken, refreshToken } =
-      await AuthService.registerAuthService(email, req);
+      await AuthService.completeRegistration(email, req);
 
     AuthService.setAuthCookies(res, accessToken, refreshToken);
     return HttpResponse.created(
@@ -102,10 +101,10 @@ class UserController {
     );
   }
 
-  @UseController()
-  static async getUserData(req: AuthenticatedRequest) {
+  @AsyncController()
+  static async getUserData(req: Request) {
     if (!req.user || !req.user.id) {
-      throw HttpError.notFound("User not found", { code: "USER_NOT_FOUND", meta: { service: "AuthService.getUserDataService" } });
+      throw HttpError.notFound("User not found", { code: "USER_NOT_FOUND", meta: { source: "AuthService.getUserDataService" } });
     }
     return HttpResponse.ok("User fetched successfully!", req.user);
   }

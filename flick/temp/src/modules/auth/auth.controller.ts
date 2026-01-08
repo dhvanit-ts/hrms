@@ -1,7 +1,6 @@
-import { UseController, HttpError, HttpResponse } from "@/core/http";
-import { Request, Response } from "express";
+import { AsyncController, HttpError, HttpResponse } from "@/core/http";
+import type { Request, Response } from "express";
 import AuthService from "./auth.service";
-import { AuthenticatedRequest } from "@/core/middlewares";
 import * as authSchemas from "@/modules/auth/auth.schema";
 import { withBodyValidation } from "@/lib/validation";
 import { toInternalUser } from "../user/user.dto";
@@ -9,12 +8,12 @@ import { toInternalUser } from "../user/user.dto";
 class AuthController {
   static loginUser = withBodyValidation(authSchemas.loginSchema, this.loginUserHandler)
 
-  @UseController()
-  static async loginUserHandler(req: Request, res: Response) {
+  @AsyncController()
+  private static async loginUserHandler(req: Request, res: Response) {
     const { email, password } = req.body;
 
     const { user, accessToken, refreshToken } =
-      await AuthService.loginAuthService(email, password, req);
+      await AuthService.authenticateUser(email, password, req);
 
     AuthService.setAuthCookies(res, accessToken, refreshToken);
 
@@ -22,61 +21,60 @@ class AuthController {
       "User logged in successfully!",
       toInternalUser(user),
     );
-  }
+  };
 
-  @UseController()
-  static async logoutUser(req: AuthenticatedRequest, res: Response) {
+  @AsyncController()
+  static async logoutUser(req: Request, res: Response) {
 
-    await AuthService.logoutAuthService(req.user.id);
+    await AuthService.logoutUser(req.user.id);
 
     AuthService.clearAuthCookies(res);
 
-    return HttpResponse.ok("User logged out successfully")
-  }
+    return HttpResponse.ok("User logged out successfully");
+  };
 
-  @UseController()
-  static async refreshAccessToken(req: AuthenticatedRequest, res: Response) {
-    const incomingRefreshToken =
-      req.cookies.refreshToken || req.body.refreshToken;
+  @AsyncController()
+  static async refreshAccessToken(req: Request, res: Response) {
+    const incomingRefreshToken = req.cookies.refreshToken;
 
     if (!incomingRefreshToken)
-      throw HttpError.unauthorized("Unauthorized request", { code: "AUTH_TOKEN_MISSING", meta: { service: "authService.refreshAccessTokenService" } });
+      throw HttpError.unauthorized("Unauthorized request", { code: "AUTH_TOKEN_MISSING", meta: { source: "authService.refreshAccessTokenService" } });
 
     const { accessToken, refreshToken } =
-      await AuthService.refreshAccessTokenService(incomingRefreshToken, req);
+      await AuthService.refreshSession(incomingRefreshToken, req);
 
     AuthService.setAuthCookies(res, accessToken, refreshToken);
 
     return HttpResponse.ok("Access token refreshed successfully");
-  }
+  };
 
-  static sendOtp = withBodyValidation(authSchemas.otpSchema, this.sendOtpHandler)
+  static sendOtp = withBodyValidation(authSchemas.otpSchema, this.sendOtpHandler);
 
-  @UseController()
-  static async sendOtpHandler(req: Request) {
+  @AsyncController()
+  private static async sendOtpHandler(req: Request) {
     const { email, username } = req.body;
 
-    const { messageId } = await AuthService.sendOtpService(email, username);
+    const { messageId } = await AuthService.sendOtp(email, username);
 
     return HttpResponse.ok(
       "OTP sent successfully",
       { messageId },
     );
-  }
+  };
 
-  static verifyOtp = withBodyValidation(authSchemas.verifyOtpSchema, this.verifyOtpHandler)
+  static verifyOtp = withBodyValidation(authSchemas.verifyOtpSchema, this.verifyOtpHandler);
 
-  @UseController()
-  static async verifyOtpHandler(req: Request) {
+  @AsyncController()
+  private static async verifyOtpHandler(req: Request) {
     const { email, otp } = req.body;
 
-    const isVerified = await AuthService.verifyOtpService(email, otp);
+    const isVerified = await AuthService.verifyOtp(email, otp);
 
     return HttpResponse.ok(
       isVerified ? "OTP verified successfully" : "Invalid OTP",
       { isVerified },
     );
-  }
+  };
 }
 
 export default AuthController;

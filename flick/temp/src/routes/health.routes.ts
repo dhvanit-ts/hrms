@@ -1,17 +1,17 @@
 import type { Application } from "express";
-import { ApiResponse, asyncHandlerCb as asyncHandler } from "@/core/http";
+import { HttpResponse, controllerHandler } from "@/core/http";
 
 export const registerHealthRoutes = (app: Application) => {
   app.get(
     "/healthz",
-    asyncHandler(async () =>
-      ApiResponse.ok({ status: "ok" }, "Server is healthy")
+    controllerHandler(async () =>
+      HttpResponse.ok("Server is healthy", { status: "ok" })
     )
   );
   app.get(
     "/readyz",
-    asyncHandler(async () =>
-      ApiResponse.ok({ status: "ready" }, "Server is healthy")
+    controllerHandler(async () =>
+      HttpResponse.ok("Server is healthy", { status: "ready" })
     )
   );
 };

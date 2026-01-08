@@ -6,7 +6,7 @@ class UserService {
     const user = await AuthRepo.CachedRead.findById(userId);
 
     if (!user)
-      throw HttpError.notFound("User doesn't exists", { code: "USER_NOT_FOUND", meta: { service: "authService.getUserByIdService" } });
+      throw HttpError.notFound("User doesn't exists", { code: "USER_NOT_FOUND", meta: { source: "authService.getUserByIdService" } });
 
     return user;
   };

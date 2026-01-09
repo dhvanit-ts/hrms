@@ -88,6 +88,20 @@ function generateMessage(notification: any): string {
       }
       return `${count} employees missed attendance`;
 
+    case "TICKET_CREATED":
+      if (count === 1) {
+        return actors.length > 0
+          ? `${actors[0]} created a new ticket`
+          : "New ticket created";
+      }
+      return `${count} new tickets created`;
+
+    case "TICKET_APPROVED":
+      return "Your ticket has been approved";
+
+    case "TICKET_REJECTED":
+      return "Your ticket has been rejected";
+
     default:
       return `${type.toLowerCase().replace(/_/g, " ")}`;
   }

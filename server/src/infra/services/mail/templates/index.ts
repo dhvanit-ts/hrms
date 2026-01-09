@@ -5,6 +5,8 @@ import OtpVerificationEmail from "./OtpVerificationEmail";
 import WelcomeEmail from "./WelcomeEmail";
 import LeaveApprovedEmail from "./LeaveApprovedEmail";
 import LeaveRejectedEmail from "./LeaveRejectedEmail";
+import TicketApprovedEmail from "./TicketApprovedEmail";
+import TicketRejectedEmail from "./TicketRejectedEmail";
 import { render } from "@react-email/render";
 import { MailDetails, MailType } from "../mail.types";
 
@@ -119,6 +121,44 @@ export const mailTemplates: Record<
       subject: "Leave Request Rejected",
       html,
       text: `Your leave request has been rejected.\nLeave Type: ${d?.leaveType}\nStart Date: ${d?.startDate}\nEnd Date: ${d?.endDate}\nRejected by: ${d?.approverName}${d?.reason ? `\nReason: ${d?.reason}` : ""}`,
+    };
+  },
+
+  "TICKET-APPROVED": async (d) => {
+    const html = await render(
+      TicketApprovedEmail({
+        employeeName: d?.employeeName as string,
+        ticketNumber: d?.ticketNumber as string,
+        ticketType: d?.ticketType as string,
+        ticketTitle: d?.ticketTitle as string,
+        approverName: d?.approverName as string,
+        approverNotes: d?.approverNotes as string | undefined,
+        dashboardUrl: d?.dashboardUrl as string | undefined,
+      })
+    );
+    return {
+      subject: `Ticket ${d?.ticketNumber} Approved`,
+      html,
+      text: `Your ticket ${d?.ticketNumber} has been approved.\nType: ${d?.ticketType}\nTitle: ${d?.ticketTitle}\nApproved by: ${d?.approverName}${d?.approverNotes ? `\nNotes: ${d?.approverNotes}` : ""}`,
+    };
+  },
+
+  "TICKET-REJECTED": async (d) => {
+    const html = await render(
+      TicketRejectedEmail({
+        employeeName: d?.employeeName as string,
+        ticketNumber: d?.ticketNumber as string,
+        ticketType: d?.ticketType as string,
+        ticketTitle: d?.ticketTitle as string,
+        approverName: d?.approverName as string,
+        approverNotes: d?.approverNotes as string | undefined,
+        dashboardUrl: d?.dashboardUrl as string | undefined,
+      })
+    );
+    return {
+      subject: `Ticket ${d?.ticketNumber} Rejected`,
+      html,
+      text: `Your ticket ${d?.ticketNumber} has been rejected.\nType: ${d?.ticketType}\nTitle: ${d?.ticketTitle}\nRejected by: ${d?.approverName}${d?.approverNotes ? `\nReason: ${d?.approverNotes}` : ""}`,
     };
   },
 };

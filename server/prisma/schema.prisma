@@ -36,6 +36,7 @@ model Attendance {
   employee   Employee  @relation(fields: [employeeId], references: [id])
   shift      Shift?    @relation(fields: [shiftId], references: [id])
   breaks     Break[]
+  tickets    Ticket[]
 
   @@unique([employeeId, date])
   @@index([employeeId])
@@ -102,6 +103,8 @@ department Department? @relation(fields: [departmentId], references: [id])
   approvals          LeaveRequest[]  @relation("EmployeeApprovals")
   refreshTokens      EmployeeRefreshToken[]
   bankDetails        BankDetails?
+  tickets            Ticket[]
+  ticketApprovals    Ticket[]        @relation("TicketApprovals")
 
   @@index([departmentId])
   @@index([jobRoleId])
@@ -378,4 +381,109 @@ enum NotificationState {
   unread
   delivered
   seen
+}
+
+model Ticket {
+  id           Int          @id @default(autoincrement())
+  ticketNumber String       @unique // Auto-generated: TKT-001, TKT-002, etc.
+  employeeId   Int
+  type         TicketType
+  category     TicketCategory
+  title        String
+  description  String       @db.Text
+  priority     Priority     @default(medium)
+  status       TicketStatus @default(pending)
+  approverId   Int?
+  approverNotes String?     @db.Text
+  
+  // Attendance correction specific fields
+  attendanceId     Int?
+  requestedDate    DateTime?
+  requestedCheckIn DateTime?
+  requestedCheckOut DateTime?
+  
+  // Leave request specific fields (for extra leave)
+  leaveType        String?
+  leaveStartDate   DateTime?
+  leaveEndDate     DateTime?
+  leaveDays        Int?
+  
+  // Profile change specific fields
+  profileChanges   Json?    // Store field changes as JSON
+  
+  // Metadata
+  metadata     Json?
+  attachments  Json?        @default("[]") // Array of file URLs/paths
+  
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  approvedAt   DateTime?
+  rejectedAt   DateTime?
+
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+  approver     Employee?    @relation("TicketApprovals", fields: [approverId], references: [id])
+  attendance   Attendance?  @relation(fields: [attendanceId], references: [id])
+  comments     TicketComment[]
+
+  @@index([employeeId])
+  @@index([approverId])
+  @@index([attendanceId])
+  @@index([status])
+  @@index([type])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model TicketComment {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  authorId  Int
+  authorType String  // "employee" or "user" (for admin/manager)
+  content   String   @db.Text
+  isInternal Boolean @default(false) // Internal notes only visible to approvers
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([authorId, authorType])
+  @@index([createdAt])
+}
+
+enum TicketType {
+  attendance_correction
+  extra_leave_request
+  profile_change_request
+}
+
+enum TicketCategory {
+  // Attendance categories
+  late_checkin
+  early_checkout
+  missing_checkin
+  missing_checkout
+  wrong_attendance_type
+  
+  // Leave categories
+  emergency_leave
+  extended_leave
+  unpaid_leave
+  
+  // Profile change categories
+  personal_info
+  employment_details
+  shift_change
+  department_transfer
+  job_role_change
+  salary_adjustment
+  contact_details
+}
+
+enum TicketStatus {
+  pending
+  under_review
+  approved
+  rejected
+  cancelled
 }

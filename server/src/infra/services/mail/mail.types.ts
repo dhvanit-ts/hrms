@@ -5,7 +5,9 @@ export type MailType =
   | "FEEDBACK-SENT"
   | "NEW-DEVICE-LOGIN"
   | "LEAVE-APPROVED"
-  | "LEAVE-REJECTED";
+  | "LEAVE-REJECTED"
+  | "TICKET-APPROVED"
+  | "TICKET-REJECTED";
 
 export interface MailDetails {
   [key: string]: unknown;

@@ -14,6 +14,7 @@ import jobRoleRoutes from "../modules/job-role/job-role.routes.js";
 import shiftRoutes from "../modules/shift/shift.routes.js";
 import leadsRoutes from "../modules/leads/leads.routes.js";
 import notificationRoutes from "../modules/notification-rejected/notification.routes.js";
+import ticketRoutes from "../modules/tickets/ticket.routes.js";
 
 const router = Router();
 
@@ -32,5 +33,6 @@ router.use("/leads", leadsRoutes);
 router.use("/stats", statsRoutes);
 router.use("/audit", auditRoutes);
 router.use("/notifications", notificationRoutes);
+router.use("/tickets", ticketRoutes);
 
 export default router;

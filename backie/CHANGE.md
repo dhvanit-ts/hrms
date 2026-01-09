@@ -1,2 +1,0 @@
-- src/shared/validators/error.schema.ys
-- docs/openapi/*

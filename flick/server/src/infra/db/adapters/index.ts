@@ -4,6 +4,7 @@ import * as collegeAdapter from "./college.adapter";
 import * as commentAdapter from "./comment.adapter";
 import * as feedbackAdapter from "./feedback.adapter";
 import * as postAdapter from "./post.adapter";
+import * as userAdapter from "./user.adapter";
 
 export const BookmarkAdapter = {
   ...bookmarkAdapter,
@@ -27,4 +28,8 @@ export const FeedbackAdapter = {
 
 export const PostAdapter = {
   ...postAdapter,
+};
+
+export const UserAdapter = {
+  ...userAdapter,
 };

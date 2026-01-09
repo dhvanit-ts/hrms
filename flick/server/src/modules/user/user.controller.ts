@@ -40,7 +40,7 @@ class UserController {
     return HttpResponse.redirect(redirectUrl)
   }
 
-  static handleUserOAuth = withBodyValidation(authSchemas.userIdSchema, this.handleTempTokenHandler)
+  static handleUserOAuth = withBodyValidation(authSchemas.userIdSchema, this.handleUserOAuthHandler)
 
   @AsyncHandler()
   private static async handleUserOAuthHandler(req: Request, res: Response) {

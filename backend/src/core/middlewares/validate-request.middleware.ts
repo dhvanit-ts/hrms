@@ -4,8 +4,6 @@ import { HttpError } from "@/core/http";
 import logger from "../logger";
 
 export type ValidationDatasource = "body" | "query" | "params"
-type ValidateRequest = Request & { validated?: Record<string, unknown> };
-
 export type ValidatedRequest<TBody = unknown, TQuery = unknown, TParams = unknown> =
   Request & {
     validated: {
@@ -17,7 +15,7 @@ export type ValidatedRequest<TBody = unknown, TQuery = unknown, TParams = unknow
 
 export const validateRequest =
   <T>(schema: ZodType<T>, dataSource: ValidationDatasource = "body") =>
-    (req: ValidateRequest, _res: Response, next: NextFunction) => {
+    (req: ValidatedRequest, _res: Response, next: NextFunction) => {
       const data = req[dataSource];
 
       const result = schema.safeParse(data);

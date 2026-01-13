@@ -12,5 +12,7 @@
       - oauth/oauth.schema.ts
       - otp/otp.schema.ts
   - lib/define-zod-schema.ts
-  - core/middlewares/validate-request.middleware.ts
+  - core/middlewares/
+    - validate-request.middleware.ts
+    - authenticate.middleware.ts
   - shared/validators -> shared/ schemas

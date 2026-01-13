@@ -3,7 +3,7 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import { env } from "@/config/env";
 import { HttpError } from "@/core/http";
 import AuthRepo from "@/modules/auth/auth.repo";
-import { jwtPayloadSchema } from "@/shared/schemas/transports/auth.schema";
+import { jwtPayloadSchema } from "@/shared/schemas/contracts/jwt-payload.schema";
 import { middlewareHandler } from "../../http/controller";
 import { toInternalUser } from "@/modules/user/user.dto";
 import logger from "@/core/logger";

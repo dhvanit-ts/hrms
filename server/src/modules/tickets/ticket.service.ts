@@ -304,6 +304,7 @@ export async function createAttendanceCorrectionTicket(
       employeeName: ticket.employee.name,
       category: data.category,
     },
+    createdAt: new Date
   });
 
   logger.info(`Attendance correction ticket created: ${ticket.ticketNumber} by employee ${employeeId}`);
@@ -376,6 +377,7 @@ export async function createExtraLeaveTicket(
       category: data.category,
       leaveDays,
     },
+    createdAt: new Date
   });
 
   logger.info(`Extra leave ticket created: ${ticket.ticketNumber} by employee ${employeeId}`);
@@ -439,6 +441,7 @@ export async function createProfileChangeTicket(
       category: data.category,
       changedFields: Object.keys(data.profileChanges),
     },
+    createdAt: new Date
   });
 
   logger.info(`Profile change ticket created: ${ticket.ticketNumber} by employee ${employeeId}`);
@@ -659,6 +662,7 @@ export async function updateTicketStatus(
       employeeName: ticket.employee.name,
       ticketType: ticket.type,
     },
+    createdAt: new Date
   });
 
   logger.info(`Ticket ${ticket.ticketNumber} ${data.status} by approver ${approverId}`);

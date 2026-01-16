@@ -8,6 +8,9 @@ const PostRepo = {
     findById: (id: string, dbTx?: DB) =>
       cached(postCacheKeys.id(id), () => PostAdapter.findById(id, dbTx)),
 
+    findAuthorId: (id: string, dbTx?: DB) =>
+      cached(postCacheKeys.id(id), () => PostAdapter.findAuthorId(id, dbTx)),
+
     findByIdWithDetails: (id: string, userId?: string, dbTx?: DB) =>
       cached(postCacheKeys.idWithDetails(id, userId), () => PostAdapter.findByIdWithDetails(id, userId, dbTx)),
 

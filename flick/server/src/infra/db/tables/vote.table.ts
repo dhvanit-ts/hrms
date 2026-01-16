@@ -20,16 +20,19 @@ export const votes = pgTable("vote", {
   postId: uuid("postId")
     .references(() => posts.id, { onDelete: "cascade" }).unique("votes_user_post_unique"),
 
+  commentId: uuid("commentId")
+    .references(() => comments.id, { onDelete: "cascade" }),
+
   userId: uuid("user_id")
     .references(() => users.id, { onDelete: "cascade" }).unique("votes_user_post_unique"),
 
   voteType: voteTypeEnum("voteType").notNull(),
 
-  type: VoteEntityEnum("type").notNull(),
-
-  commentId: uuid("commentId")
-    .references(() => comments.id, { onDelete: "cascade" }),
+  targetType: VoteEntityEnum("targetType").notNull(),
 }, (table) => [
-  index("votes_user_post_unique").on(table.userId, table.postId).where(eq(table.type, "post")),
-  index("votes_post_type_idx").on(table.postId, table.type),
+  index("votes_user_post_unique").on(table.userId, table.postId).where(eq(table.targetType, "post")),
+  index("votes_post_type_idx").on(table.postId, table.targetType),
 ]);
+
+export type VoteSelect = typeof votes.$inferSelect;
+export type VoteInsert = typeof votes.$inferInsert;

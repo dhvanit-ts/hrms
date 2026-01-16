@@ -12,7 +12,7 @@ export const updateReportStatusSchema = z.object({
 });
 
 export const reportParamsSchema = z.object({
-  id: z.string().uuid("Invalid report ID")
+  id: z.uuid("Invalid report ID")
 });
 
 export const userReportsParamsSchema = z.object({

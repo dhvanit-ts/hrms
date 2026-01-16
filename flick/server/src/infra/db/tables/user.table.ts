@@ -1,4 +1,4 @@
-import { boolean, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { AuthTypeEnum } from "@/infra/db/enums";
 import { colleges } from "./college.table";
 
@@ -14,6 +14,7 @@ export const users = pgTable("user", {
   roles: RoleEnum("roles").array().notNull().default(["user"]),
   collegeId: uuid("collegeId").references(() => colleges.id),
   branch: uuid("branch").references(() => colleges.id),
+  karma: integer("karma").default(0),
 
   isBlocked: boolean("isBlocked").notNull().default(false),
   suspension: jsonb("suspension").notNull().default({

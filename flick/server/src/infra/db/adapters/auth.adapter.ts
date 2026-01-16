@@ -45,6 +45,19 @@ export const create = async (user: User, dbTx?: DB) => {
   return createdUser;
 };
 
+export const update = async (karmaChange: number, ownerId: string, dbTx?: DB) => {
+  const client = dbTx ?? db;
+  const [updatedUser] = await client
+    .update(users)
+    .set({
+      karma: sql`${users.karma} + ${karmaChange}`,
+    })
+    .where(eq(users.id, ownerId))
+    .returning({ karma: users.karma });
+
+  return updatedUser;
+};
+
 export const findByUsername = async (username: string, dbTx?: DB) => {
   const client = dbTx ?? db;
   const user = await client.query.users.findFirst({

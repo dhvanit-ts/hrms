@@ -12,6 +12,16 @@ export const findById = async (id: string, dbTx?: DB) => {
   return post;
 };
 
+export const findAuthorId = async (id: string, dbTx?: DB) => {
+  const client = dbTx ?? db;
+  const result = await client.select({ postedBy: posts.postedBy })
+    .from(posts)
+    .where(eq(posts.id, id))
+    .limit(1);
+
+  return result[0].postedBy;
+}
+
 export const findByIdWithDetails = async (
   id: string,
   userId?: string,
@@ -138,18 +148,18 @@ export const findByIdWithDetails = async (
 
     postedBy: row.authorId
       ? {
-          _id: row.authorId,
-          username: row.authorUsername,
-          branch: row.authorBranch,
-          college: row.collegeId
-            ? {
-                _id: row.collegeId,
-                name: row.collegeName,
-                profile: row.collegeProfile,
-                email: row.collegeEmail,
-              }
-            : null,
-        }
+        _id: row.authorId,
+        username: row.authorUsername,
+        branch: row.authorBranch,
+        college: row.collegeId
+          ? {
+            _id: row.collegeId,
+            name: row.collegeName,
+            profile: row.collegeProfile,
+            email: row.collegeEmail,
+          }
+          : null,
+      }
       : null,
   };
 };
@@ -236,7 +246,7 @@ export const findMany = async (
     whereConditions.push(eq(users.branch, options.branch));
   }
 
-  const orderBy = sortOrder === "asc" 
+  const orderBy = sortOrder === "asc"
     ? asc(posts[sortBy])
     : desc(posts[sortBy]);
 
@@ -306,18 +316,18 @@ export const findMany = async (
 
     postedBy: row.authorId
       ? {
-          _id: row.authorId,
-          username: row.authorUsername,
-          branch: row.authorBranch,
-          college: row.collegeId
-            ? {
-                _id: row.collegeId,
-                name: row.collegeName,
-                profile: row.collegeProfile,
-                email: row.collegeEmail,
-              }
-            : null,
-        }
+        _id: row.authorId,
+        username: row.authorUsername,
+        branch: row.authorBranch,
+        college: row.collegeId
+          ? {
+            _id: row.collegeId,
+            name: row.collegeName,
+            profile: row.collegeProfile,
+            email: row.collegeEmail,
+          }
+          : null,
+      }
       : null,
   }));
 };
@@ -331,7 +341,7 @@ export const countAll = async (
   dbTx?: DB
 ) => {
   const client = dbTx ?? db;
-  
+
   let whereConditions = [
     eq(posts.isBanned, false),
     eq(posts.isShadowBanned, false),

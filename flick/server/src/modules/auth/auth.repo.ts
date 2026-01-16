@@ -31,7 +31,8 @@ const AuthRepo = {
 
   Write: {
     updateRefreshToken: authAdapter.updateRefreshToken,
-    create: authAdapter.create
+    create: authAdapter.create,
+    update: authAdapter.update
   }
 }
 

@@ -12,6 +12,16 @@ export const findById = async (id: string, dbTx?: DB) => {
   return comment;
 };
 
+export const findAuthorId = async (id: string, dbTx?: DB) => {
+  const client = dbTx ?? db;
+  const result = await client.select({ postedBy: comments.postedBy })
+    .from(comments)
+    .where(eq(comments.id, id))
+    .limit(1);
+
+  return result[0].postedBy;
+}
+
 export const findByPostId = async (
   postId: string,
   options?: {
@@ -54,7 +64,7 @@ export const findByPostId = async (
       .groupBy(votes.commentId)
   );
 
-  const orderBy = sortOrder === "asc" 
+  const orderBy = sortOrder === "asc"
     ? asc(comments[sortBy])
     : desc(comments[sortBy]);
 
@@ -113,17 +123,17 @@ export const findByPostId = async (
 
     commentedBy: r.authorId
       ? {
-          id: r.authorId,
-          username: r.authorUsername,
-          branch: r.authorBranch,
-          college: r.collegeId
-            ? {
-                id: r.collegeId,
-                name: r.collegeName,
-                profile: r.collegeProfile,
-              }
-            : null,
-        }
+        id: r.authorId,
+        username: r.authorUsername,
+        branch: r.authorBranch,
+        college: r.collegeId
+          ? {
+            id: r.collegeId,
+            name: r.collegeName,
+            profile: r.collegeProfile,
+          }
+          : null,
+      }
       : null,
   }));
 
@@ -195,7 +205,7 @@ export const findByIdWithAuthor = async (id: string, dbTx?: DB) => {
       createdAt: comments.createdAt,
       updatedAt: comments.updatedAt,
       commentedBy: comments.commentedBy,
-      
+
       authorId: users.id,
       authorUsername: users.username,
       authorBranch: users.branch,
@@ -217,13 +227,13 @@ export const findByIdWithAuthor = async (id: string, dbTx?: DB) => {
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     commentedBy: row.commentedBy,
-    
+
     author: row.authorId
       ? {
-          _id: row.authorId,
-          username: row.authorUsername,
-          branch: row.authorBranch,
-        }
+        _id: row.authorId,
+        username: row.authorUsername,
+        branch: row.authorBranch,
+      }
       : null,
   };
 };

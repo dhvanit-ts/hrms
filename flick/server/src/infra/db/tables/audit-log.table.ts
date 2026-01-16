@@ -7,108 +7,77 @@ import {
   pgEnum,
   index,
   uuid,
+  inet,
 } from "drizzle-orm/pg-core";
-import { users } from "./user.table";
+import { auditActions } from "@/shared/constants/audit/actions";
+import { auditPlatforms } from "@/shared/constants/audit/platform";
+import { auditStatus } from "@/shared/constants/audit/status";
+import { roleKeys } from "@/config/roles";
 
-export const roleEnum = pgEnum("log_role", ["Admin", "User"]);
+export const roleEnum = pgEnum("log_role", roleKeys);
+export const platformEnum = pgEnum("log_platform", auditPlatforms);
+export const statusEnum = pgEnum("log_status", auditStatus);
+export const actionEnum = pgEnum("log_action", auditActions);
 
-export const platformEnum = pgEnum("log_platform", [
-  "web",
-  "mobile",
-  "tv",
-  "server",
-  "other",
-]);
+/**
+ * id: uuid PRIMARY KEY DEFAULT get_random_uuid()
+ * occurred_at: timestamptz NOT NULL DEFAULT now()
+ * actor_id: uuid
+ * actor_type: text NOT NULL - user, system, admin, service.
+ * action: text NOT NULL - INSERT, UPDATE, DELETE, LOGIN, PASSWORD_RESET, STATUS_CHANGE
+ * entity_type: text NOT NULL - order, user, invoice
+ * entity_id: uuid
+ * before: jsonb - only for update/delete. changes tracking
+ * after: jsonb - only for update/insert. changes tracking
+ * ip_address: inet
+ * user_agent: text
+ * request_id: uuid - should corelate to logs (system logs, logger.error() etc)
+ * reason: text - optional free text explaining why
+ * metadata: jsonb - you're doing this already
+ */
 
-export const statusEnum = pgEnum("log_status", ["success", "fail"]);
+/**
+CREATE INDEX idx_audit_logs_entity
+  ON audit_logs (entity_type, entity_id);
 
-export const actionEnum = pgEnum("log_action", [
-  "user:upvoted:post",
-  "user:upvoted:comment",
-  "user:downvoted:post",
-  "user:downvoted:comment",
-  "user:deleted:vote:on:comment",
-  "user:deleted:vote:on:post",
-  "user:switched:vote:on:comment",
-  "user:switched:vote:on:post",
-  "user:created:post",
-  "user:updated:post",
-  "user:created:comment",
-  "user:updated:comment",
-  "user:deleted:post",
-  "user:deleted:comment",
-  "user:reported:content",
-  "user:accepted:terms",
-  "user:initialized:account",
-  "user:created:account",
-  "user:verified:otp",
-  "user:failed:to:verify:otp",
-  "user:reset:email:otp",
-  "user:logged:in:self",
-  "user:logged:out:self",
-  "user:created:feedback",
-  "user:updated:feedback",
-  "user:deleted:feedback",
-  "user:forgot:password",
-  "user:initialized:forgot:password",
+CREATE INDEX idx_audit_logs_actor
+  ON audit_logs (actor_id);
 
-  "admin:banned:user",
-  "admin:unbanned:user",
-  "admin:suspended:user",
-  "admin:created:college",
-  "admin:deleted:college",
-  "admin:updated:college",
-  "admin:blocked:content",
-  "admin:unblocked:content",
-  "admin:shadow:banned:content",
-  "admin:shadow:unbanned:content",
-  "admin:updated:content",
-  "admin:deleted:report",
-  "admin:bulk:deleted:reports",
-  "admin:updated:report:status",
-  "admin:updated:feedback:status",
-  "admin:deleted:feedback",
-
-  "system:created:admin:account",
-  "admin:logged:out:self",
-  "admin:initialized:account",
-  "admin:verified:otp",
-  "admin:removed:authorized:device",
-  "admin:reset:email:otp",
-  "admin:deleted:admin:account",
-  "admin:updated:admin:account",
-  "admin:fetched:all:admin:accounts",
-
-  "system:logged:error",
-  "system:logged:in",
-  "system:logged:out",
-
-  "other:action",
-]);
+CREATE INDEX idx_audit_logs_occurred_at
+  ON audit_logs (occurred_at DESC);
+ */
 
 export const auditLogs = pgTable(
   "logs",
   {
-    id: uuid("id")
-      .defaultRandom()
-      .primaryKey(),
-    timestamp: timestamp("timestamp", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    role: roleEnum("role").notNull(),
-    userId: uuid("userId").notNull().references(() => users.id),
-    logVersion: integer("logVersion").default(1).notNull(),
-    action: actionEnum("action").notNull(),
-    metadata: jsonb("metadata").default({}).notNull(),
-    sessionId: text("sessionId"),
-    platform: platformEnum("platform").notNull(),
-    status: statusEnum("status").default("success").notNull(),
-    createdAt: timestamp("createdAt", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    occuredAt: timestamp("occured_at", { withTimezone: true }).defaultNow().notNull(),
+
+    actorId: uuid("actor_id"),
+    actorType: roleEnum("actor_type").notNull(),
+
+    // can be improved
+    action: text("action").notNull(),
+
+    entityType: text("entity_type").notNull(),
+    entityId: uuid("entity_id"),
+
+    before: jsonb("before"),
+    after: jsonb("after"),
+
+    ipAddress: inet("ip_address"),
+    userAgent: text("user_agent"),
+
+    requestId: uuid("request_id"),
+    reason: text("reason"),
+    metadata: jsonb("metadata")
   },
   (table) => [
-    index("log_user_id_idx").on(table.userId),
-    index("log_timestamp_idx").on(table.timestamp),
+    index("idx_audit_logs_entity").on(table.entityType, table.entityId),
+    index("idx_audit_logs_actor").on(table.actorId),
+    index("idx_audit_logs_occurred_at").on(table.occuredAt.desc()),
   ]
 );
+
+export type AuditLogsInsert = typeof auditLogs.$inferInsert
+export type AuditLogsSelect = typeof auditLogs.$inferSelect

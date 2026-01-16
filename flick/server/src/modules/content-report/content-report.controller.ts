@@ -6,8 +6,9 @@ import ContentReportService from "./content-report.service.js";
 import UserManagementService from "./user-management.service.js";
 import ContentModerationService from "./content-moderation.service.js";
 import { ContentReportInsert } from "@/infra/db/tables/content-report.table.js";
-import { withBodyValidation, withParamsValidation, withQueryValidation } from "@/lib/validation.js";
+import { withBodyValidation } from "@/lib/validation.js";
 import * as contentReportSchemas from "./content-report.schema.js";
+import writeAuditLog from "@/lib/write-audit-log.js";
 
 const ALLOWED_STATUSES = ["pending", "resolved", "ignored"];
 
@@ -111,14 +112,11 @@ class ContentReportController {
 
     const report = await ContentReportService.updateReportStatus(id, status);
 
-    // TODO: Add logging when available
-    // logEvent({
-    //   req,
-    //   action: "admin_updated_report_status",
-    //   platform: "web",
-    //   userId: req.admin._id.toString(),
-    //   metadata: { reportId: id, status },
-    // });
+    await writeAuditLog({
+      req,
+      action: "admin:updated:report:status",
+      meta: { reportId: id, status },
+    });
 
     return HttpResponse.ok("Report status updated successfully", { report });
   }
@@ -128,14 +126,11 @@ class ContentReportController {
     const { id } = req.params;
     const result = await ContentReportService.deleteReport(id);
 
-    // TODO: Add logging when available
-    // logEvent({
-    //   req,
-    //   action: "admin_deleted_report",
-    //   platform: "web",
-    //   userId: req.admin._id.toString(),
-    //   metadata: { reportId: id },
-    // });
+    await writeAuditLog({
+      req,
+      action: "admin:deleted:report",
+      meta: { reportId: id },
+    });
 
     return HttpResponse.ok("Report deleted successfully", result);
   }
@@ -150,14 +145,11 @@ class ContentReportController {
 
     const result = await ContentReportService.bulkDeleteReports(reportIds);
 
-    // TODO: Add logging when available
-    // logEvent({
-    //   req,
-    //   action: "admin_bulk_deleted_reports",
-    //   platform: "web",
-    //   userId: req.admin._id.toString(),
-    //   metadata: { reportIds, deletedCount: result.deletedCount },
-    // });
+    await writeAuditLog({
+      req,
+      action: "admin:bulk-deleted:reports",
+      meta: { reportIds, deletedCount: result.deletedCount },
+    });
 
     return HttpResponse.ok("Reports deleted successfully", result);
   }
@@ -183,14 +175,13 @@ class ContentReportController {
 
     const result = await ContentModerationService.moderateContent(targetId, type, action);
 
-    // TODO: Add logging when available
-    // logEvent({
-    //   req,
-    //   action: `admin_${action}_content`,
-    //   platform: "web",
-    //   userId: req.admin._id.toString(),
-    //   metadata: { targetId, type, action },
-    // });
+    const auditAction = `admin:${action}:content`.toLowerCase();
+
+    await writeAuditLog({
+      req,
+      action: auditAction,
+      meta: { targetId, type, action },
+    });
 
     return HttpResponse.ok(result.message, result);
   }
@@ -201,14 +192,11 @@ class ContentReportController {
     const { userId } = req.params;
     const result = await UserManagementService.blockUser(userId);
 
-    // TODO: Add logging when available
-    // logEvent({
-    //   req,
-    //   action: "admin_banned_user",
-    //   platform: "web",
-    //   userId: req.admin._id.toString(),
-    //   metadata: { userId },
-    // });
+    await writeAuditLog({
+      req,
+      action: "admin:banned:user",
+      meta: { userId },
+    });
 
     return HttpResponse.ok(result.message, result);
   }
@@ -218,14 +206,11 @@ class ContentReportController {
     const { userId } = req.params;
     const result = await UserManagementService.unblockUser(userId);
 
-    // TODO: Add logging when available
-    // logEvent({
-    //   req,
-    //   action: "admin_unbanned_user",
-    //   platform: "web",
-    //   userId: req.admin._id.toString(),
-    //   metadata: { userId },
-    // });
+    await writeAuditLog({
+      req,
+      action: "admin:unbanned:user",
+      meta: { userId },
+    });
 
     return HttpResponse.ok(result.message, result);
   }
@@ -246,14 +231,11 @@ class ContentReportController {
 
     const result = await UserManagementService.suspendUser(userId, suspensionData);
 
-    // TODO: Add logging when available
-    // logEvent({
-    //   req,
-    //   action: "admin_suspended_user",
-    //   platform: "web",
-    //   userId: req.admin._id.toString(),
-    //   metadata: { userId, ends, reason },
-    // });
+    await writeAuditLog({
+      req,
+      action: "admin:suspended:user",
+      meta: { userId, ends, reason },
+    });
 
     return HttpResponse.ok(result.message, result);
   }

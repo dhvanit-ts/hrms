@@ -130,23 +130,3 @@ class HttpError extends Error {
 }
 
 export default HttpError;
-
-
-// ----- internal should be ------
-// class HttpError extends Error {
-//   statusCode
-//   code
-//   isOperational
-//   cause
-//   meta
-//   errors?
-// }
-
-// ----- external should be -----
-// class HttpResponse {
-//   success
-//   statusCode
-//   message
-//   code?
-//   meta?
-// }

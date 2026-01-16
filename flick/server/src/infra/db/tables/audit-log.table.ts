@@ -50,27 +50,27 @@ CREATE INDEX idx_audit_logs_occurred_at
 export const auditLogs = pgTable(
   "logs",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: uuid().defaultRandom().primaryKey(),
     occuredAt: timestamp("occured_at", { withTimezone: true }).defaultNow().notNull(),
 
     actorId: uuid("actor_id"),
     actorType: roleEnum("actor_type").notNull(),
 
     // can be improved
-    action: text("action").notNull(),
+    action: text().notNull(),
 
     entityType: text("entity_type").notNull(),
     entityId: uuid("entity_id"),
 
-    before: jsonb("before"),
-    after: jsonb("after"),
+    before: jsonb(),
+    after: jsonb(),
 
     ipAddress: inet("ip_address"),
     userAgent: text("user_agent"),
 
     requestId: uuid("request_id"),
-    reason: text("reason"),
-    metadata: jsonb("metadata")
+    reason: text(),
+    metadata: jsonb()
   },
   (table) => [
     index("idx_audit_logs_entity").on(table.entityType, table.entityId),

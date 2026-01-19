@@ -1,10 +1,11 @@
-import { VoteInsert } from "@/infra/db/tables/vote.table";
 import VoteRepo from "./vote.repo";
 import { HttpError, HttpResponse } from "@/core/http";
 import PostRepo from "../post/post.repo";
 import CommentRepo from "../comment/comment.repo";
 import AuthRepo from "../auth/auth.repo";
 import { runTransaction } from "@/infra/db/transactions";
+import recordAudit from "@/lib/record-audit";
+import { AuditAction } from "@/shared/constants/audit/actions";
 
 class VoteService {
   static async createVote(userId: string, targetType: "post" | "comment", targetId: string, voteType: "upvote" | "downvote") {
@@ -56,19 +57,18 @@ class VoteService {
       //   });
       // }
 
-      // const action: TLogAction = `user_${voteType}d_${targetType}`;
+      const action: AuditAction = `user:${voteType}d:${targetType}`;
 
-      // logEvent({
-      //   req,
-      //   action,
-      //   platform: "web",
-      //   userId: req.user.id.toString(),
-      //   metadata: {
-      //     voteType,
-      //     targetId,
-      //     targetType,
-      //   },
-      // });
+      await recordAudit({
+        action,
+        entityType: "vote",
+        entityId: createdVote.id,
+        after: { id: createdVote.id, voteType: createdVote.voteType },
+        metadata: {
+          targetId,
+          targetType,
+        },
+      });
 
       return createdVote
     })
@@ -83,7 +83,7 @@ class VoteService {
 
       // If voteType is the same, no need to patch
       if (existingVote.voteType === voteType) {
-        return HttpResponse.ok("Vote already of the requested type", existingVote);
+        return { message: "Vote already of the requested type", vote: existingVote, before: existingVote.voteType };
       }
 
       const updatedVote = await VoteRepo.Write.update(existingVote.id, { voteType }, tx)
@@ -98,25 +98,24 @@ class VoteService {
 
       await AuthRepo.Write.update(karmaChange, ownerId, tx)
 
-      return HttpResponse.ok("Vote patched successfully to the requested type", updatedVote)
+      return { message: "Vote patched successfully to the requested type", vote: updatedVote, before: existingVote.voteType }
     })
 
-    // const action: TLogAction = `user_switched_vote_on_${targetType}`;
+    const action: AuditAction = `user:switched:vote:on:${targetType}`;
 
-    // logEvent({
-    //   req,
-    //   action,
-    //   platform: "web",
-    //   userId: req.user.id.toString(),
-    //   metadata: {
-    //     targetId,
-    //     switchedFrom: existingVote.voteType,
-    //     switchedTo: voteType,
-    //     targetType,
-    //   },
-    // });
+    await recordAudit({
+      action,
+      entityType: "vote",
+      entityId: txResponse.vote.id,
+      before: { voteType: txResponse.before },
+      after: { voteType: txResponse.vote.voteType },
+      metadata: {
+        targetId,
+        targetType,
+      },
+    });
 
-    return txResponse
+    return HttpResponse.ok(txResponse.message, txResponse.vote)
   }
 
   static async delete(userId: string, targetId: string, targetType: "post" | "comment") {
@@ -142,19 +141,17 @@ class VoteService {
       return deletedVote.id
     })
 
-    // const action: TLogAction = `user_deleted_vote_on_${targetType}`;
+    const action: AuditAction = `user:deleted:vote:on:${targetType}`;
 
-    // logEvent({
-    //   req,
-    //   action,
-    //   platform: "web",
-    //   userId: req.user.id.toString(),
-    //   metadata: {
-    //     targetId,
-    //     voteType: existingVote.voteType,
-    //     targetType,
-    //   },
-    // });
+    await recordAudit({
+      action,
+      entityType: "vote",
+      before: { id: deletedVoteId },
+      metadata: {
+        targetId,
+        targetType,
+      },
+    });
 
     return deletedVoteId
   }

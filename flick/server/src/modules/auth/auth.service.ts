@@ -9,6 +9,7 @@ import oauthService from "@/modules/auth/oauth/oauth.service";
 import tokenService from "@/modules/auth/tokens/token.service";
 import otpService from "@/modules/auth/otp/otp.service";
 import { runTransaction } from "@/infra/db/transactions";
+import recordAudit from "@/lib/record-audit";
 
 class AuthService {
   options: CookieOptions = {
@@ -77,6 +78,12 @@ class AuthService {
         meta: { source: "authService.initializeAuthService" },
       });
 
+    await recordAudit({
+      action: "user:initialized:account",
+      entityType: "user",
+      entityId: existingUser.id,
+    });
+
     return email;
   };
 
@@ -130,6 +137,13 @@ class AuthService {
       }
     );
 
+    await recordAudit({
+      action: "user:created:account",
+      entityType: "user",
+      entityId: createdUser.id,
+      after: { id: createdUser.id },
+    });
+
     return { createdUser, accessToken, refreshToken };
   };
 
@@ -154,6 +168,12 @@ class AuthService {
     const { accessToken, refreshToken } =
       await tokenService.generateAndPersistTokens(user.id, user.username, req);
 
+    await recordAudit({
+      action: "user:logged:in:self",
+      entityType: "auth",
+      entityId: user.id,
+    });
+
     return { user, accessToken, refreshToken };
   };
 
@@ -165,6 +185,12 @@ class AuthService {
       });
 
     await AuthRepo.Write.updateRefreshToken(user.id, "");
+
+    await recordAudit({
+      action: "user:logged:out:self",
+      entityType: "auth",
+      entityId: user.id,
+    });
   };
 
   refreshAccessTokenService = async (
@@ -213,11 +239,11 @@ class AuthService {
 
   async handleGoogleOAuth(code: string, req: Request) {
     return oauthService.handleGoogleOAuth(code, req);
-  }
+  };
 
   async handleUserOAuth(email: string, username: string, req: Request) {
     return oauthService.createUserFromOAuth(email, username, req);
-  }
+  };
 }
 
 export default new AuthService();

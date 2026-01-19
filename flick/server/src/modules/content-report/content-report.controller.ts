@@ -8,7 +8,7 @@ import ContentModerationService from "./content-moderation.service.js";
 import { ContentReportInsert } from "@/infra/db/tables/content-report.table.js";
 import { withBodyValidation } from "@/lib/validation.js";
 import * as contentReportSchemas from "./content-report.schema.js";
-import writeAuditLog from "@/lib/write-audit-log.js";
+import writeAuditLog from "@/lib/record-audit.js";
 
 const ALLOWED_STATUSES = ["pending", "resolved", "ignored"];
 

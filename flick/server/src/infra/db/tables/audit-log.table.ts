@@ -2,7 +2,6 @@ import {
   pgTable,
   text,
   timestamp,
-  integer,
   jsonb,
   pgEnum,
   index,
@@ -13,11 +12,13 @@ import { auditActions } from "@/shared/constants/audit/actions";
 import { auditPlatforms } from "@/shared/constants/audit/platform";
 import { auditStatus } from "@/shared/constants/audit/status";
 import { roleKeys } from "@/config/roles";
+import { auditEntityTypes } from "@/shared/constants/audit/entity";
 
 export const roleEnum = pgEnum("log_role", roleKeys);
 export const platformEnum = pgEnum("log_platform", auditPlatforms);
 export const statusEnum = pgEnum("log_status", auditStatus);
 export const actionEnum = pgEnum("log_action", auditActions);
+export const entityEnum = pgEnum("log_action", auditEntityTypes);
 
 /**
  * id: uuid PRIMARY KEY DEFAULT get_random_uuid()
@@ -54,12 +55,12 @@ export const auditLogs = pgTable(
     occuredAt: timestamp("occured_at", { withTimezone: true }).defaultNow().notNull(),
 
     actorId: uuid("actor_id"),
-    actorType: roleEnum("actor_type").notNull(),
+    actorType: roleEnum("actor_type").array().notNull(),
 
     // can be improved
     action: text().notNull(),
 
-    entityType: text("entity_type").notNull(),
+    entityType: entityEnum("entity_type").notNull(),
     entityId: uuid("entity_id"),
 
     before: jsonb(),

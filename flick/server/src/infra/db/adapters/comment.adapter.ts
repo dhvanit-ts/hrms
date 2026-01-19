@@ -60,7 +60,7 @@ export const findByPostId = async (
         `.as("userVote") : sql<null>`NULL`.as("userVote"),
       })
       .from(votes)
-      .where(eq(votes.type, "comment"))
+      .where(eq(votes.targetType, "comment"))
       .groupBy(votes.commentId)
   );
 

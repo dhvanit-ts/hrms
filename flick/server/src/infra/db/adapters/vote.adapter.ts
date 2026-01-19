@@ -6,7 +6,7 @@ import { VoteInsert, votes } from "../tables/vote.table";
 
 export const create = async (values: VoteInsert, dbTx?: DB) => {
   const client = dbTx ?? db;
-  const vote = await client.insert(votes).values(values).returning();
+  const [vote] = await client.insert(votes).values(values).returning();
   return vote
 }
 

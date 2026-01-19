@@ -1,5 +1,8 @@
 import { HttpError } from "@/core/http";
 import PostRepo from "./post.repo";
+import recordAudit from "@/lib/record-audit";
+import { AuditAction } from "@/shared/constants/audit/actions";
+import { observabilityContext } from "../audit/audit-context";
 
 class PostService {
   async createPost(postData: {
@@ -13,6 +16,13 @@ class PostService {
       content: postData.content.trim(),
       topic: postData.topic as any,
       postedBy: postData.postedBy,
+    });
+
+    await recordAudit({
+      action: "user:created:post",
+      entityType: "post",
+      entityId: newPost.id,
+      after: { id: newPost.id },
     });
 
     return newPost;
@@ -91,11 +101,30 @@ class PostService {
     }
 
     const cleanUpdates: any = {};
-    if (updates.title) cleanUpdates.title = updates.title.trim();
-    if (updates.content) cleanUpdates.content = updates.content.trim();
-    if (updates.topic) cleanUpdates.topic = updates.topic;
+    const beforeUpdates: any = {};
+    if (updates.title) {
+      cleanUpdates.title = updates.title.trim();
+      beforeUpdates.title = existingPost.title
+    }
+    if (updates.content) {
+      cleanUpdates.content = updates.content.trim();
+      beforeUpdates.content = existingPost.content
+    }
+    if (updates.topic) {
+      cleanUpdates.topic = updates.topic;
+      beforeUpdates.topic = existingPost.topic
+    }
 
     const updatedPost = await PostRepo.Write.updateById(id, cleanUpdates);
+
+    await recordAudit({
+      action: "user:updated:post",
+      entityType: "post",
+      entityId: updatedPost.id,
+      before: beforeUpdates,
+      after: { ...cleanUpdates },
+    });
+
     return updatedPost;
   }
 
@@ -120,12 +149,22 @@ class PostService {
     }
 
     const deletedPost = await PostRepo.Write.deleteById(id);
+
+    await recordAudit({
+      action: "user:deleted:post",
+      entityType: "post",
+      entityId: deletedPost.id,
+      before: { id: deletedPost.id },
+    });
+
     return deletedPost;
   }
 
   async incrementPostViews(id: string) {
     // Note: In a real implementation, you might want to add IP-based view tracking
     // to prevent multiple views from the same user/IP within a time window
+    const ctx = observabilityContext.getStore()
+
     const updatedPost = await PostRepo.Write.incrementViews(id);
     return updatedPost;
   }

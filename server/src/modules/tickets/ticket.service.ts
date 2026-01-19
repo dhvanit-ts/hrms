@@ -677,10 +677,10 @@ export async function updateTicketStatus(
 
       const emailType = data.status === "approved" ? "TICKET-APPROVED" : "TICKET-REJECTED";
 
-      await mailService.send({
-        to: updatedTicket.employee.email,
-        type: emailType,
-        details: {
+      await mailService.send(
+        updatedTicket.employee.email,
+        emailType,
+        {
           employeeName: updatedTicket.employee.name,
           ticketNumber: updatedTicket.ticketNumber,
           ticketType: updatedTicket.type.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
@@ -688,8 +688,8 @@ export async function updateTicketStatus(
           approverName: approver?.name || "Manager",
           approverNotes: data.approverNotes,
           dashboardUrl: process.env.CLIENT_URL ? `${process.env.CLIENT_URL}/employee/tickets` : undefined,
-        },
-      });
+        }
+      );
 
       logger.info(`${emailType} email sent to ${updatedTicket.employee.email} for ticket ${ticket.ticketNumber}`);
     } catch (emailError) {
@@ -839,38 +839,114 @@ export async function addTicketComment(
 
 // Get ticket statistics
 export async function getTicketStatistics(employeeId?: number) {
-  const where: any = {};
-  if (employeeId) where.employeeId = employeeId;
+  try {
+    const where: any = {};
 
-  const [
-    totalTickets,
-    pendingTickets,
-    approvedTickets,
-    rejectedTickets,
-    attendanceTickets,
-    leaveTickets,
-    profileTickets,
-  ] = await Promise.all([
-    prisma.ticket.count({ where }),
-    prisma.ticket.count({ where: { ...where, status: "pending" } }),
-    prisma.ticket.count({ where: { ...where, status: "approved" } }),
-    prisma.ticket.count({ where: { ...where, status: "rejected" } }),
-    prisma.ticket.count({ where: { ...where, type: "attendance_correction" } }),
-    prisma.ticket.count({ where: { ...where, type: "extra_leave_request" } }),
-    prisma.ticket.count({ where: { ...where, type: "profile_change_request" } }),
-  ]);
+    // Only add employeeId filter if it's a valid number
+    if (employeeId && !isNaN(employeeId) && employeeId > 0) {
+      where.employeeId = employeeId;
+    }
 
-  return {
-    total: totalTickets,
-    byStatus: {
-      pending: pendingTickets,
-      approved: approvedTickets,
-      rejected: rejectedTickets,
-    },
-    byType: {
-      attendance_correction: attendanceTickets,
-      extra_leave_request: leaveTickets,
-      profile_change_request: profileTickets,
-    },
-  };
+    // Get basic counts first
+    const [
+      totalTickets,
+      pendingTickets,
+      underReviewTickets,
+      approvedTickets,
+      rejectedTickets,
+      cancelledTickets,
+    ] = await Promise.all([
+      prisma.ticket.count({ where }),
+      prisma.ticket.count({ where: { ...where, status: "pending" } }),
+      prisma.ticket.count({ where: { ...where, status: "under_review" } }),
+      prisma.ticket.count({ where: { ...where, status: "approved" } }),
+      prisma.ticket.count({ where: { ...where, status: "rejected" } }),
+      prisma.ticket.count({ where: { ...where, status: "cancelled" } }),
+    ]);
+
+    // Get type counts
+    const [
+      attendanceTickets,
+      leaveTickets,
+      profileTickets,
+    ] = await Promise.all([
+      prisma.ticket.count({ where: { ...where, type: "attendance_correction" } }),
+      prisma.ticket.count({ where: { ...where, type: "extra_leave_request" } }),
+      prisma.ticket.count({ where: { ...where, type: "profile_change_request" } }),
+    ]);
+
+    // Get priority counts
+    const [
+      urgentTickets,
+      highTickets,
+      mediumTickets,
+      lowTickets,
+    ] = await Promise.all([
+      prisma.ticket.count({ where: { ...where, priority: "urgent" } }),
+      prisma.ticket.count({ where: { ...where, priority: "high" } }),
+      prisma.ticket.count({ where: { ...where, priority: "medium" } }),
+      prisma.ticket.count({ where: { ...where, priority: "low" } }),
+    ]);
+
+    // Get category counts (simplified - only get actual categories that exist)
+    const categoryResults = await prisma.ticket.groupBy({
+      by: ['category'],
+      where,
+      _count: {
+        category: true,
+      },
+    });
+
+    // Convert category results to object
+    const byCategory: Record<string, number> = {};
+    categoryResults.forEach(result => {
+      if (result.category) {
+        byCategory[result.category] = result._count.category;
+      }
+    });
+
+    return {
+      total: totalTickets || 0,
+      pending: pendingTickets || 0,
+      underReview: underReviewTickets || 0,
+      approved: approvedTickets || 0,
+      rejected: rejectedTickets || 0,
+      cancelled: cancelledTickets || 0,
+      byType: {
+        attendance_correction: attendanceTickets || 0,
+        extra_leave_request: leaveTickets || 0,
+        profile_change_request: profileTickets || 0,
+      },
+      byCategory,
+      byPriority: {
+        urgent: urgentTickets || 0,
+        high: highTickets || 0,
+        medium: mediumTickets || 0,
+        low: lowTickets || 0,
+      },
+    };
+  } catch (error) {
+    console.error('Error in getTicketStatistics:', error);
+    // Return default statistics on error
+    return {
+      total: 0,
+      pending: 0,
+      underReview: 0,
+      approved: 0,
+      rejected: 0,
+      cancelled: 0,
+      byType: {
+        attendance_correction: 0,
+        extra_leave_request: 0,
+        profile_change_request: 0,
+      },
+      byCategory: {},
+      byPriority: {
+        urgent: 0,
+        high: 0,
+        medium: 0,
+        low: 0,
+      },
+    };
+  }
 }

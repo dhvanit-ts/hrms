@@ -78,17 +78,18 @@ export interface CreateAttendanceCorrectionTicketData {
   title: string;
   description: string;
   priority?: "low" | "medium" | "high" | "urgent";
+  attachments?: string[];
 }
 
 export interface CreateExtraLeaveTicketData {
   leaveType: string;
   leaveStartDate: string;
   leaveEndDate: string;
-  leaveDays: number;
   category: string;
   title: string;
   description: string;
   priority?: "low" | "medium" | "high" | "urgent";
+  attachments?: string[];
 }
 
 export interface CreateProfileChangeTicketData {
@@ -97,6 +98,7 @@ export interface CreateProfileChangeTicketData {
   title: string;
   description: string;
   priority?: "low" | "medium" | "high" | "urgent";
+  attachments?: string[];
 }
 
 export interface UpdateTicketStatusData {
@@ -199,33 +201,65 @@ export const employeeTicketsApi = {
 // Admin API (uses http)
 export const adminTicketsApi = {
   // Get tickets
-  async getAllTickets(query?: TicketListQuery): Promise<{ tickets: Ticket[]; pagination: any }> {
-    const res = await http.get("/tickets/admin/all", { params: query });
+  async getAllTickets(accessToken: string, query?: TicketListQuery): Promise<{ tickets: Ticket[]; pagination: any }> {
+    console.log('🌐 adminTicketsApi.getAllTickets - Called with token:', accessToken ? 'Present' : 'Missing');
+    console.log('🌐 adminTicketsApi.getAllTickets - Token length:', accessToken?.length || 0);
+    console.log('🌐 adminTicketsApi.getAllTickets - Query:', query);
+
+    const res = await http.get("/tickets/admin/all", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      params: query,
+    });
+
+    console.log('🌐 adminTicketsApi.getAllTickets - Response received:', res.status);
     return res.data;
   },
 
-  async getTicketById(ticketId: number): Promise<{ ticket: Ticket }> {
-    const res = await http.get(`/tickets/admin/${ticketId}`);
+  async getTicketById(accessToken: string, ticketId: number): Promise<{ ticket: Ticket }> {
+    console.log('🌐 adminTicketsApi.getTicketById - Called with token:', accessToken ? 'Present' : 'Missing');
+
+    const res = await http.get(`/tickets/admin/${ticketId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    console.log('🌐 adminTicketsApi.getTicketById - Response received:', res.status);
     return res.data;
   },
 
   // Update ticket status
-  async updateTicketStatus(ticketId: number, data: UpdateTicketStatusData): Promise<{ ticket: Ticket }> {
-    const res = await http.patch(`/tickets/admin/${ticketId}/status`, data);
+  async updateTicketStatus(accessToken: string, ticketId: number, data: UpdateTicketStatusData): Promise<{ ticket: Ticket }> {
+    console.log('🌐 adminTicketsApi.updateTicketStatus - Called with token:', accessToken ? 'Present' : 'Missing');
+
+    const res = await http.patch(`/tickets/admin/${ticketId}/status`, data, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    console.log('🌐 adminTicketsApi.updateTicketStatus - Response received:', res.status);
     return res.data;
   },
 
   // Comments
-  async addComment(ticketId: number, data: CreateTicketCommentData): Promise<{ comment: TicketComment }> {
-    const res = await http.post(`/tickets/admin/${ticketId}/comments`, data);
+  async addComment(accessToken: string, ticketId: number, data: CreateTicketCommentData): Promise<{ comment: TicketComment }> {
+    console.log('🌐 adminTicketsApi.addComment - Called with token:', accessToken ? 'Present' : 'Missing');
+
+    const res = await http.post(`/tickets/admin/${ticketId}/comments`, data, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    console.log('🌐 adminTicketsApi.addComment - Response received:', res.status);
     return res.data;
   },
 
   // Statistics
-  async getStatistics(employeeId?: number): Promise<{ statistics: TicketStatistics }> {
+  async getStatistics(accessToken: string, employeeId?: number): Promise<{ statistics: TicketStatistics }> {
+    console.log('🌐 adminTicketsApi.getStatistics - Called with token:', accessToken ? 'Present' : 'Missing');
+
     const res = await http.get("/tickets/admin/statistics", {
+      headers: { Authorization: `Bearer ${accessToken}` },
       params: employeeId ? { employeeId } : undefined,
     });
+
+    console.log('🌐 adminTicketsApi.getStatistics - Response received:', res.status);
     return res.data;
   },
 };
@@ -233,7 +267,14 @@ export const adminTicketsApi = {
 // Shared API
 export const ticketsApi = {
   async getCategories(): Promise<{ categories: TicketCategories }> {
-    const res = await http.get("/tickets/categories");
-    return res.data;
+    console.log("🌐 ticketsApi.getCategories - Making request to /tickets/categories");
+    try {
+      const res = await http.get("/tickets/categories");
+      console.log("🌐 ticketsApi.getCategories - Response received:", res.status, res.data);
+      return res.data;
+    } catch (error) {
+      console.error("🌐 ticketsApi.getCategories - Error:", error);
+      throw error;
+    }
   },
 };

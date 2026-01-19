@@ -156,13 +156,25 @@ export const TicketWithRelationsSchema = TicketBaseSchema.extend({
 
 // Ticket List Query Schema
 export const TicketListQuerySchema = z.object({
-  page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(20),
+  page: z.preprocess((val) => {
+    if (val === "" || val === null || val === undefined) return 1;
+    const num = Number(val);
+    return isNaN(num) || num < 1 ? 1 : num;
+  }, z.number().min(1).default(1)),
+  limit: z.preprocess((val) => {
+    if (val === "" || val === null || val === undefined) return 20;
+    const num = Number(val);
+    return isNaN(num) || num < 1 ? 20 : Math.min(num, 100);
+  }, z.number().min(1).max(100).default(20)),
   status: TicketStatusSchema.optional(),
   type: TicketTypeSchema.optional(),
   category: TicketCategorySchema.optional(),
   priority: PrioritySchema.optional(),
-  employeeId: z.coerce.number().optional(),
+  employeeId: z.preprocess((val) => {
+    if (val === "" || val === null || val === undefined) return undefined;
+    const num = Number(val);
+    return isNaN(num) ? undefined : num;
+  }, z.number().optional()),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   search: z.string().optional(),

@@ -89,7 +89,16 @@ export async function getMyTicketByIdController(
   res: Response
 ) {
   const employeeId = req.employee!.id;
-  const ticketId = z.coerce.number().parse(req.params.id);
+  const ticketIdParam = req.params.id;
+
+  if (!ticketIdParam || ticketIdParam === 'undefined' || ticketIdParam === 'null') {
+    return res.status(400).json({
+      error: "Invalid ticket ID",
+      message: "Ticket ID is required and must be a valid number"
+    });
+  }
+
+  const ticketId = z.coerce.number().parse(ticketIdParam);
 
   const ticket = await getTicketById(ticketId, employeeId, 'employee');
 
@@ -104,7 +113,16 @@ export async function addMyTicketCommentController(
   res: Response
 ) {
   const employeeId = req.employee!.id;
-  const ticketId = z.coerce.number().parse(req.params.id);
+  const ticketIdParam = req.params.id;
+
+  if (!ticketIdParam || ticketIdParam === 'undefined' || ticketIdParam === 'null') {
+    return res.status(400).json({
+      error: "Invalid ticket ID",
+      message: "Ticket ID is required and must be a valid number"
+    });
+  }
+
+  const ticketId = z.coerce.number().parse(ticketIdParam);
   const data = CreateTicketCommentSchema.parse(req.body);
 
   const comment = await addTicketComment(ticketId, employeeId, 'employee', data);
@@ -150,7 +168,17 @@ export async function getTicketByIdController(
   req: AuthenticatedRequest,
   res: Response
 ) {
-  const ticketId = z.coerce.number().parse(req.params.id);
+  const ticketIdParam = req.params.id;
+
+  // Validate that the ID parameter exists and is a valid number
+  if (!ticketIdParam || ticketIdParam === 'undefined' || ticketIdParam === 'null') {
+    return res.status(400).json({
+      error: "Invalid ticket ID",
+      message: "Ticket ID is required and must be a valid number"
+    });
+  }
+
+  const ticketId = z.coerce.number().parse(ticketIdParam);
 
   const ticket = await getTicketById(ticketId, undefined, 'admin');
 
@@ -164,8 +192,17 @@ export async function updateTicketStatusController(
   req: AuthenticatedRequest,
   res: Response
 ) {
-  const ticketId = z.coerce.number().parse(req.params.id);
-  const approverId = parseInt(req.user!.id); // Admin/Manager ID
+  const ticketIdParam = req.params.id;
+
+  if (!ticketIdParam || ticketIdParam === 'undefined' || ticketIdParam === 'null') {
+    return res.status(400).json({
+      error: "Invalid ticket ID",
+      message: "Ticket ID is required and must be a valid number"
+    });
+  }
+
+  const ticketId = z.coerce.number().parse(ticketIdParam);
+  const approverId = z.coerce.number().parse(req.user!.id); // Admin/Manager ID
   const data = UpdateTicketStatusSchema.parse(req.body);
 
   const ticket = await updateTicketStatus(ticketId, approverId, data);
@@ -180,8 +217,17 @@ export async function addTicketCommentController(
   req: AuthenticatedRequest,
   res: Response
 ) {
-  const ticketId = z.coerce.number().parse(req.params.id);
-  const authorId = parseInt(req.user!.id);
+  const ticketIdParam = req.params.id;
+
+  if (!ticketIdParam || ticketIdParam === 'undefined' || ticketIdParam === 'null') {
+    return res.status(400).json({
+      error: "Invalid ticket ID",
+      message: "Ticket ID is required and must be a valid number"
+    });
+  }
+
+  const ticketId = z.coerce.number().parse(ticketIdParam);
+  const authorId = z.coerce.number().parse(req.user!.id);
   const data = CreateTicketCommentSchema.parse(req.body);
 
   const comment = await addTicketComment(ticketId, authorId, 'user', data);
@@ -196,9 +242,13 @@ export async function getTicketStatisticsController(
   req: AuthenticatedRequest,
   res: Response
 ) {
-  const employeeId = req.query.employeeId ? z.coerce.number().parse(req.query.employeeId) : undefined;
+  const employeeId = req.query.employeeId && req.query.employeeId !== ''
+    ? z.coerce.number().parse(req.query.employeeId)
+    : undefined;
 
   const statistics = await getTicketStatistics(employeeId);
+
+  console.log(statistics)
 
   return ApiResponse.ok(res, {
     message: "Ticket statistics retrieved successfully",
@@ -212,32 +262,35 @@ export async function getTicketCategoriesController(
   req: Request,
   res: Response
 ) {
+  console.log("🎫 Categories controller called");
+
   const categories = {
     attendance_correction: [
-      { value: "late_checkin", label: "Late Check-in" },
-      { value: "early_checkout", label: "Early Check-out" },
-      { value: "missing_checkin", label: "Missing Check-in" },
-      { value: "missing_checkout", label: "Missing Check-out" },
-      { value: "wrong_attendance_type", label: "Wrong Attendance Type" },
+      "late_checkin",
+      "early_checkout",
+      "missing_checkin",
+      "missing_checkout",
+      "wrong_attendance_type",
     ],
     extra_leave_request: [
-      { value: "emergency_leave", label: "Emergency Leave" },
-      { value: "extended_leave", label: "Extended Leave" },
-      { value: "unpaid_leave", label: "Unpaid Leave" },
+      "emergency_leave",
+      "extended_leave",
+      "unpaid_leave",
     ],
     profile_change_request: [
-      { value: "personal_info", label: "Personal Information" },
-      { value: "employment_details", label: "Employment Details" },
-      { value: "shift_change", label: "Shift Change" },
-      { value: "department_transfer", label: "Department Transfer" },
-      { value: "job_role_change", label: "Job Role Change" },
-      { value: "salary_adjustment", label: "Salary Adjustment" },
-      { value: "contact_details", label: "Contact Details" },
+      "personal_info",
+      "employment_details",
+      "shift_change",
+      "department_transfer",
+      "job_role_change",
+      "salary_adjustment",
+      "contact_details",
     ],
   };
 
+  console.log("🎫 Returning categories:", categories);
+
   return ApiResponse.ok(res, {
-    message: "Ticket categories retrieved successfully",
-    data: categories,
-  });
+    categories: categories,
+  }, "Ticket categories retrieved successfully");
 }

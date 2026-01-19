@@ -16,10 +16,16 @@ export function authenticate(
 ) {
   const env = loadEnv();
   const header = req.headers.authorization;
+
+  console.log('🔐 Admin auth middleware - URL:', req.url);
+  console.log('🔐 Admin auth middleware - Authorization header:', header ? 'Present' : 'Missing');
+
   if (!header?.startsWith("Bearer ")) {
+    console.log('🔐 Admin auth middleware - No Bearer token found');
     return res.status(401).json({ error: "Unauthorized" });
   }
   const token = header.slice("Bearer ".length);
+
   try {
     const payload = jwt.verify(
       token,
@@ -29,13 +35,24 @@ export function authenticate(
       email: string;
       roles: string[];
     };
+
+    console.log('🔐 Admin auth middleware - Token payload:', {
+      sub: payload.sub,
+      email: payload.email,
+      roles: payload.roles,
+      hasRoles: !!payload.roles
+    });
+
     req.user = {
       id: payload.sub as string,
       email: payload.email!,
       roles: payload.roles || [],
     };
+
+    console.log('🔐 Admin auth middleware - Success, proceeding to next middleware');
     return next();
-  } catch {
+  } catch (error) {
+    console.log('🔐 Admin auth middleware - JWT verification failed:', error);
     return res.status(401).json({ error: "Unauthorized" });
   }
 }
@@ -47,10 +64,16 @@ export function authenticateEmployee(
 ) {
   const env = loadEnv();
   const header = req.headers.authorization;
+
+  console.log('👤 Employee auth middleware - URL:', req.url);
+  console.log('👤 Employee auth middleware - Authorization header:', header ? 'Present' : 'Missing');
+
   if (!header?.startsWith("Bearer ")) {
+    console.log('👤 Employee auth middleware - No Bearer token found');
     return res.status(401).json({ error: "Unauthorized" });
   }
   const token = header.slice("Bearer ".length);
+
   try {
     const payload = jwt.verify(
       token,
@@ -62,6 +85,14 @@ export function authenticateEmployee(
       departmentId?: number;
       jobRoleId?: number;
     };
+
+    console.log('👤 Employee auth middleware - Token payload:', {
+      sub: payload.sub,
+      employeeId: payload.employeeId,
+      email: payload.email,
+      hasEmployeeId: !!payload.employeeId
+    });
+
     req.employee = {
       id: parseInt(payload.sub),
       employeeId: payload.employeeId,
@@ -69,8 +100,11 @@ export function authenticateEmployee(
       departmentId: payload.departmentId,
       jobRoleId: payload.jobRoleId,
     };
+
+    console.log('👤 Employee auth middleware - Success, proceeding to next middleware');
     return next();
-  } catch {
+  } catch (error) {
+    console.log('👤 Employee auth middleware - JWT verification failed:', error);
     return res.status(401).json({ error: "Unauthorized" });
   }
 }

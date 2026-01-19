@@ -37,7 +37,7 @@ interface TicketDetailProps {
 }
 
 export function TicketDetail({ ticket, isAdmin = false, onClose, onUpdate }: TicketDetailProps) {
-  const { employeeAccessToken } = useAuth();
+  const { employeeAccessToken, accessToken } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCommentForm, setShowCommentForm] = useState(false);
@@ -122,9 +122,16 @@ export function TicketDetail({ ticket, isAdmin = false, onClose, onUpdate }: Tic
       setError(null);
 
       if (isAdmin) {
-        await adminTicketsApi.addComment(ticket.id, data);
+        if (!accessToken) {
+          setError("Authentication required");
+          return;
+        }
+        await adminTicketsApi.addComment(accessToken, ticket.id, data);
       } else {
-        if (!employeeAccessToken) return;
+        if (!employeeAccessToken) {
+          setError("Authentication required");
+          return;
+        }
         await employeeTicketsApi.addComment(employeeAccessToken, ticket.id, data);
       }
 
@@ -145,7 +152,12 @@ export function TicketDetail({ ticket, isAdmin = false, onClose, onUpdate }: Tic
       setLoading(true);
       setError(null);
 
-      await adminTicketsApi.updateTicketStatus(ticket.id, data);
+      if (!accessToken) {
+        setError("Authentication required");
+        return;
+      }
+
+      await adminTicketsApi.updateTicketStatus(accessToken, ticket.id, data);
 
       statusForm.reset();
       setShowStatusForm(false);

@@ -4,7 +4,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/shared/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table";
 import { Clock, Calendar, Plus, AlertCircle, CheckCircle, XCircle, RefreshCw, Ticket as TicketIcon, User, FileText } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
@@ -39,19 +39,48 @@ export function Tickets() {
       setLoading(true);
       setError(null);
 
-      const [ticketsRes, statsRes, categoriesRes] = await Promise.all([
-        employeeTicketsApi.getMyTickets(accessToken),
-        employeeTicketsApi.getMyStatistics(accessToken),
-        ticketsApi.getCategories(),
-      ]);
+      console.log("🎫 Starting to load tickets data...");
+      console.log("🎫 Access token available:", !!accessToken);
 
-      setTickets(ticketsRes.tickets);
+      // Load data sequentially to better identify which call is failing
+      console.log("🎫 Loading categories...");
+      const categoriesRes = await ticketsApi.getCategories();
+      console.log("🎫 Categories response:", categoriesRes);
+
+      // Ensure categories has the expected structure
+      const loadedCategories = categoriesRes?.categories || {
+        attendance_correction: ["late_checkin", "early_checkout", "missing_checkin", "missing_checkout"],
+        extra_leave_request: ["emergency_leave", "extended_leave", "unpaid_leave"],
+        profile_change_request: ["personal_info", "employment_details", "contact_details"],
+      };
+
+      console.log("🎫 Setting categories:", loadedCategories);
+      setCategories(loadedCategories);
+
+      console.log("🎫 Loading tickets...");
+      const ticketsRes = await employeeTicketsApi.getMyTickets(accessToken);
+      console.log("🎫 Tickets response:", ticketsRes);
+      setTickets(Array.isArray(ticketsRes.tickets) ? ticketsRes.tickets : []);
+
+      console.log("🎫 Loading statistics...");
+      const statsRes = await employeeTicketsApi.getMyStatistics(accessToken);
+      console.log("🎫 Statistics response:", statsRes);
       setStatistics(statsRes.statistics);
-      setCategories(categoriesRes.categories);
+
+      console.log("🎫 All data loaded successfully");
     } catch (err: any) {
       const errorMessage = extractErrorMessage(err);
-      console.error("Failed to load tickets data:", err);
+      console.error("🎫 Failed to load tickets data:", err);
+      console.error("🎫 Error details:", {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+      });
       setError(errorMessage);
+      // Set empty arrays on error to prevent undefined access
+      setTickets([]);
+      setStatistics(null);
+      setCategories(null);
     } finally {
       setLoading(false);
     }
@@ -126,7 +155,7 @@ export function Tickets() {
     }
   };
 
-  const filteredTickets = tickets.filter(ticket => {
+  const filteredTickets = tickets?.filter(ticket => {
     if (activeTab === "all") return true;
     return ticket.status === activeTab;
   });
@@ -167,12 +196,19 @@ export function Tickets() {
                   Submit a request for attendance correction, extra leave, or profile changes
                 </DialogDescription>
               </DialogHeader>
-              {categories && (
+              {categories ? (
                 <TicketForm
                   categories={categories}
                   onSuccess={handleTicketCreated}
                   onCancel={() => setShowCreateDialog(false)}
                 />
+              ) : (
+                <div className="flex items-center justify-center p-8">
+                  <div className="text-center">
+                    <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading form...</p>
+                  </div>
+                </div>
               )}
             </DialogContent>
           </Dialog>
@@ -260,7 +296,7 @@ export function Tickets() {
             </TabsList>
 
             <TabsContent value={activeTab}>
-              {filteredTickets.length === 0 ? (
+              {filteredTickets?.length === 0 ? (
                 <div className="text-center py-8">
                   <TicketIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-medium">No tickets found</h3>
@@ -285,7 +321,7 @@ export function Tickets() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredTickets.map((ticket) => (
+                    {filteredTickets?.map((ticket) => (
                       <TableRow key={ticket.id}>
                         <TableCell className="font-medium">
                           {ticket.ticketNumber}

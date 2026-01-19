@@ -24,8 +24,8 @@ import JobRolesPage from './pages/JobRoles';
 import LeadsPage from './pages/Leads';
 import { ShiftManagementPage } from './pages/ShiftManagement';
 import { Tickets } from './pages/Tickets';
-import { TicketsAdmin } from './pages/TicketsAdmin';
 import { Toaster } from './shared/components/ui/toaster';
+import { TicketsAdmin } from './pages/TicketsAdmin';
 
 const router = createBrowserRouter([
   {

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Textarea } from "@/shared/components/ui/textarea";
@@ -11,49 +10,48 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/sha
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { Calendar } from "@/shared/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components/ui/popover";
-import { CalendarIcon, Clock, User, FileText, AlertCircle } from "lucide-react";
+import { CalendarIcon, Clock, User, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/shared/context/AuthContext";
-import { employeeTicketsApi, type TicketCategories } from "@/services/api/tickets";
+import { employeeTicketsApi, type TicketCategories, type CreateAttendanceCorrectionTicketData, type CreateExtraLeaveTicketData, type CreateProfileChangeTicketData } from "@/services/api/tickets";
 import { getAttendanceHistory, type Attendance } from "@/services/api/attendance";
 import { extractErrorMessage } from "@/lib/utils";
+import { z } from "zod";
 
-// Validation schemas
-const attendanceCorrectionSchema = z.object({
-  type: z.literal("attendance_correction"),
+// Base schema for common fields
+const baseSchema = z.object({
   category: z.string().min(1, "Category is required"),
   title: z.string().min(1, "Title is required"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
-  attendanceId: z.number().optional(),
+});
+
+// Validation schemas
+const attendanceCorrectionSchema = baseSchema.extend({
+  attendanceId: z.union([z.number(), z.string(), z.undefined()]).optional().nullable(),
   requestedDate: z.string().min(1, "Date is required"),
   requestedCheckIn: z.string().optional(),
   requestedCheckOut: z.string().optional(),
 });
 
-const extraLeaveSchema = z.object({
-  type: z.literal("extra_leave_request"),
-  category: z.string().min(1, "Category is required"),
-  title: z.string().min(1, "Title is required"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
+const extraLeaveSchema = baseSchema.extend({
   leaveType: z.string().min(1, "Leave type is required"),
   leaveStartDate: z.string().min(1, "Start date is required"),
   leaveEndDate: z.string().min(1, "End date is required"),
-  leaveDays: z.number().min(1, "Leave days must be at least 1"),
+  leaveDays: z.number().min(1, "Leave days must be at least 1"), // Keep for frontend calculation
 });
 
-const profileChangeSchema = z.object({
-  type: z.literal("profile_change_request"),
-  category: z.string().min(1, "Category is required"),
-  title: z.string().min(1, "Title is required"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
-  profileChanges: z.record(z.any()).min(1, "At least one change is required"),
+const profileChangeSchema = baseSchema.extend({
+  profileChanges: z.record(z.string(), z.unknown()).optional(),
 });
 
-type FormData = z.infer<typeof attendanceCorrectionSchema> | z.infer<typeof extraLeaveSchema> | z.infer<typeof profileChangeSchema>;
+// Add type field for form management (not sent to backend)
+type AttendanceCorrectionData = z.infer<typeof attendanceCorrectionSchema> & { type: "attendance_correction" };
+type ExtraLeaveData = z.infer<typeof extraLeaveSchema> & { type: "extra_leave_request" };
+type ProfileChangeData = z.infer<typeof profileChangeSchema> & { type: "profile_change_request" };
+
+type FormData = AttendanceCorrectionData | ExtraLeaveData | ProfileChangeData;
 
 interface TicketFormProps {
   categories: TicketCategories;
@@ -82,20 +80,56 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
     }
   };
 
+  const getDefaultValues = () => {
+    const base = {
+      priority: "medium" as const,
+      category: "",
+      title: "",
+      description: "",
+    };
+
+    switch (ticketType) {
+      case "attendance_correction":
+        return {
+          ...base,
+          type: ticketType,
+          attendanceId: undefined,
+          requestedDate: "",
+          requestedCheckIn: "",
+          requestedCheckOut: "",
+        };
+      case "extra_leave_request":
+        return {
+          ...base,
+          type: ticketType,
+          leaveType: "",
+          leaveStartDate: "",
+          leaveEndDate: "",
+          leaveDays: 1,
+        };
+      case "profile_change_request":
+        return {
+          ...base,
+          type: ticketType,
+          profileChanges: {},
+        };
+    }
+  };
+
   const form = useForm<FormData>({
     resolver: zodResolver(getSchema()),
-    defaultValues: {
-      type: ticketType,
-      priority: "medium",
-    },
+    defaultValues: getDefaultValues(),
+    mode: "onChange",
   });
 
+  // Reset form when ticket type changes
   useEffect(() => {
-    form.setValue("type", ticketType);
-    form.reset({
-      type: ticketType,
-      priority: "medium",
-    });
+    const newDefaults = getDefaultValues();
+    form.reset(newDefaults);
+    setSelectedDate(undefined);
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setError(null);
   }, [ticketType, form]);
 
   useEffect(() => {
@@ -104,10 +138,18 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
     }
   }, [ticketType, accessToken]);
 
+  // Also load attendance history when the component first mounts if we're on attendance tab
+  useEffect(() => {
+    if (accessToken && ticketType === "attendance_correction") {
+      loadAttendanceHistory();
+    }
+  }, [accessToken]);
+
   const loadAttendanceHistory = async () => {
     if (!accessToken) return;
 
     try {
+      console.log("🕒 Loading attendance history...");
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 30);
@@ -117,9 +159,11 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
         endDate: endDate.toISOString().split('T')[0],
       });
 
-      setAttendanceHistory(data.attendances);
+      console.log("🕒 Attendance history loaded:", data.attendances);
+      setAttendanceHistory(data.attendances || []);
     } catch (err: any) {
       console.error("Failed to load attendance history:", err);
+      setAttendanceHistory([]); // Set empty array on error
     }
   };
 
@@ -132,7 +176,7 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
   useEffect(() => {
     if (startDate && endDate && ticketType === "extra_leave_request") {
       const days = calculateLeaveDays(startDate, endDate);
-      form.setValue("leaveDays", days);
+      form.setValue("leaveDays", days, { shouldValidate: true });
     }
   }, [startDate, endDate, ticketType, form]);
 
@@ -143,22 +187,63 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
       setLoading(true);
       setError(null);
 
+      console.log("🎫 Form data before submission:", data);
+
       switch (data.type) {
-        case "attendance_correction":
-          await employeeTicketsApi.createAttendanceCorrectionTicket(accessToken, data);
+        case "attendance_correction": {
+          const attendanceData: CreateAttendanceCorrectionTicketData = {
+            category: data.category,
+            title: data.title,
+            description: data.description,
+            priority: data.priority,
+            requestedDate: data.requestedDate,
+            // Convert "-" to undefined for attendanceId
+            ...(data.attendanceId && data.attendanceId !== "-" && { attendanceId: typeof data.attendanceId === 'string' ? parseInt(data.attendanceId) : data.attendanceId }),
+            ...(data.requestedCheckIn && { requestedCheckIn: data.requestedCheckIn }),
+            ...(data.requestedCheckOut && { requestedCheckOut: data.requestedCheckOut }),
+            attachments: [],
+          };
+          console.log("🎫 Sending attendance correction data:", attendanceData);
+          await employeeTicketsApi.createAttendanceCorrectionTicket(accessToken, attendanceData);
           break;
-        case "extra_leave_request":
-          await employeeTicketsApi.createExtraLeaveTicket(accessToken, data);
+        }
+        case "extra_leave_request": {
+          const leaveData: CreateExtraLeaveTicketData = {
+            category: data.category,
+            title: data.title,
+            description: data.description,
+            priority: data.priority,
+            leaveType: data.leaveType,
+            leaveStartDate: data.leaveStartDate,
+            leaveEndDate: data.leaveEndDate,
+            // Note: leaveDays is not sent to backend as it's not in the schema
+            attachments: [],
+          };
+          console.log("🎫 Sending extra leave data:", leaveData);
+          await employeeTicketsApi.createExtraLeaveTicket(accessToken, leaveData);
           break;
-        case "profile_change_request":
-          await employeeTicketsApi.createProfileChangeTicket(accessToken, data);
+        }
+        case "profile_change_request": {
+          const profileData: CreateProfileChangeTicketData = {
+            category: data.category,
+            title: data.title,
+            description: data.description,
+            priority: data.priority,
+            profileChanges: data.profileChanges || { description: data.description },
+            attachments: [],
+          };
+          console.log("🎫 Sending profile change data:", profileData);
+          await employeeTicketsApi.createProfileChangeTicket(accessToken, profileData);
           break;
+        }
       }
 
+      console.log("🎫 Ticket created successfully");
       onSuccess();
     } catch (err: any) {
       const errorMessage = extractErrorMessage(err);
-      console.error("Failed to create ticket:", err);
+      console.error("🎫 Failed to create ticket:", err);
+      console.error("🎫 Error response:", err.response?.data);
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -194,7 +279,15 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
           </TabsTrigger>
         </TabsList>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit(onSubmit)(e);
+          }}
+          className="space-y-4"
+          noValidate
+        >
           <TabsContent value="attendance_correction" className="space-y-4">
             <Card>
               <CardHeader>
@@ -207,7 +300,10 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="category">Category</Label>
-                    <Select onValueChange={(value) => form.setValue("category", value)}>
+                    <Select
+                      value={form.watch("category")}
+                      onValueChange={(value) => form.setValue("category", value, { shouldValidate: true })}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
@@ -226,7 +322,10 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
 
                   <div className="space-y-2">
                     <Label htmlFor="priority">Priority</Label>
-                    <Select onValueChange={(value) => form.setValue("priority", value as any)}>
+                    <Select
+                      value={form.watch("priority")}
+                      onValueChange={(value) => form.setValue("priority", value as any, { shouldValidate: true })}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select priority" />
                       </SelectTrigger>
@@ -237,6 +336,9 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                         <SelectItem value="urgent">Urgent</SelectItem>
                       </SelectContent>
                     </Select>
+                    {form.formState.errors.priority && (
+                      <p className="text-sm text-destructive">{form.formState.errors.priority.message}</p>
+                    )}
                   </div>
                 </div>
 
@@ -245,6 +347,7 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
+                        type="button"
                         variant="outline"
                         className={cn(
                           "w-full justify-start text-left font-normal",
@@ -262,11 +365,13 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                         onSelect={(date) => {
                           setSelectedDate(date);
                           if (date) {
-                            form.setValue("requestedDate", format(date, "yyyy-MM-dd"));
+                            const dateString = format(date, "yyyy-MM-dd");
+                            form.setValue("requestedDate", dateString, { shouldValidate: true });
+                          } else {
+                            form.setValue("requestedDate", "", { shouldValidate: true });
                           }
                         }}
                         disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                        initialFocus
                       />
                     </PopoverContent>
                   </Popover>
@@ -275,25 +380,57 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                   )}
                 </div>
 
-                {selectedDate && attendanceHistory.length > 0 && (
+                {selectedDate && (
                   <div className="space-y-2">
-                    <Label>Existing Attendance Record</Label>
-                    <Select onValueChange={(value) => form.setValue("attendanceId", parseInt(value))}>
+                    <Label>Existing Attendance Record (Optional)</Label>
+                    <Select
+                      value={form.watch("attendanceId")?.toString() || "-"}
+                      onValueChange={(value) => {
+                        if (value === "-") {
+                          form.setValue("attendanceId", undefined, { shouldValidate: true });
+                        } else {
+                          form.setValue("attendanceId", parseInt(value), { shouldValidate: true });
+                        }
+                      }}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select attendance record (optional)" />
                       </SelectTrigger>
                       <SelectContent>
-                        {attendanceHistory
-                          .filter(att => format(new Date(att.date), "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd"))
-                          .map((attendance) => (
-                            <SelectItem key={attendance.id} value={attendance.id.toString()}>
-                              {format(new Date(attendance.date), "PPP")} -
-                              {attendance.checkIn ? format(new Date(attendance.checkIn), "HH:mm") : "No check-in"} to
-                              {attendance.checkOut ? format(new Date(attendance.checkOut), "HH:mm") : "No check-out"}
-                            </SelectItem>
-                          ))}
+                        <SelectItem value="-">No existing record</SelectItem>
+                        {attendanceHistory.length > 0 ? (
+                          attendanceHistory
+                            .filter(att => {
+                              if (!selectedDate) return false;
+                              try {
+                                const attDate = format(new Date(att.date), "yyyy-MM-dd");
+                                const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
+                                return attDate === selectedDateStr;
+                              } catch (error) {
+                                console.error("Date comparison error:", error);
+                                return false;
+                              }
+                            })
+                            .map((attendance) => (
+                              <SelectItem key={attendance.id} value={attendance.id.toString()}>
+                                {format(new Date(attendance.date), "PPP")} -
+                                {attendance.checkIn ? ` In: ${format(new Date(attendance.checkIn), "HH:mm")}` : " No check-in"}
+                                {attendance.checkOut ? ` Out: ${format(new Date(attendance.checkOut), "HH:mm")}` : " No check-out"}
+                              </SelectItem>
+                            ))
+                        ) : (
+                          <SelectItem value="-" disabled>
+                            No attendance records found for this date
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {attendanceHistory.length === 0
+                        ? "Loading attendance records..."
+                        : `Found ${attendanceHistory.length} attendance records in the last 30 days`
+                      }
+                    </p>
                   </div>
                 )}
 
@@ -353,7 +490,10 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="category">Category</Label>
-                    <Select onValueChange={(value) => form.setValue("category", value)}>
+                    <Select
+                      value={form.watch("category")}
+                      onValueChange={(value) => form.setValue("category", value, { shouldValidate: true })}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
@@ -365,11 +505,17 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                         ))}
                       </SelectContent>
                     </Select>
+                    {form.formState.errors.category && (
+                      <p className="text-sm text-destructive">{form.formState.errors.category.message}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="priority">Priority</Label>
-                    <Select onValueChange={(value) => form.setValue("priority", value as any)}>
+                    <Select
+                      value={form.watch("priority")}
+                      onValueChange={(value) => form.setValue("priority", value as any, { shouldValidate: true })}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select priority" />
                       </SelectTrigger>
@@ -380,12 +526,18 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                         <SelectItem value="urgent">Urgent</SelectItem>
                       </SelectContent>
                     </Select>
+                    {form.formState.errors.priority && (
+                      <p className="text-sm text-destructive">{form.formState.errors.priority.message}</p>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="leaveType">Leave Type</Label>
-                  <Select onValueChange={(value) => form.setValue("leaveType", value)}>
+                  <Select
+                    value={form.watch("leaveType")}
+                    onValueChange={(value) => form.setValue("leaveType", value, { shouldValidate: true })}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select leave type" />
                     </SelectTrigger>
@@ -398,6 +550,9 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                       <SelectItem value="paternity">Paternity Leave</SelectItem>
                     </SelectContent>
                   </Select>
+                  {form.formState.errors.leaveType && (
+                    <p className="text-sm text-destructive">{form.formState.errors.leaveType.message}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
@@ -406,6 +561,7 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
+                          type="button"
                           variant="outline"
                           className={cn(
                             "w-full justify-start text-left font-normal",
@@ -423,14 +579,19 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                           onSelect={(date) => {
                             setStartDate(date);
                             if (date) {
-                              form.setValue("leaveStartDate", format(date, "yyyy-MM-dd"));
+                              const dateString = format(date, "yyyy-MM-dd");
+                              form.setValue("leaveStartDate", dateString, { shouldValidate: true });
+                            } else {
+                              form.setValue("leaveStartDate", "", { shouldValidate: true });
                             }
                           }}
                           disabled={(date) => date < new Date()}
-                          initialFocus
                         />
                       </PopoverContent>
                     </Popover>
+                    {form.formState.errors.leaveStartDate && (
+                      <p className="text-sm text-destructive">{form.formState.errors.leaveStartDate.message}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -438,6 +599,7 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
+                          type="button"
                           variant="outline"
                           className={cn(
                             "w-full justify-start text-left font-normal",
@@ -455,14 +617,19 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                           onSelect={(date) => {
                             setEndDate(date);
                             if (date) {
-                              form.setValue("leaveEndDate", format(date, "yyyy-MM-dd"));
+                              const dateString = format(date, "yyyy-MM-dd");
+                              form.setValue("leaveEndDate", dateString, { shouldValidate: true });
+                            } else {
+                              form.setValue("leaveEndDate", "", { shouldValidate: true });
                             }
                           }}
                           disabled={(date) => date < (startDate || new Date())}
-                          initialFocus
                         />
                       </PopoverContent>
                     </Popover>
+                    {form.formState.errors.leaveEndDate && (
+                      <p className="text-sm text-destructive">{form.formState.errors.leaveEndDate.message}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -470,8 +637,12 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                     <Input
                       type="number"
                       readOnly
-                      {...form.register("leaveDays", { valueAsNumber: true })}
+                      value={form.watch("leaveDays") || 1}
+                      className="bg-muted"
                     />
+                    {form.formState.errors.leaveDays && (
+                      <p className="text-sm text-destructive">{form.formState.errors.leaveDays.message}</p>
+                    )}
                   </div>
                 </div>
 
@@ -481,6 +652,9 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                     placeholder="Brief title for your leave request"
                     {...form.register("title")}
                   />
+                  {form.formState.errors.title && (
+                    <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -490,6 +664,9 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                     rows={4}
                     {...form.register("description")}
                   />
+                  {form.formState.errors.description && (
+                    <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -507,7 +684,10 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="category">Category</Label>
-                    <Select onValueChange={(value) => form.setValue("category", value)}>
+                    <Select
+                      value={form.watch("category")}
+                      onValueChange={(value) => form.setValue("category", value, { shouldValidate: true })}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
@@ -519,11 +699,17 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                         ))}
                       </SelectContent>
                     </Select>
+                    {form.formState.errors.category && (
+                      <p className="text-sm text-destructive">{form.formState.errors.category.message}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="priority">Priority</Label>
-                    <Select onValueChange={(value) => form.setValue("priority", value as any)}>
+                    <Select
+                      value={form.watch("priority")}
+                      onValueChange={(value) => form.setValue("priority", value as any, { shouldValidate: true })}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select priority" />
                       </SelectTrigger>
@@ -534,6 +720,9 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                         <SelectItem value="urgent">Urgent</SelectItem>
                       </SelectContent>
                     </Select>
+                    {form.formState.errors.priority && (
+                      <p className="text-sm text-destructive">{form.formState.errors.priority.message}</p>
+                    )}
                   </div>
                 </div>
 
@@ -543,6 +732,9 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                     placeholder="Brief title for your profile change request"
                     {...form.register("title")}
                   />
+                  {form.formState.errors.title && (
+                    <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -552,6 +744,9 @@ export function TicketForm({ categories, onSuccess, onCancel }: TicketFormProps)
                     rows={4}
                     {...form.register("description")}
                   />
+                  {form.formState.errors.description && (
+                    <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">

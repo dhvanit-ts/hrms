@@ -62,6 +62,12 @@ router.get(
 );
 
 router.get(
+  "/my-statistics",
+  authenticateEmployee,
+  asyncHandler(getMyTicketStatisticsController)
+);
+
+router.get(
   "/my-tickets/:id",
   authenticateEmployee,
   asyncHandler(getMyTicketByIdController)
@@ -74,32 +80,33 @@ router.post(
   asyncHandler(addMyTicketCommentController)
 );
 
-router.get(
-  "/my-statistics",
-  authenticateEmployee,
-  asyncHandler(getMyTicketStatisticsController)
-);
-
 // Admin Routes (require admin/manager authentication)
 router.get(
   "/admin/all",
   authenticate,
-  requireRoles("ADMIN", "MANAGER", "HR"),
+  requireRoles("ADMIN", "MANAGER", "HR", "SUPER_ADMIN"),
   validate(TicketListQuerySchema),
   asyncHandler(getAllTicketsController)
 );
 
 router.get(
+  "/admin/statistics",
+  authenticate,
+  requireRoles("ADMIN", "MANAGER", "HR", "SUPER_ADMIN"),
+  asyncHandler(getTicketStatisticsController)
+);
+
+router.get(
   "/admin/:id",
   authenticate,
-  requireRoles("ADMIN", "MANAGER", "HR"),
+  requireRoles("ADMIN", "MANAGER", "HR", "SUPER_ADMIN"),
   asyncHandler(getTicketByIdController)
 );
 
 router.patch(
   "/admin/:id/status",
   authenticate,
-  requireRoles("ADMIN", "MANAGER", "HR"),
+  requireRoles("ADMIN", "MANAGER", "HR", "SUPER_ADMIN"),
   validate(UpdateTicketStatusSchema),
   asyncHandler(updateTicketStatusController)
 );
@@ -107,22 +114,14 @@ router.patch(
 router.post(
   "/admin/:id/comments",
   authenticate,
-  requireRoles("ADMIN", "MANAGER", "HR"),
+  requireRoles("ADMIN", "MANAGER", "HR", "SUPER_ADMIN"),
   validate(CreateTicketCommentSchema),
   asyncHandler(addTicketCommentController)
-);
-
-router.get(
-  "/admin/statistics",
-  authenticate,
-  requireRoles("ADMIN", "MANAGER", "HR"),
-  asyncHandler(getTicketStatisticsController)
 );
 
 // Shared Routes (accessible by both employees and admins)
 router.get(
   "/categories",
-  authenticateAny,
   asyncHandler(getTicketCategoriesController)
 );
 

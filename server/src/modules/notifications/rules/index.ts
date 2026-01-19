@@ -53,18 +53,12 @@ export const TicketRejectedRule: NotificationRule = {
 
 const RULES = {
   POST_UPVOTED: PostUpvotedRule,
-<<<<<<< HEAD
-  TICKET_CREATED: TicketCreatedRule,
-  TICKET_APPROVED: TicketApprovedRule,
-  TICKET_REJECTED: TicketRejectedRule,
-=======
   LEAVE_REQUESTED: LeaveRequestedRule,
   LEAVE_APPROVED: LeaveApprovedRule,
   LEAVE_REJECTED: LeaveRejectedRule,
   ATTENDANCE_CORRECTION_REQUESTED: AttendanceCorrectionRequestedRule,
   ATTENDANCE_CORRECTION_APPROVED: AttendanceCorrectionApprovedRule,
   ATTENDANCE_CORRECTION_REJECTED: AttendanceCorrectionRejectedRule,
->>>>>>> main
   // COMMENT_REPLIED: CommentRepliedRule
 }
 

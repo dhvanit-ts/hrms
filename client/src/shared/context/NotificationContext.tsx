@@ -169,93 +169,124 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       return;
     }
 
-    // Don't reconnect if we already have a connected EventSource for the same user
-    if (eventSourceRef.current && eventSourceRef.current.readyState === EventSource.OPEN) {
-      return;
-    }
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+    let isManualClose = false;
 
-    const apiUrl = (import.meta as any).env?.VITE_API_URL || "http://localhost:4000";
-
-    // Create EventSource with authentication token as query parameter
-    const eventSource = new EventSource(`${apiUrl}/api/events?token=${encodeURIComponent(currentToken)}`);
-
-    eventSource.onopen = () => {
-      console.log("✅ SSE connection established");
-    };
-
-    eventSource.onerror = (error) => {
-      console.error("❌ SSE connection error:", error);
-
-      // Attempt to reconnect after a delay if the connection fails
-      if (eventSource.readyState === EventSource.CLOSED) {
-        setTimeout(() => {
-          if (currentUserId && currentToken) {
-            // Trigger a reconnection by clearing the ref
-            eventSourceRef.current = null;
-          }
-        }, 5000);
+    const connectSSE = () => {
+      // Close existing connection if any
+      if (eventSourceRef.current) {
+        isManualClose = true;
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+        isManualClose = false;
       }
-    };
 
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
+      const apiUrl = (import.meta as any).env?.VITE_API_URL || "http://localhost:4000";
 
-        switch (data.type) {
-          case 'connected':
-            console.log("🔗 SSE client connected:", data.clientId);
-            break;
+      // Create EventSource with authentication token as query parameter
+      const eventSource = new EventSource(`${apiUrl}/api/events?token=${encodeURIComponent(currentToken)}`);
 
-          case 'ping':
-            // Handle keep-alive pings (no action needed)
-            break;
-
-          case 'notification':
-            // Handle new notification
-            if (data.notification) {
-              // Add new notification to the list
-              setNotifications(prev => {
-                if (!Array.isArray(prev)) {
-                  console.warn("Previous notifications state is not an array, resetting:", prev);
-                  return [data.notification];
-                }
-                return [data.notification, ...prev];
-              });
-
-              setUnreadCount(prev => (typeof prev === 'number' ? prev + 1 : 1));
-
-              // Show browser notification if permission granted
-              if (Notification.permission === "granted") {
-                new Notification("HRMS Notification", {
-                  body: data.notification.message || "New notification",
-                  icon: "/favicon.ico"
-                });
-              }
-            }
-            break;
-
-          case 'unread-count':
-            // Handle unread count update
-            const count = typeof data.unreadCount === 'number' ? data.unreadCount : 0;
-            setUnreadCount(count);
-            break;
-
-          case 'broadcast':
-            // Handle broadcast messages (if needed)
-            console.log("📢 Broadcast message:", data);
-            break;
-
-          default:
-            console.log("📨 SSE message:", data);
+      eventSource.onopen = () => {
+        console.log("✅ SSE connection established");
+        // Clear any pending reconnection attempts
+        if (reconnectTimeout) {
+          clearTimeout(reconnectTimeout);
+          reconnectTimeout = null;
         }
-      } catch (error) {
-        console.error("Failed to parse SSE message:", event.data, error);
-      }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error("❌ SSE connection error:", error);
+
+        // Don't attempt to reconnect if this was a manual close
+        if (isManualClose) {
+          return;
+        }
+
+        // If connection is closed, attempt to reconnect with fresh token
+        if (eventSource.readyState === EventSource.CLOSED) {
+          console.log("🔄 SSE connection closed, attempting to reconnect in 3 seconds...");
+
+          // Clear the current reference
+          eventSourceRef.current = null;
+
+          // Attempt to reconnect after a delay
+          reconnectTimeout = setTimeout(() => {
+            if (currentUserId && currentToken) {
+              console.log("🔄 Reconnecting SSE with fresh token...");
+              connectSSE();
+            }
+          }, 3000);
+        }
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+
+          switch (data.type) {
+            case 'connected':
+              console.log("🔗 SSE client connected:", data.clientId);
+              break;
+
+            case 'ping':
+              // Handle keep-alive pings (no action needed)
+              break;
+
+            case 'notification':
+              // Handle new notification
+              if (data.notification) {
+                // Add new notification to the list
+                setNotifications(prev => {
+                  if (!Array.isArray(prev)) {
+                    console.warn("Previous notifications state is not an array, resetting:", prev);
+                    return [data.notification];
+                  }
+                  return [data.notification, ...prev];
+                });
+
+                setUnreadCount(prev => (typeof prev === 'number' ? prev + 1 : 1));
+
+                // Show browser notification if permission granted
+                if (Notification.permission === "granted") {
+                  new Notification("HRMS Notification", {
+                    body: data.notification.message || "New notification",
+                    icon: "/favicon.ico"
+                  });
+                }
+              }
+              break;
+
+            case 'unread-count':
+              // Handle unread count update
+              const count = typeof data.unreadCount === 'number' ? data.unreadCount : 0;
+              setUnreadCount(count);
+              break;
+
+            case 'broadcast':
+              // Handle broadcast messages (if needed)
+              console.log("📢 Broadcast message:", data);
+              break;
+
+            default:
+              console.log("📨 SSE message:", data);
+          }
+        } catch (error) {
+          console.error("Failed to parse SSE message:", event.data, error);
+        }
+      };
+
+      eventSourceRef.current = eventSource;
     };
 
-    eventSourceRef.current = eventSource;
+    // Initial connection
+    connectSSE();
 
     return () => {
+      isManualClose = true;
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;

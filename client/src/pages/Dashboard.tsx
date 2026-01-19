@@ -24,6 +24,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from '@/shared/comp
 import { useForm } from 'react-hook-form';
 import { http } from '@/services/api/http';
 import { Spinner } from '@/shared/components/ui/spinner';
+import { RefreshButton } from '@/shared/components/ui/refresh-button';
 import z from 'zod';
 
 const employeeSchema = z.object({
@@ -138,41 +139,51 @@ const DashboardPage: React.FC = () => {
   );
 
   // Fetch dashboard stats for admin users
+  const fetchStats = async () => {
+    setIsLoadingStats(true);
+    try {
+      const dashboardStats = await statsApi.getDashboardStats();
+      setStats(dashboardStats);
+    } catch (error) {
+      console.error('Failed to fetch dashboard stats:', error);
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
   useEffect(() => {
     if (hasAdminAccess) {
-      const fetchStats = async () => {
-        setIsLoadingStats(true);
-        try {
-          const dashboardStats = await statsApi.getDashboardStats();
-          setStats(dashboardStats);
-        } catch (error) {
-          console.error('Failed to fetch dashboard stats:', error);
-        } finally {
-          setIsLoadingStats(false);
-        }
-      };
-
       fetchStats();
     }
   }, [hasAdminAccess]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Welcome Section */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-2xl font-bold mb-2">
-          Welcome, {isEmployee ? employee?.name : user?.email}!
-        </h2>
-        {isEmployee && (
-          <div className="space-y-2 text-sm text-gray-600">
-            <p><span className="font-medium">Employee ID:</span> {employee?.employeeId}</p>
-            <p><span className="font-medium">Email:</span> {employee?.email}</p>
-          </div>
-        )}
-        {isAdmin && (
-          <div className="space-y-2 text-sm text-gray-600">
-            <p><span className="font-medium">Roles:</span> {user?.roles.join(', ')}</p>
-          </div>
+      {/* Header Section */}
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <h2 className="text-2xl font-bold mb-2">
+            Welcome, {isEmployee ? employee?.name : user?.email}!
+          </h2>
+          {isEmployee && (
+            <div className="space-y-2 text-sm text-gray-600">
+              <p><span className="font-medium">Employee ID:</span> {employee?.employeeId}</p>
+              <p><span className="font-medium">Email:</span> {employee?.email}</p>
+            </div>
+          )}
+          {isAdmin && (
+            <div className="space-y-2 text-sm text-gray-600">
+              <p><span className="font-medium">Roles:</span> {user?.roles.join(', ')}</p>
+            </div>
+          )}
+        </div>
+        {hasAdminAccess && (
+          <RefreshButton
+            onRefresh={fetchStats}
+            isLoading={isLoadingStats}
+            showText={true}
+            variant="outline"
+          />
         )}
       </div>
 

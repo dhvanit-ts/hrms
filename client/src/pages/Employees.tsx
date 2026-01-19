@@ -11,6 +11,7 @@ import {
   Edit3,
   RotateCcw
 } from 'lucide-react';
+import { } from "node:sqlite"
 
 // UI Components
 import { Button } from '@/shared/components/ui/button';
@@ -22,6 +23,7 @@ import {
 } from '@/shared/components/ui/card';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/shared/components/ui/sheet';
 import { Spinner } from '@/shared/components/ui/spinner';
+import { RefreshButton } from '@/shared/components/ui/refresh-button';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/shared/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
@@ -286,19 +288,22 @@ export const EmployeesPage: React.FC = () => {
   const [assignShiftDialogOpen, setAssignShiftDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await http.get('/employees', { headers: { Authorization: `Bearer ${accessToken}` } });
-        if (res.data.employees) {
-          setRows(res.data.employees);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error("Failed to load employees", error);
-        setIsLoading(false);
+  const loadEmployees = async () => {
+    setIsLoading(true);
+    try {
+      const res = await http.get('/employees', { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (res.data.employees) {
+        setRows(res.data.employees);
       }
-    })();
+    } catch (error) {
+      console.error("Failed to load employees", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadEmployees();
   }, [accessToken]);
 
   // Simple client-side filter for the demo
@@ -314,16 +319,7 @@ export const EmployeesPage: React.FC = () => {
 
   const handleShiftAssigned = () => {
     // Refresh the employee list to show updated shift assignments
-    (async () => {
-      try {
-        const res = await http.get('/employees', { headers: { Authorization: `Bearer ${accessToken}` } });
-        if (res.data.employees) {
-          setRows(res.data.employees);
-        }
-      } catch (error) {
-        console.error("Failed to refresh employees", error);
-      }
-    })();
+    loadEmployees();
     setAssignShiftDialogOpen(false);
     setSelectedEmployee(null);
   };
@@ -336,35 +332,34 @@ export const EmployeesPage: React.FC = () => {
           <h2 className="text-xl font-semibold text-zinc-900">Employees</h2>
           <p className="text-sm text-zinc-500">Manage your team members and permissions.</p>
         </div>
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button className="shadow-sm">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Employee
-            </Button>
-          </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>Add Employee</SheetTitle>
-              <SheetDescription>
-                Add a new employee to your organization.
-              </SheetDescription>
-            </SheetHeader>
-            <EmployeeForm onSuccess={() => {
-              // Refresh the employee list
-              (async () => {
-                try {
-                  const res = await http.get('/employees', { headers: { Authorization: `Bearer ${accessToken}` } });
-                  if (res.data.employees) {
-                    setRows(res.data.employees);
-                  }
-                } catch (error) {
-                  console.error("Failed to refresh employees", error);
-                }
-              })();
-            }} />
-          </SheetContent>
-        </Sheet>
+        <div className="flex items-center gap-2">
+          <RefreshButton
+            onRefresh={loadEmployees}
+            isLoading={isLoading}
+            showText={true}
+            variant="outline"
+          />
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button className="shadow-sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Employee
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>Add Employee</SheetTitle>
+                <SheetDescription>
+                  Add a new employee to your organization.
+                </SheetDescription>
+              </SheetHeader>
+              <EmployeeForm onSuccess={() => {
+                // Refresh the employee list
+                loadEmployees();
+              }} />
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
 
       {/* Filters & Actions */}

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Calendar, Clock, Home, Building, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, Home, Building, AlertCircle, Edit } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import {
   RiCheckboxCircleFill,
   RiErrorWarningFill,
@@ -218,6 +219,16 @@ export const AttendancePage: React.FC = () => {
           <p className="text-sm text-zinc-500">Track your daily attendance and work hours</p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            asChild
+          >
+            <Link to="/dashboard/attendance-corrections">
+              <Edit className="w-4 h-4 mr-2" />
+              Request Corrections
+            </Link>
+          </Button>
           <Button
             variant={viewMode === 'calendar' ? 'default' : 'outline'}
             size="sm"

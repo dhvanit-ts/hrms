@@ -6,7 +6,10 @@ function notifyViaSSE(receiverId: string, aggregationKey: string, notificationDa
     const [userType, userId] = receiverId.split('_');
 
     if (userType && userId && (userType === 'user' || userType === 'employee')) {
-      SSE.notifyUser(Number(userId), userType, {
+      // Admin user IDs are strings (UUIDs), employee IDs are numbers
+      const parsedUserId = userType === 'user' ? userId : Number(userId);
+
+      SSE.notifyUser(parsedUserId, userType, {
         aggregationKey,
         receiverId,
         ...notificationData

@@ -1,10 +1,11 @@
 import prisma from "@/config/db"
 import { DomainEvent } from "./notification.interface"
 import { ApiError } from "@/core/http"
+import { NotificationReceiver } from "./rules/notification.rules-interface"
 
 // TODO: Improve this code, consider handling edge cases
 
-export const upsertNotification = async (event: DomainEvent, receiver: { id: number, type: string }, aggregationKey: string) => {
+export const upsertNotification = async (event: DomainEvent, receiver: NotificationReceiver, aggregationKey: string) => {
   // if (notification exists for aggregationKey) {
   //   update:
   //     - add actor if new
@@ -41,7 +42,7 @@ export const upsertNotification = async (event: DomainEvent, receiver: { id: num
       const newNotification = await prisma.notification.create({
         data: {
           aggregationKey,
-          receiverId: receiver.id,
+          receiverId: Number(receiver.id), // Ensure it's a number for the database
           receiverType: receiver.type,
           targetId: event.targetId,
           targetType: event.targetType,
@@ -61,6 +62,7 @@ export const upsertNotification = async (event: DomainEvent, receiver: { id: num
     }
 
   } catch (error) {
-    console.log(error)
+    console.error("Failed to upsert notification:", error)
+    throw error
   }
 }

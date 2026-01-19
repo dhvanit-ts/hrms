@@ -92,7 +92,7 @@ model Employee {
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
 
-department Department? @relation(fields: [departmentId], references: [id])
+  department Department? @relation(fields: [departmentId], references: [id])
   managedDepartments Department[] @relation("DepartmentManager")
   jobRole            JobRole?        @relation(fields: [jobRoleId], references: [id])
   shift              Shift?          @relation(fields: [shiftId], references: [id])

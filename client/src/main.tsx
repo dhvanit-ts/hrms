@@ -23,6 +23,8 @@ import DepartmentsPage from './pages/Departments';
 import JobRolesPage from './pages/JobRoles';
 import LeadsPage from './pages/Leads';
 import { ShiftManagementPage } from './pages/ShiftManagement';
+import { Tickets } from './pages/Tickets';
+import { TicketsAdmin } from './pages/TicketsAdmin';
 import { Toaster } from './shared/components/ui/toaster';
 
 const router = createBrowserRouter([
@@ -56,6 +58,8 @@ const router = createBrowserRouter([
           { index: true, element: <DashboardPage /> },
           { path: "leaves", element: <LeavesPage /> },
           { path: "attendance", element: <AttendancePage /> },
+          { path: "tickets", element: <Tickets /> },
+          { path: "tickets-admin", element: <TicketsAdmin /> },
           { path: "profile", element: <EmployeeProfilePage /> },
           { path: "holidays", element: <HolidaysPage /> },
           { path: "bank-details", element: <BankDetailsPage /> },

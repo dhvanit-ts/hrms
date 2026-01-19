@@ -22,6 +22,7 @@ import {
   DialogTrigger
 } from '@/shared/components/ui/dialog';
 import { useAuth } from '@/shared/context/AuthContext';
+import { RefreshButton } from '@/shared/components/ui/refresh-button';
 import * as departmentsApi from '@/services/api/departments';
 import { ErrorAlert } from '@/shared/components/ui/error-alert';
 import { extractErrorMessage } from '@/lib/utils';
@@ -181,46 +182,54 @@ export const DepartmentsPage: React.FC = () => {
           <h2 className="text-xl font-semibold text-zinc-900">Department Management</h2>
           <p className="text-sm text-zinc-500">Manage organizational departments and their details</p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Department
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Department</DialogTitle>
-              <DialogDescription>Add a new department to your organization</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Department Name</label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Engineering, Marketing, HR"
-                />
+        <div className="flex items-center gap-2">
+          <RefreshButton
+            onRefresh={loadDepartments}
+            isLoading={isLoading}
+            showText={true}
+            variant="outline"
+          />
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Department
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Department</DialogTitle>
+                <DialogDescription>Add a new department to your organization</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Department Name</label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="e.g. Engineering, Marketing, HR"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Description (Optional)</label>
+                  <Input
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Brief description of the department"
+                  />
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button onClick={handleCreate} disabled={isSubmitting || !formData.name.trim()}>
+                    {isSubmitting ? 'Creating...' : 'Create Department'}
+                  </Button>
+                  <Button variant="outline" onClick={closeDialogs}>
+                    Cancel
+                  </Button>
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description (Optional)</label>
-                <Input
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Brief description of the department"
-                />
-              </div>
-              <div className="flex gap-2 pt-4">
-                <Button onClick={handleCreate} disabled={isSubmitting || !formData.name.trim()}>
-                  {isSubmitting ? 'Creating...' : 'Create Department'}
-                </Button>
-                <Button variant="outline" onClick={closeDialogs}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Search */}

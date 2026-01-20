@@ -2,6 +2,7 @@ import { HttpError } from "@/core/http";
 import CollegeRepo from "./college.repo";
 import recordAudit from "@/lib/record-audit";
 import { CollegeUpdates } from "./college.types";
+import logger from "@/core/logger";
 
 class CollegeService {
   async createCollege(collegeData: {
@@ -11,9 +12,12 @@ class CollegeService {
     state: string;
     profile?: string;
   }) {
+    logger.info("Creating college", { emailDomain: collegeData.emailDomain, name: collegeData.name });
+    
     // Check if college with this email domain already exists
     const existing = await CollegeRepo.CachedRead.findByEmailDomain(collegeData.emailDomain);
     if (existing) {
+      logger.warn("College with email domain already exists", { emailDomain: collegeData.emailDomain });
       throw new HttpError({
         statusCode: 409,
         message: "College with this email domain already exists",
@@ -29,6 +33,7 @@ class CollegeService {
     }
 
     const newCollege = await CollegeRepo.Write.create(collegeData);
+    logger.info("College created successfully", { collegeId: newCollege.id, emailDomain: newCollege.emailDomain });
 
     await recordAudit({
       action: "admin:created:college",
@@ -42,19 +47,27 @@ class CollegeService {
   }
 
   async getColleges(filters?: { city?: string; state?: string }) {
+    logger.info("Fetching colleges", { filters });
+    
     const colleges = await CollegeRepo.CachedRead.findAll(filters);
+    logger.info("Retrieved colleges", { count: colleges.length, filters });
     return colleges;
   }
 
   async getCollegeById(id: string) {
+    logger.info("Fetching college by ID", { collegeId: id });
+    
     const college = await CollegeRepo.CachedRead.findById(id);
     if (!college) {
+      logger.warn("College not found", { collegeId: id });
       throw HttpError.notFound("College not found", {
         code: "COLLEGE_NOT_FOUND",
         meta: { source: "CollegeService.getCollegeById" },
         errors: [{ field: "id", message: "College not found" }],
       });
     }
+    
+    logger.info("College retrieved successfully", { collegeId: id, emailDomain: college.emailDomain });
     return college;
   }
 

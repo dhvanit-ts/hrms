@@ -1,13 +1,31 @@
 import { HttpError } from "@/core/http";
 import ContentReportRepo from "./content-report.repo";
 import { ContentReportInsert } from "@/infra/db/tables/content-report.table";
+import logger from "@/core/logger";
 import recordAudit from "@/lib/record-audit";
+import { shouldSampleLog } from "@/lib/should-sample-log";
 
 class ContentReportService {
   static async createReport(values: ContentReportInsert) {
+    if (shouldSampleLog(values.reportedBy)) logger.info("Creating content report", {
+      type: values.type,
+      postId: values.postId,
+      commentId: values.commentId,
+      reportedBy: values.reportedBy
+    });
+
     const report = await ContentReportRepo.Write.create(values);
 
-    if (!report) throw HttpError.internal("Failed to create report");
+    if (!report) {
+      logger.error("Failed to create content report", { values });
+      throw HttpError.internal("Failed to create report");
+    }
+
+    if (shouldSampleLog(values.reportedBy)) logger.info("Content report created successfully", {
+      reportId: report.id,
+      type: report.type,
+      status: report.status
+    });
 
     await recordAudit({
       action: "user:reported:content",
@@ -21,17 +39,32 @@ class ContentReportService {
   }
 
   static async getReportById(id: string) {
+    if (shouldSampleLog(id)) logger.info("Fetching report by ID", { reportId: id });
+
     const report = await ContentReportRepo.Read.findById(id);
-    if (!report) throw HttpError.notFound("Report not found");
+    if (!report) {
+      logger.warn("Report not found", { reportId: id });
+      throw HttpError.notFound("Report not found");
+    }
+
+    if (shouldSampleLog(id)) logger.info("Report retrieved successfully", { reportId: id, type: report.type });
     return report;
   }
 
   static async getUserReports(userId: string) {
-    return await ContentReportRepo.Read.findByUserId(userId);
+    logger.info("Fetching user reports", { userId });
+    
+    const reports = await ContentReportRepo.Read.findByUserId(userId);
+    logger.info("Retrieved user reports", { userId, count: reports.length });
+    return reports;
   }
 
   static async getAllReports() {
-    return await ContentReportRepo.Read.findAll();
+    logger.info("Fetching all reports");
+    
+    const reports = await ContentReportRepo.Read.findAll();
+    logger.info("Retrieved all reports", { count: reports.length });
+    return reports;
   }
 
   static async getReportsWithFilters(filters: {
@@ -86,7 +119,6 @@ class ContentReportService {
     await recordAudit({
       action: "user:reported:content",
       entityType: "content-report",
-      before: { type, status },
       after: { type, status },
       metadata: { targetId }
     })

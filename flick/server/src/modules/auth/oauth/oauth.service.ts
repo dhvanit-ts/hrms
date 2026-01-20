@@ -6,9 +6,12 @@ import AuthRepo from "@/modules/auth/auth.repo";
 import tokenService from "@/modules/auth/tokens/token.service";
 import { HttpError } from "@/core/http";
 import recordAudit from "@/lib/record-audit";
+import logger from "@/core/logger";
 
 class OAuthService {
   handleGoogleOAuth = async (code: string, req: Request) => {
+    logger.info("Handling Google OAuth", { code: code.substring(0, 10) + "..." });
+    
     // Exchange code for access token
     // Get user info
     // Check existing user
@@ -36,6 +39,7 @@ class OAuthService {
     );
 
     const user = userInfoRes.data;
+    logger.info("Retrieved Google user info", { email: user.email });
 
     const existingUser = await AuthRepo.Read.findByEmail(user.email);
 
@@ -44,6 +48,8 @@ class OAuthService {
     const baseOrigin = env.ACCESS_CONTROL_ORIGINS[0] // make sure this is the main origin
 
     if (existingUser) {
+      logger.info("Existing user found, generating tokens", { userId: existingUser.id });
+      
       const { accessToken, refreshToken } =
         await tokenService.generateAndPersistTokens(
           existingUser.id,
@@ -59,7 +65,9 @@ class OAuthService {
       });
 
       redirectUrl = `${baseOrigin}/auth/oauth/signin?tempToken=${tempToken}`;
+      logger.info("OAuth signin redirect prepared", { userId: existingUser.id });
     } else {
+      logger.info("New user, redirecting to registration", { email: user.email });
       redirectUrl = `${baseOrigin}/auth/oauth/callback?email=${user.email}`;
     }
 

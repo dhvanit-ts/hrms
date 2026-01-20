@@ -1,21 +1,29 @@
 import { HttpError } from "@/core/http";
 import { UserAdapter } from "@/infra/db/adapters";
+import logger from "@/core/logger";
 
 class UserManagementService {
   static async blockUser(userId: string) {
+    logger.info("Blocking user", { userId });
+    
     const user = await UserAdapter.findById(userId);
     if (!user) {
+      logger.warn("User not found for blocking", { userId });
       throw HttpError.notFound("User not found");
     }
 
     if (user.isBlocked) {
+      logger.warn("User already blocked", { userId });
       throw HttpError.badRequest("User is already blocked");
     }
 
     const updatedUser = await UserAdapter.blockUser(userId);
     if (!updatedUser) {
+      logger.error("Failed to block user", { userId });
       throw HttpError.internal("Failed to block user");
     }
+
+    logger.info("User blocked successfully", { userId, username: updatedUser.username });
 
     return {
       success: true,
@@ -29,19 +37,26 @@ class UserManagementService {
   }
 
   static async unblockUser(userId: string) {
+    logger.info("Unblocking user", { userId });
+    
     const user = await UserAdapter.findById(userId);
     if (!user) {
+      logger.warn("User not found for unblocking", { userId });
       throw HttpError.notFound("User not found");
     }
 
     if (!user.isBlocked) {
+      logger.warn("User not blocked", { userId });
       throw HttpError.badRequest("User is not blocked");
     }
 
     const updatedUser = await UserAdapter.unblockUser(userId);
     if (!updatedUser) {
+      logger.error("Failed to unblock user", { userId });
       throw HttpError.internal("Failed to unblock user");
     }
+
+    logger.info("User unblocked successfully", { userId, username: updatedUser.username });
 
     return {
       success: true,
@@ -58,20 +73,27 @@ class UserManagementService {
     ends: Date;
     reason: string;
   }) {
+    logger.info("Suspending user", { userId, suspensionEnds: suspensionData.ends, reason: suspensionData.reason });
+    
     const user = await UserAdapter.findById(userId);
     if (!user) {
+      logger.warn("User not found for suspension", { userId });
       throw HttpError.notFound("User not found");
     }
 
     // Check if suspension end date is in the future
     if (suspensionData.ends <= new Date()) {
+      logger.warn("Invalid suspension end date", { userId, suspensionEnds: suspensionData.ends });
       throw HttpError.badRequest("Suspension end date must be in the future");
     }
 
     const updatedUser = await UserAdapter.suspendUser(userId, suspensionData);
     if (!updatedUser) {
+      logger.error("Failed to suspend user", { userId });
       throw HttpError.internal("Failed to suspend user");
     }
+
+    logger.info("User suspended successfully", { userId, username: updatedUser.username, suspensionEnds: suspensionData.ends });
 
     return {
       success: true,

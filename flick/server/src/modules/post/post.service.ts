@@ -3,6 +3,7 @@ import PostRepo from "./post.repo";
 import recordAudit from "@/lib/record-audit";
 import { AuditAction } from "@/shared/constants/audit/actions";
 import { observabilityContext } from "../audit/audit-context";
+import logger from "@/core/logger";
 
 class PostService {
   async createPost(postData: {
@@ -11,11 +12,23 @@ class PostService {
     topic: string;
     postedBy: string;
   }) {
+    logger.info("Creating post", { 
+      topic: postData.topic, 
+      postedBy: postData.postedBy,
+      title: postData.title 
+    });
+    
     const newPost = await PostRepo.Write.create({
       title: postData.title.trim(),
       content: postData.content.trim(),
       topic: postData.topic as any,
       postedBy: postData.postedBy,
+    });
+
+    logger.info("Post created successfully", { 
+      postId: newPost.id, 
+      topic: newPost.topic,
+      postedBy: newPost.postedBy 
     });
 
     await recordAudit({
@@ -29,14 +42,19 @@ class PostService {
   }
 
   async getPostById(id: string, userId?: string) {
+    logger.info("Fetching post by ID", { postId: id, userId });
+    
     const post = await PostRepo.CachedRead.findByIdWithDetails(id, userId);
     if (!post) {
+      logger.warn("Post not found", { postId: id });
       throw HttpError.notFound("Post not found", {
         code: "POST_NOT_FOUND",
         meta: { source: "PostService.getPostById" },
         errors: [{ field: "id", message: "Post not found" }],
       });
     }
+    
+    logger.info("Post retrieved successfully", { postId: id, title: post.title });
     return post;
   }
 
@@ -50,6 +68,8 @@ class PostService {
     branch?: string;
     userId?: string;
   }) {
+    logger.info("Fetching posts", { options });
+    
     const posts = await PostRepo.CachedRead.findMany(options);
     const totalCount = await PostRepo.CachedRead.countAll({
       topic: options?.topic,
@@ -60,7 +80,7 @@ class PostService {
     const page = options?.page || 1;
     const limit = options?.limit || 10;
 
-    return {
+    const result = {
       posts,
       meta: {
         total: totalCount,
@@ -70,6 +90,17 @@ class PostService {
         hasMore: page * limit < totalCount,
       },
     };
+
+    logger.info("Retrieved posts", { 
+      count: posts.length, 
+      totalCount, 
+      page, 
+      limit,
+      topic: options?.topic,
+      collegeId: options?.collegeId 
+    });
+
+    return result;
   }
 
   async updatePost(
@@ -81,9 +112,12 @@ class PostService {
       topic?: string;
     }
   ) {
+    logger.info("Updating post", { postId: id, userId, updates: Object.keys(updates) });
+    
     // First check if post exists and get author info
     const existingPost = await PostRepo.CachedRead.findById(id);
     if (!existingPost) {
+      logger.warn("Post not found for update", { postId: id, userId });
       throw HttpError.notFound("Post not found", {
         code: "POST_NOT_FOUND",
         meta: { source: "PostService.updatePost" },
@@ -93,6 +127,7 @@ class PostService {
 
     // Check if user is the author
     if (existingPost.postedBy !== userId) {
+      logger.warn("Unauthorized post update attempt", { postId: id, userId, authorId: existingPost.postedBy });
       throw HttpError.forbidden("You are not authorized to update this post", {
         code: "POST_UPDATE_FORBIDDEN",
         meta: { source: "PostService.updatePost" },
@@ -116,6 +151,8 @@ class PostService {
     }
 
     const updatedPost = await PostRepo.Write.updateById(id, cleanUpdates);
+
+    logger.info("Post updated successfully", { postId: id, userId, updatedFields: Object.keys(cleanUpdates) });
 
     await recordAudit({
       action: "user:updated:post",

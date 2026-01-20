@@ -1,25 +1,33 @@
 import { HttpError } from "@/core/http";
 import { PostAdapter, CommentAdapter } from "@/infra/db/adapters";
 import ContentReportService from "./content-report.service.js";
+import logger from "@/core/logger";
 
 class ContentModerationService {
   static async banPost(postId: string) {
+    logger.info("Banning post", { postId });
+    
     const post = await PostAdapter.findById(postId);
     if (!post) {
+      logger.warn("Post not found for banning", { postId });
       throw HttpError.notFound("Post not found");
     }
 
     if (post.isBanned) {
+      logger.warn("Post already banned", { postId });
       throw HttpError.badRequest("Post is already banned");
     }
 
     const updatedPost = await PostAdapter.updateById(postId, { isBanned: true });
     if (!updatedPost) {
+      logger.error("Failed to ban post", { postId });
       throw HttpError.internal("Failed to ban post");
     }
 
     // Update related reports to resolved
     await ContentReportService.updateReportsByTargetId(parseInt(postId), "Post", "resolved");
+
+    logger.info("Post banned successfully", { postId, title: updatedPost.title });
 
     return {
       success: true,

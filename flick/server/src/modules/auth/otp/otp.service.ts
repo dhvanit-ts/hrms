@@ -4,9 +4,12 @@ import { hashOTP } from "@/lib/crypto";
 import { HttpError } from "@/core/http";
 import recordAudit from "@/lib/record-audit";
 import { auditIdentity } from "@/lib/audit-identity";
+import logger from "@/core/logger";
 
 class OtpService {
   async sendOtp(email: string) {
+    logger.info("Sending OTP", { email });
+    
     const data = await mailService.send(
       email,
       "OTP",
@@ -18,11 +21,15 @@ class OtpService {
 
     const isError = data.status === "error"
 
-    if (isError || !data?.otp)
+    if (isError || !data?.otp) {
+      logger.error("OTP send failed", { email, status: data.status });
       throw HttpError.internal("OTP send failed");
+    }
 
     const hashed = await hashOTP(data.otp as string);
     await cache.set(`otp:${email}`, hashed, 65);
+
+    logger.info("OTP sent successfully", { email, messageId: data.id });
 
     await recordAudit({
       action: "auth:otp:send",
@@ -37,6 +44,8 @@ class OtpService {
   }
 
   async verifyOtp(email: string, otp: string) {
+    logger.info("Verifying OTP", { email });
+    
     const cached = await cache.get<string>(`otp:${email}`);
 
     let failureReason: string | null = null
@@ -44,13 +53,17 @@ class OtpService {
 
     if (cached) {
       const hashed = await hashOTP(otp);
-      if (hashed === cached) result = true;
-      else {
+      if (hashed === cached) {
+        result = true;
+        logger.info("OTP verification successful", { email });
+      } else {
         failureReason = "otp_mismatch"
         await cache.del(`otp:${email}`);
+        logger.warn("OTP verification failed - mismatch", { email });
       }
     } else {
       failureReason = "otp_missing_or_expired"
+      logger.warn("OTP verification failed - missing or expired", { email });
     }
 
     await recordAudit({

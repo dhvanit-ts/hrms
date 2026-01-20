@@ -5,6 +5,7 @@ import cache from "@/infra/services/cache/index";
 import AuthRepo from "@/modules/auth/auth.repo";
 import tokenService from "@/modules/auth/tokens/token.service";
 import { HttpError } from "@/core/http";
+import recordAudit from "@/lib/record-audit";
 
 class OAuthService {
   handleGoogleOAuth = async (code: string, req: Request) => {
@@ -98,6 +99,17 @@ class OAuthService {
         meta: { source: "authService.handleUserOAuth" },
       });
     }
+
+    await recordAudit({
+      action: "user:created:account",
+      entityType: "user",
+      entityId: createdUser.id,
+      after: {id: createdUser.id},
+      metadata: {
+        registrationMethod: "oauth",
+        provider: "google"
+      }
+    })
 
     return {
       createdUser,

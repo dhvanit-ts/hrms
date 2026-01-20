@@ -1,5 +1,7 @@
 import { HttpError } from "@/core/http";
 import CollegeRepo from "./college.repo";
+import recordAudit from "@/lib/record-audit";
+import { CollegeUpdates } from "./college.types";
 
 class CollegeService {
   async createCollege(collegeData: {
@@ -27,6 +29,15 @@ class CollegeService {
     }
 
     const newCollege = await CollegeRepo.Write.create(collegeData);
+
+    await recordAudit({
+      action: "admin:created:college",
+      entityType: "college",
+      entityId: newCollege.id,
+      after: { id: newCollege.id },
+      metadata: { emailDomain: newCollege.emailDomain }
+    })
+
     return newCollege;
   }
 
@@ -47,13 +58,7 @@ class CollegeService {
     return college;
   }
 
-  async updateCollege(id: string, updates: {
-    name?: string;
-    emailDomain?: string;
-    city?: string;
-    state?: string;
-    profile?: string;
-  }) {
+  async updateCollege(id: string, updates: CollegeUpdates) {
     // Check if college exists
     const existing = await CollegeRepo.CachedRead.findById(id);
     if (!existing) {
@@ -84,6 +89,23 @@ class CollegeService {
     }
 
     const updatedCollege = await CollegeRepo.Write.updateById(id, updates);
+    const before: CollegeUpdates = {}
+
+    if (updates.city) before.city = existing.city
+    if (updates.emailDomain) before.emailDomain = existing.emailDomain
+    if (updates.name) before.emailDomain = existing.emailDomain
+    if (updates.profile) before.profile = existing.profile
+    if (updates.state) before.state = existing.state
+
+    await recordAudit({
+      action: "admin:updated:college",
+      entityType: "college",
+      entityId: updatedCollege.id,
+      before: before,
+      after: updates,
+      metadata: { emailDomain: updatedCollege.emailDomain }
+    })
+
     return updatedCollege;
   }
 
@@ -98,6 +120,15 @@ class CollegeService {
     }
 
     const deletedCollege = await CollegeRepo.Write.deleteById(id);
+
+    await recordAudit({
+      action: "admin:deleted:college",
+      entityType: "college",
+      entityId: deletedCollege.id,
+      before: { id: deletedCollege.id },
+      metadata: { emailDomain: deletedCollege.emailDomain }
+    })
+
     return deletedCollege;
   }
 }

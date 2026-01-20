@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Bell, Check, CheckCheck } from "lucide-react";
-import { Button } from "../shared/components/ui/button.js";
+import { Button } from "../shared/components/ui/button.jsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,10 +8,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../shared/components/ui/dropdown-menu.js";
-import { Badge } from "../shared/components/ui/badge.js";
-import { ScrollArea } from "../shared/components/ui/scroll-area.js";
-import { useNotifications } from "../shared/context/NotificationContext.js";
+} from "../shared/components/ui/dropdown-menu.jsx";
+import { Badge } from "../shared/components/ui/badge.jsx";
+import { ScrollArea } from "../shared/components/ui/scroll-area.jsx";
+import { useNotifications } from "../shared/context/NotificationContext.jsx";
 import { formatDistanceToNow } from "date-fns";
 
 export const NotificationBell: React.FC = React.memo(() => {

@@ -1,6 +1,6 @@
 import prisma from "@/config/db.js";
 import { writeAuditLog } from "@/infra/services/audit.service.js";
-import { Decimal } from "@prisma/client/runtime/library.js";
+import { Decimal } from "@prisma/client/runtime/library";
 
 // Upsert payroll record
 export async function upsertPayroll(data: {

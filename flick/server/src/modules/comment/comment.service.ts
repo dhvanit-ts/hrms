@@ -1,5 +1,6 @@
 import { HttpError } from "@/core/http";
 import CommentRepo from "./comment.repo";
+import recordAudit from "@/lib/record-audit";
 
 class CommentService {
   async getCommentsByPostId(
@@ -42,6 +43,14 @@ class CommentService {
       parentCommentId: commentData.parentCommentId || null,
     });
 
+    await recordAudit({
+      action: "user:created:comment",
+      entityType: "comment",
+      entityId: newComment.id,
+      after: { id: newComment.id },
+      metadata: { postId: newComment.postId, parentCommentId: newComment.parentCommentId }
+    })
+
     return newComment;
   }
 
@@ -69,6 +78,14 @@ class CommentService {
       content: content.trim(),
     });
 
+    await recordAudit({
+      action: "user:updated:comment",
+      entityType: "comment",
+      entityId: updatedComment.id,
+      before: { content: existingComment.content },
+      after: { content },
+    })
+
     return updatedComment;
   }
 
@@ -93,6 +110,15 @@ class CommentService {
     }
 
     const deletedComment = await CommentRepo.Write.deleteById(commentId);
+
+    await recordAudit({
+      action: "user:deleted:comment",
+      entityType: "comment",
+      entityId: deletedComment.id,
+      before: { id: deletedComment.id },
+      metadata: { userId }
+    })
+
     return deletedComment;
   }
 

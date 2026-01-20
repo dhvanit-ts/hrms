@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "../shared/components/ui/button.js";
-import { Card, CardContent, CardHeader, CardTitle } from "../shared/components/ui/card.js";
-import { Badge } from "../shared/components/ui/badge.js";
-import { useAuth } from "../shared/context/AuthContext.js";
-import { useNotifications } from "../shared/context/NotificationContext.js";
+import { Button } from "../shared/components/ui/button.jsx";
+import { Card, CardContent, CardHeader, CardTitle } from "../shared/components/ui/card.jsx";
+import { Badge } from "../shared/components/ui/badge.jsx";
+import { useAuth } from "../shared/context/AuthContext.jsx";
+import { useNotifications } from "../shared/context/NotificationContext.jsx";
 import { http } from "../services/api/http.js";
 import { employeeHttp } from "../services/api/employee-http.js";
 

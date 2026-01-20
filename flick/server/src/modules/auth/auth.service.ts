@@ -10,6 +10,7 @@ import tokenService from "@/modules/auth/tokens/token.service";
 import otpService from "@/modules/auth/otp/otp.service";
 import { runTransaction } from "@/infra/db/transactions";
 import recordAudit from "@/lib/record-audit";
+import logger from "@/core/logger";
 
 class AuthService {
   options: CookieOptions = {
@@ -59,24 +60,36 @@ class AuthService {
   ) => {
     const existingUser = await AuthRepo.CachedRead.findByEmail(email);
 
-    if (existingUser)
+    if (existingUser) {
+      logger.error("User with this email already exists", {
+        source: "initialize_auth_service"
+      })
       throw HttpError.badRequest("User with this email already exists", {
         meta: { source: "authService.initializeAuthService" },
       });
+    }
 
     const usernameTaken = await AuthRepo.CachedRead.findByUsername(username);
-    if (usernameTaken)
+    if (usernameTaken){
+       logger.error("Username is already taken", {
+        source: "initialize_auth_service"
+      })
       throw HttpError.badRequest("Username is already taken", {
         meta: { source: "authService.initializeAuthService" },
       });
+    }
 
     const user = { email: email.toLowerCase(), username, password };
 
     const cacheSuccess = await cache.set(`pending:${email}`, user, 300);
-    if (!cacheSuccess)
+    if (!cacheSuccess) {
+      logger.error("Failed to set user in cache", {
+        source: "initialize_auth_service"
+      })
       throw HttpError.internal("Failed to set user in cache", {
         meta: { source: "authService.initializeAuthService" },
       });
+    }
 
     await recordAudit({
       action: "user:initialized:account",
@@ -142,6 +155,9 @@ class AuthService {
       entityType: "user",
       entityId: createdUser.id,
       after: { id: createdUser.id },
+      metadata: {
+        registrationMethod: "jwt"
+      }
     });
 
     return { createdUser, accessToken, refreshToken };

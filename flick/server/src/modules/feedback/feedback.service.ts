@@ -1,5 +1,6 @@
 import { HttpError } from "@/core/http";
 import FeedbackRepo from "./feedback.repo";
+import recordAudit from "@/lib/record-audit";
 
 class FeedbackService {
   async createFeedback(feedbackData: {
@@ -15,6 +16,14 @@ class FeedbackService {
       userId: feedbackData.userId,
       status: "new", // Default status for new feedback
     });
+
+    await recordAudit({
+      action: "user:created:feedback",
+      entityType: "feedback",
+      entityId: newFeedback.id,
+      after: { id: newFeedback.id },
+      metadata: { type: newFeedback.type }
+    })
 
     return newFeedback;
   }
@@ -76,6 +85,15 @@ class FeedbackService {
     }
 
     const updatedFeedback = await FeedbackRepo.Write.updateById(id, { status });
+
+    await recordAudit({
+      action: "admin:updated:feedback:status",
+      entityType: "feedback",
+      entityId: updatedFeedback.id,
+      before: { status: existing.status },
+      after: { status },
+    })
+
     return updatedFeedback;
   }
 
@@ -90,6 +108,14 @@ class FeedbackService {
     }
 
     const deletedFeedback = await FeedbackRepo.Write.deleteById(id);
+
+    await recordAudit({
+      action: "admin:deleted:feedback",
+      entityType: "feedback",
+      entityId: deletedFeedback.id,
+      before: { status: existing.status, id: deletedFeedback.id },
+    })
+
     return deletedFeedback;
   }
 

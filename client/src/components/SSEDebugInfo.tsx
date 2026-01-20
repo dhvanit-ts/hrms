@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../shared/context/AuthContext.js";
-import { useNotifications } from "../shared/context/NotificationContext.js";
+import { useAuth } from "../shared/context/AuthContext.jsx";
+import { useNotifications } from "../shared/context/NotificationContext.jsx";
 
 export const SSEDebugInfo: React.FC = () => {
   const { user, employee, accessToken, employeeAccessToken, isEmployee } = useAuth();

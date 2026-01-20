@@ -15,7 +15,7 @@ export const findById = async (id: string, db?: DBTx): Promise<ContentReportSele
   return report || null
 };
 
-export const findByUserId = async (userId: number, db?: DBTx): Promise<ContentReportSelect[]> => {
+export const findByUserId = async (userId: string, db?: DBTx): Promise<ContentReportSelect[]> => {
   const client = db ?? prisma
   return await client.select().from(contentReports).where(eq(contentReports.reportedBy, userId))
 };

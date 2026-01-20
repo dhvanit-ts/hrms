@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { useAuth } from "./AuthContext.js";
+import { useAuth } from "./AuthContext.jsx";
 import * as notificationApi from "../../services/api/notifications.js";
 import type { Notification } from "../../services/api/notifications.js";
 

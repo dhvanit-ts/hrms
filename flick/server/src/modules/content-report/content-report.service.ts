@@ -1,6 +1,7 @@
 import { HttpError } from "@/core/http";
 import ContentReportRepo from "./content-report.repo";
 import { ContentReportInsert } from "@/infra/db/tables/content-report.table";
+import recordAudit from "@/lib/record-audit";
 
 class ContentReportService {
   static async createReport(values: ContentReportInsert) {
@@ -8,20 +9,15 @@ class ContentReportService {
 
     if (!report) throw HttpError.internal("Failed to create report");
 
-    return report;
+    await recordAudit({
+      action: "user:reported:content",
+      entityType: "content-report",
+      entityId: report.id,
+      after: { id: report.id },
+      metadata: { reason: values.reason, reportedBy: values.reportedBy, contentType: values.type }
+    })
 
-    // TODO: Add logging when log service is available
-    // logEvent({
-    //   req,
-    //   action: "user_reported_content",
-    //   platform: "web",
-    //   userId: userId.toString(),
-    //   metadata: {
-    //     type,
-    //     targetId,
-    //     reason,
-    //   },
-    // });
+    return report;
   }
 
   static async getReportById(id: string) {
@@ -30,7 +26,7 @@ class ContentReportService {
     return report;
   }
 
-  static async getUserReports(userId: number) {
+  static async getUserReports(userId: string) {
     return await ContentReportRepo.Read.findByUserId(userId);
   }
 
@@ -69,6 +65,14 @@ class ContentReportService {
 
     const report = await ContentReportRepo.Write.updateStatus(id, status);
     if (!report) throw HttpError.notFound("Report not found");
+
+    await recordAudit({
+      action: "user:reported:content",
+      entityType: "content-report",
+      entityId: report.id,
+      after: { status },
+    })
+
     return report;
   }
 
@@ -77,12 +81,28 @@ class ContentReportService {
     type: "Post" | "Comment",
     status: string = "resolved"
   ) {
-    return await ContentReportRepo.Write.updateManyByTargetId(targetId, type, status);
+    const report = await ContentReportRepo.Write.updateManyByTargetId(targetId, type, status);
+
+    await recordAudit({
+      action: "user:reported:content",
+      entityType: "content-report",
+      before: { type, status },
+      after: { type, status },
+      metadata: { targetId }
+    })
+
+    return report
   }
 
   static async deleteReport(id: string) {
     const deleted = await ContentReportRepo.Write.delete(id);
     if (!deleted) throw HttpError.notFound("Report not found");
+    await recordAudit({
+      action: "user:reported:content",
+      entityType: "content-report",
+      entityId: id,
+      after: { id },
+    })
     return { success: true };
   }
 
@@ -92,6 +112,14 @@ class ContentReportService {
     }
 
     const deletedCount = await ContentReportRepo.Write.deleteManyByIds(ids);
+
+    await recordAudit({
+      action: "admin:deleted:report",
+      entityType: "content-report",
+      after: { ids },
+      metadata: { deletedCount },
+    })
+
     return { success: true, deletedCount };
   }
 }

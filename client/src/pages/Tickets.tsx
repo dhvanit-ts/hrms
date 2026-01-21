@@ -49,7 +49,7 @@ export function Tickets() {
 
       // Ensure categories has the expected structure
       const loadedCategories = categoriesRes?.categories || {
-        attendance_correction: ["late_checkin", "early_checkout", "missing_checkin", "missing_checkout"],
+        attendance_correction: ["late_checkin", "early_checkout", "missing_checkin", "missing_checkout", "wrong_attendance_type"],
         extra_leave_request: ["emergency_leave", "extended_leave", "unpaid_leave"],
         profile_change_request: ["personal_info", "employment_details", "contact_details"],
       };

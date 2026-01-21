@@ -145,9 +145,15 @@ export interface TicketCategories {
 export const employeeTicketsApi = {
   // Create tickets
   async createAttendanceCorrectionTicket(accessToken: string, data: CreateAttendanceCorrectionTicketData): Promise<{ ticket: Ticket }> {
+    console.log("🌐 employeeTicketsApi.createAttendanceCorrectionTicket - Called with:");
+    console.log("🌐 Access token:", accessToken ? "Present" : "Missing");
+    console.log("🌐 Data:", JSON.stringify(data, null, 2));
+    
     const res = await employeeHttp.post("/tickets/attendance-correction", data, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
+    
+    console.log("🌐 employeeTicketsApi.createAttendanceCorrectionTicket - Response:", res.status, res.data);
     return res.data;
   },
 

@@ -1,8 +1,8 @@
-import { NextFunction, Request, Response } from "express";
+import type { Request, Response } from "express";
 import HttpResponse from "../response";
 
-export type HttpController<T = unknown> =
-  | ((req: Request, res: Response, next: NextFunction) => HttpResponse<T>)
-  | ((req: Request, res: Response, next: NextFunction) => Promise<HttpResponse<T>>);
-
-export type HttpMiddleware = ((req: Request, res: Response, next: NextFunction) => Promise<void>)
+export type HttpController<
+  Req extends Request = Request,
+  Res extends Response = Response,
+  T = unknown
+> = (req: Req, res: Res) => Promise<HttpResponse<T>>;

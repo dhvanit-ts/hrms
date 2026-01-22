@@ -6,13 +6,23 @@
     - user/
       - user.controller.ts
       - user.schema.ts
+      - user.route.ts
     - auth/
       - auth.schema.ts
       - auth.controller.ts
       - oauth/oauth.schema.ts
       - otp/otp.schema.ts
-  - lib/define-zod-schema.ts
-  - core/middlewares/
-    - validate-request.middleware.ts
-    - authenticate.middleware.ts
-  - shared/validators -> shared/ schemas
+  - lib/
+    - define-zod-schema.ts
+    - validation.ts (delete this)
+  - core/
+    - http/
+      - types/*
+      - controller.ts
+      - index.ts
+    - middlewares/
+      - error/*
+      - index.ts
+      - authenticate.middleware.ts
+      - validate-request.middleware.ts (delete this)
+  - shared/validators -> shared/schemas

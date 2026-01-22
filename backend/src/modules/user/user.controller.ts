@@ -9,7 +9,6 @@ import { Controller } from "@/core/http/controller";
 
 @Controller()
 class UserController {
-
   static async getUserById(req: Request) {
     const { userId } = userSchemas.userIdSchema.parse(req.params);
     const singleUserId = Array.isArray(userId) ? userId[0] : userId

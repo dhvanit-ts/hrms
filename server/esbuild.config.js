@@ -16,5 +16,5 @@ await build({
     })
   ],
   logLevel: "info",
-  packages: "external"
+  packages: "external",
 })

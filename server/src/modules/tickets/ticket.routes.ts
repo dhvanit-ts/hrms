@@ -29,6 +29,7 @@ import {
   // Shared controllers
   getTicketCategoriesController,
 } from "./ticket.controller.js";
+import { wrapZodSchemaRequest } from "@/lib/zod-schema-wrapper.js";
 
 const router = Router();
 
@@ -36,28 +37,28 @@ const router = Router();
 router.post(
   "/attendance-correction",
   authenticateEmployee,
-  validate(CreateAttendanceCorrectionTicketSchema),
+  validate(wrapZodSchemaRequest(CreateAttendanceCorrectionTicketSchema)),
   asyncHandler(createAttendanceCorrectionTicketController)
 );
 
 router.post(
   "/extra-leave",
   authenticateEmployee,
-  validate(CreateExtraLeaveTicketSchema),
+  validate(wrapZodSchemaRequest(CreateExtraLeaveTicketSchema)),
   asyncHandler(createExtraLeaveTicketController)
 );
 
 router.post(
   "/profile-change",
   authenticateEmployee,
-  validate(CreateProfileChangeTicketSchema),
+  validate(wrapZodSchemaRequest(CreateProfileChangeTicketSchema)),
   asyncHandler(createProfileChangeTicketController)
 );
 
 router.get(
   "/my-tickets",
   authenticateEmployee,
-  validate(TicketListQuerySchema),
+  validate(wrapZodSchemaRequest(TicketListQuerySchema, "query")),
   asyncHandler(getMyTicketsController)
 );
 
@@ -76,7 +77,7 @@ router.get(
 router.post(
   "/my-tickets/:id/comments",
   authenticateEmployee,
-  validate(CreateTicketCommentSchema),
+  validate(wrapZodSchemaRequest(CreateTicketCommentSchema)),
   asyncHandler(addMyTicketCommentController)
 );
 
@@ -85,7 +86,7 @@ router.get(
   "/admin/all",
   authenticate,
   requireRoles("ADMIN", "MANAGER", "HR", "SUPER_ADMIN"),
-  validate(TicketListQuerySchema),
+  validate(wrapZodSchemaRequest(TicketListQuerySchema, "query")),
   asyncHandler(getAllTicketsController)
 );
 
@@ -107,7 +108,7 @@ router.patch(
   "/admin/:id/status",
   authenticate,
   requireRoles("ADMIN", "MANAGER", "HR", "SUPER_ADMIN"),
-  validate(UpdateTicketStatusSchema),
+  validate(wrapZodSchemaRequest(UpdateTicketStatusSchema)),
   asyncHandler(updateTicketStatusController)
 );
 
@@ -115,7 +116,7 @@ router.post(
   "/admin/:id/comments",
   authenticate,
   requireRoles("ADMIN", "MANAGER", "HR", "SUPER_ADMIN"),
-  validate(CreateTicketCommentSchema),
+  validate(wrapZodSchemaRequest(CreateTicketCommentSchema)),
   asyncHandler(addTicketCommentController)
 );
 

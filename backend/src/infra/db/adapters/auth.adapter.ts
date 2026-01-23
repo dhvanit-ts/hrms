@@ -14,8 +14,8 @@ export const findById = async (userId: string, dbTx?: DB) => {
 };
 
 export const updateRefreshToken = async (
-  id: string,
-  refreshToken: string,
+  id: string, 
+  refreshToken: string, 
   dbTx?: DB
 ) => {
   const client = dbTx ?? db;

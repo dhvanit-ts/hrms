@@ -1,1 +1,0 @@
-export { default as EmailSchema } from "./email.schema"

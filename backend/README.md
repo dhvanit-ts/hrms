@@ -1,4 +1,4 @@
-# backend is scaffolded with [Initex](https://www.npmjs.com/package/initex).
+# bak is scaffolded with [Initex](https://www.npmjs.com/package/initex).
 
 ## How to run?
 

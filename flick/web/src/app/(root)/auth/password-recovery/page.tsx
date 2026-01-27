@@ -1,13 +1,16 @@
+"use client"
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { env } from "@/conf/env";
+import { env } from "@/config/env";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios, { isAxiosError } from "axios";
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -25,8 +28,8 @@ function ResetPassword() {
   const [isConfirmPasswordShowing, setIsConfirmPasswordShowing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const email = useSearchParams()[0].get('email');
-  const navigate = useNavigate()
+  const email = useSearchParams().get('email');
+  const navigate = useRouter().push
 
   useEffect(() => {
     if (!email) {
@@ -102,7 +105,7 @@ function ResetPassword() {
             {isPasswordShowing ? <IoMdEyeOff /> : <IoMdEye />}
           </div>
         </div>
-        {errors.password && <p className="text-red-500 text-sm !mt-1">{errors.password.message}</p>}
+        {errors.password && <p className="text-red-500 text-sm mt-1!">{errors.password.message}</p>}
         <div className="w-full flex relative">
           <Input
             id="confirm-password"
@@ -122,7 +125,7 @@ function ResetPassword() {
             {isConfirmPasswordShowing ? <IoMdEyeOff /> : <IoMdEye />}
           </div>
         </div>
-        {errors.confirmPassword && <p className="text-red-500 text-sm !mt-1">{errors.confirmPassword?.message}</p>}
+        {errors.confirmPassword && <p className="text-red-500 text-sm mt-1!">{errors.confirmPassword?.message}</p>}
 
         <Button
           type="submit"
@@ -136,7 +139,7 @@ function ResetPassword() {
         Don&apos;t want to reset?{" "}
         <Link
           className={isSubmitting ? "pointer-events-none cursor-not-allowed text-blue-600/50 dark:text-blue-500/50" : "hover:underline text-blue-600 dark:text-blue-500 cursor-pointer"}
-          to="/auth/signin">
+          href="/auth/signin">
           Login
         </Link>
       </p>

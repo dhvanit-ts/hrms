@@ -1,10 +1,11 @@
+import { env } from "@/config/env"
 import { useErrorHandler } from "@/hooks/useErrorHandler"
 import axios, { AxiosError } from "axios"
-import { useNavigate } from "react-router-dom"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 function TerminateSessions() {
-  const navigate = useNavigate()
+  const navigate = useRouter().push
 
   const { handleError } = useErrorHandler()
 
@@ -14,7 +15,7 @@ function TerminateSessions() {
       toastId = toast.loading("Terminating sessions...")
 
       const response = await axios.post(
-        `${import.meta.env.VITE_SERVER_API_ENDPOINT}/users/devices/terminate`,
+        `${env.serverApiEndpoint}/users/devices/terminate`,
         {},
         { withCredentials: true }
       )

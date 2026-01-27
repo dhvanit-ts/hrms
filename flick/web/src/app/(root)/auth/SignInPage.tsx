@@ -4,15 +4,16 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
-import { Link, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import axios, { isAxiosError } from "axios"
 import { toast } from "sonner"
-import { env } from "@/conf/env"
+import { env } from "@/config/env"
 import { IoMdEye, IoMdEyeOff } from "react-icons/io"
 import { FaGoogle } from "react-icons/fa6"
 import { handleGoogleOAuthRedirect } from "@/utils/googleOAuthRedirect"
 import { Separator } from "@/components/ui/separator"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 const signInSchema = z.object({
   email: z.string().email("Email is invalid"),
@@ -24,7 +25,7 @@ type SignInFormData = z.infer<typeof signInSchema>
 function SignInPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isPasswordShowing, setIsPasswordShowing] = useState(false);
-  const navigate = useNavigate()
+  const navigate = useRouter().push
 
   const {
     register,
@@ -71,7 +72,6 @@ function SignInPage() {
         <div>
           <Input
             type="email"
-            variant="filled"
             disabled={isSubmitting}
             placeholder="you@example.com"
             {...register("email")}
@@ -85,7 +85,6 @@ function SignInPage() {
           <Input
             id="password"
             disabled={isSubmitting}
-            variant="filled"
             type={isPasswordShowing ? "text" : "password"}
             placeholder="••••••••"
             {...register("password")}
@@ -126,7 +125,7 @@ function SignInPage() {
         Don&apos;t have an account?{" "}
         <Link
           className={isSubmitting ? "pointer-events-none cursor-not-allowed text-blue-600/50 dark:text-blue-500/50" : "hover:underline text-blue-600 dark:text-blue-500 cursor-pointer"}
-          to="/auth/signup">
+          href="/auth/signup">
           Signup
         </Link>
       </p>

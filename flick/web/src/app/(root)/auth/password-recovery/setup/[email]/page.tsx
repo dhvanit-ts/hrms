@@ -1,14 +1,16 @@
-import { env } from "@/conf/env";
+"use client"
+
+import { env } from "@/config/env";
 import axios from "axios";
 import { Loader2 } from "lucide-react"
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 function PasswordRecoverySetup() {
 
   const [isLoading, setIsLoading] = useState(true)
-  const navigate = useNavigate()
+  const navigate = useRouter().push
   const { email } = useParams()
 
   const recoverySetup = useCallback(async () => {

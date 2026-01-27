@@ -1,6 +1,5 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import NotificationCard from "@/components/general/NotificationCard"
-import { env } from "@/conf/env"
+import { env } from "@/config/env"
 import { useErrorHandler } from "@/hooks/useErrorHandler"
 import { INotification } from "@/types/Notification"
 import axios, { AxiosError } from "axios"

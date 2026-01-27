@@ -1,46 +1,18 @@
-import { CookieOptions, Request, Response } from "express";
-import jwt from "jsonwebtoken";
-import { env } from "@/config/env";
+import { Request, Response } from "express";
 import { HttpError } from "@/core/http";
 import cache from "@/infra/services/cache/index";
 import AuthRepo from "@/modules/auth/auth.repo";
 import { hashPassword, verifyPassword } from "@/lib/crypto";
 import oauthService from "@/modules/auth/oauth/oauth.service";
-import tokenService from "@/modules/auth/tokens/token.service";
 import otpService from "@/modules/auth/otp/otp.service";
 import { runTransaction } from "@/infra/db/transactions";
 import recordAudit from "@/lib/record-audit";
 import logger from "@/core/logger";
+import { auth } from "@/infra/auth/auth";
+import { forwardSetCookieHeaders } from "@/lib/better-auth/http-helpers";
+import parseHeaders from "@/lib/better-auth/parse-headers";
 
 class AuthService {
-  options: CookieOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    ...(process.env.NODE_ENV === "production" ? {} : { domain: "localhost" }),
-  };
-
-  setAuthCookies = (
-    res: Response,
-    accessToken: string,
-    refreshToken: string
-  ) => {
-    res
-      .cookie("accessToken", accessToken, {
-        ...this.options,
-        maxAge: tokenService.accessTokenExpiryMs,
-      })
-      .cookie("refreshToken", refreshToken, {
-        ...this.options,
-        maxAge: tokenService.refreshTokenExpiryMs,
-      });
-  };
-
-  clearAuthCookies(res: Response) {
-    res
-      .clearCookie("accessToken", { ...this.options })
-      .clearCookie("refreshToken", { ...this.options });
-  }
 
   redeemTempToken = async (tempToken: string) => {
     const stored: { accessToken: string; refreshToken: string } | undefined =
@@ -70,8 +42,8 @@ class AuthService {
     }
 
     const usernameTaken = await AuthRepo.CachedRead.findByUsername(username);
-    if (usernameTaken){
-       logger.error("Username is already taken", {
+    if (usernameTaken) {
+      logger.error("Username is already taken", {
         source: "initialize_auth_service"
       })
       throw HttpError.badRequest("Username is already taken", {
@@ -100,7 +72,7 @@ class AuthService {
     return email;
   };
 
-  registerAuthService = async (email: string, req: Request) => {
+  registerAuth = async (email: string, res: Response) => {
     const user = await cache.get(`pending:${email}`);
     if (!user)
       throw HttpError.notFound("User doesn't exists", {
@@ -108,141 +80,69 @@ class AuthService {
       });
 
     const { password, username } = user as {
-      password: string;
-      username: string;
+      readonly password: string;
+      readonly username: string;
     };
 
-    const encryptedPassword = await hashPassword(password);
+    // Call BetterAuth signUp — pass plain password; BetterAuth handles hashing
+    const response = await auth.api.signUpEmail({
+      body: { email, password, name: username },
+      // body: { email, password, name: username, username },
+      asResponse: true,
+      returnHeaders: true,
+    });
 
-    const { createdUser, accessToken, refreshToken } = await runTransaction(
-      async (tx) => {
-        const createdUser = await AuthRepo.Write.create(
-          {
-            email,
-            password: encryptedPassword,
-            username,
-            authType: "manual",
-            roles: ["user"],
-            isBlocked: false,
-            suspension: null,
-          },
-          tx
-        );
+    // Forward cookies to client
+    if (res && response.headers) forwardSetCookieHeaders(response.headers, res);
 
-        const { accessToken, refreshToken } =
-          await tokenService.generateAndPersistTokens(
-            createdUser.id,
-            createdUser.username,
-            req,
-            tx
-          );
+    const data = await response.json();
+    const createdUser = data.user;
 
-        if (!accessToken || !refreshToken)
-          throw HttpError.internal("Failed to generate access and refresh token", {
-            meta: { source: "authService.registerAuthService" },
-          });
-
-        // Cleanup cache
-        await cache.del(`pending:${email}`);
-        await cache.del(`otp:${email}`);
-
-        return { createdUser, accessToken, refreshToken };
-      }
-    );
+    // cleanup cache/otp
+    await cache.del(`pending:${email}`);
+    await cache.del(`otp:${email}`);
 
     await recordAudit({
       action: "user:created:account",
       entityType: "user",
       entityId: createdUser.id,
       after: { id: createdUser.id },
-      metadata: {
-        registrationMethod: "jwt"
-      }
+      metadata: { registrationMethod: "better-auth" },
     });
 
-    return { createdUser, accessToken, refreshToken };
+    return { createdUser, session: data.session };
   };
 
-  loginAuthService = async (email: string, password: string, req: Request) => {
-    const user = await AuthRepo.CachedRead.findByEmail(email);
+  loginAuth = async (email: string, password: string, res: Response) => {
+    const response = await auth.api.signInEmail({
+      body: { email, password },
+      asResponse: true,
+      returnHeaders: true,
+    });
 
-    if (!user)
-      throw HttpError.notFound("User doesn't exists", {
-        meta: { source: "authService.loginAuthService" },
-      });
-    if (!user.password)
-      throw HttpError.badRequest("Password not set", {
-        meta: { source: "authService.loginAuthService" },
-      });
+    forwardSetCookieHeaders(response.headers, res);
 
-    const passwordValid = await verifyPassword(password, user.password);
-    if (!passwordValid)
-      throw HttpError.badRequest("Invalid password", {
-        meta: { source: "authService.loginAuthService" },
-      });
-
-    const { accessToken, refreshToken } =
-      await tokenService.generateAndPersistTokens(user.id, user.username, req);
+    const data = await response.json();
 
     await recordAudit({
       action: "user:logged:in:self",
       entityType: "auth",
-      entityId: user.id,
+      entityId: data.id,
     });
 
-    return { user, accessToken, refreshToken };
+    return data
   };
 
-  logoutAuthService = async (userId: string) => {
-    const user = await AuthRepo.CachedRead.findById(userId);
-    if (!user)
-      throw HttpError.notFound("User doesn't exists", {
-        meta: { source: "authService.logoutAuthService" },
-      });
-
-    await AuthRepo.Write.updateRefreshToken(user.id, "");
+  logoutAuth = async (req: Request, res: Response, userId: string) => {
+    const headers = parseHeaders(req.headers)
+    await auth.api.signOut({ headers, asResponse: true, returnHeaders: true });
+    forwardSetCookieHeaders(headers, res);
 
     await recordAudit({
       action: "user:logged:out:self",
       entityType: "auth",
-      entityId: user.id,
+      entityId: userId,
     });
-  };
-
-  refreshAccessTokenService = async (
-    incomingRefreshToken: string,
-    req: Request
-  ) => {
-    if (!incomingRefreshToken)
-      throw HttpError.unauthorized("Unauthorized request", {
-        meta: { source: "authService.refreshAccessTokenService" },
-      });
-
-    const decodedToken = jwt.verify(
-      incomingRefreshToken,
-      env.REFRESH_TOKEN_SECRET
-    );
-    if (!decodedToken || typeof decodedToken === "string")
-      throw HttpError.unauthorized("Invalid Access Token", {
-        meta: { source: "authService.refreshAccessTokenService" },
-      });
-
-    const user = await AuthRepo.CachedRead.findById(decodedToken.id);
-
-    if (!user || !user.refreshToken)
-      throw HttpError.unauthorized("Invalid Refresh Token", {
-        meta: { source: "authService.refreshAccessTokenService" },
-      });
-
-    if (!user.refreshToken.includes(incomingRefreshToken))
-      throw HttpError.unauthorized("Refresh token is invalid or not recognized", {
-        meta: { source: "authService.refreshAccessTokenService" },
-      });
-
-    const { accessToken, refreshToken } =
-      await tokenService.generateAndPersistTokens(user.id, user.username, req);
-
-    return { accessToken, refreshToken };
   };
 
   sendOtpService = async (email: string) => {

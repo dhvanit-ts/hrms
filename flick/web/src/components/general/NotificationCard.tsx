@@ -1,13 +1,13 @@
 import { INotification } from "@/types/Notification"
-import { useNavigate } from "react-router-dom"
 import { PiArrowFatUpFill } from "react-icons/pi";
 import { FaComment } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 
 function NotificationCard({ _redisId, actorUsernames, post, _id, seen, type, content }: Partial<INotification>) {
-  const navigate = useNavigate()
+  const navigate = useRouter().push
   return (
     <div
-      className={`flex items-center space-x-6 py-4 px-6 border-[1px] border-zinc-200 dark:border-zinc-800 ${seen ? "hover:bg-zinc-100 dark:hover:bg-zinc-800" : "bg-blue-600/5"} cursor-pointer`}
+      className={`flex items-center space-x-6 py-4 px-6 border border-zinc-200 dark:border-zinc-800 ${seen ? "hover:bg-zinc-100 dark:hover:bg-zinc-800" : "bg-blue-600/5"} cursor-pointer`}
       onClick={() => navigate(`/p/${post?._id}`)}
       key={_id || _redisId}
     >

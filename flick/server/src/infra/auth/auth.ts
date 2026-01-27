@@ -2,6 +2,7 @@ import db from "@/infra/db";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { betterAuth } from "better-auth"
 import { twoFactor, organization, admin } from "better-auth/plugins"
+import { env } from "@/config/env";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -11,9 +12,10 @@ export const auth = betterAuth({
     enabled: true,
   },
   socialProviders: {
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID as string,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+    google: {
+      prompt: "select_account",
+      clientId: env.GOOGLE_OAUTH_CLIENT_ID,
+      clientSecret: env.GOOGLE_OAUTH_CLIENT_SECRET,
     },
   },
   session: {

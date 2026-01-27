@@ -40,7 +40,7 @@ function CreatePost({ className }: { className?: string }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className={`flex items-center cursor-pointer space-x-3 px-4 py-4 rounded-md w-full justify-start text-lg font-normal bg-transparent dark:bg-transparent bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/40 ${className}`}>
+        <Button className={`flex items-center cursor-pointer space-x-3 px-4 py-4 rounded-md w-full justify-start text-lg font-normal dark:bg-transparent bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/40 ${className}`}>
           <FaPlus />
           <span>create</span>
         </Button>

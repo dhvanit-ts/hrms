@@ -3,7 +3,6 @@ import { Request } from "express";
 import { env } from "@/config/env";
 import cache from "@/infra/services/cache/index";
 import AuthRepo from "@/modules/auth/auth.repo";
-import tokenService from "@/modules/auth/tokens/token.service";
 import { HttpError } from "@/core/http";
 import recordAudit from "@/lib/record-audit";
 import logger from "@/core/logger";

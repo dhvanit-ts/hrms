@@ -1,5 +1,4 @@
 import useProfileStore from '@/store/profileStore'
-import { Link, useNavigate } from 'react-router-dom'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { IUser } from '@/types/User';
 import { isCollege, isUser } from '@/utils/helpers';
@@ -7,12 +6,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuIte
 import { FaUser } from 'react-icons/fa';
 import { MdFeedback } from "react-icons/md";
 import { IoBookmarkSharp, IoSettingsSharp } from 'react-icons/io5'
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const getCollegeProfile = (user: IUser | string) => isUser(user) && isCollege(user.college) ? user.college.profile : "Unknown College";
 
 function UserProfile() {
   const profile = useProfileStore(state => state.profile)
-  const navigate = useNavigate()
+  const navigate = useRouter().push
   return (
     <>
       {profile._id
@@ -42,7 +43,7 @@ function UserProfile() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        : <Link className="flex justify-center items-center bg-zinc-800 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 px-3 py-1 rounded-sm transition-colors" to="/auth/signin">Sign in</Link>
+        : <Link className="flex justify-center items-center bg-zinc-800 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 px-3 py-1 rounded-sm transition-colors" href="/auth/signin">Sign in</Link>
       }
     </>
   )

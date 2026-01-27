@@ -1,13 +1,13 @@
 import Post from "@/components/general/Post"
 import SkeletonCard from "@/components/skeletons/PostSkeleton"
-import { env } from "@/conf/env"
+import { env } from "@/config/env"
 import { useErrorHandler } from "@/hooks/useErrorHandler"
 import usePostStore from "@/store/postStore"
 import { IPost } from "@/types/Post"
 import { formatDate, getAvatarUrl, getCollegeName, isUser } from "@/utils/helpers"
 import axios, { AxiosError } from "axios"
+import { useParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
 
 function FeedPage() {
 

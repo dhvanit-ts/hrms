@@ -1,20 +1,15 @@
 import { AsyncHandler, HttpResponse, HttpError } from "@/core/http";
 import { Request, Response } from "express";
 import authService from "./auth.service";
-import { withBodyValidation } from "@/lib/validation";
 import * as authSchemas from "./auth.schema";
 
 class AuthController {
-  static loginUser = withBodyValidation(authSchemas.loginSchema, this.loginUserHandler)
-
   @AsyncHandler()
-  private static async loginUserHandler(req: Request, res: Response) {
-    const { email, password } = req.body;
+  static async loginUser(req: Request, res: Response) {
+    const { email, password } = authSchemas.loginSchema.parse(req.body);
 
-    const { user, accessToken, refreshToken } =
-      await authService.loginAuthService(email, password, req);
-
-    authService.setAuthCookies(res, accessToken, refreshToken);
+    const user =
+      await authService.loginAuth(email, password, res);
 
     return HttpResponse.ok(
       "User logged in successfully!",
@@ -33,9 +28,7 @@ class AuthController {
         meta: { source: "authService.logoutAuthService" },
       });
 
-    await authService.logoutAuthService(req.user.id);
-
-    authService.clearAuthCookies(res);
+    await authService.logoutAuth(req, res, req.user?.id);
 
     return HttpResponse.ok("User logged out successfully");
   }
@@ -50,30 +43,26 @@ class AuthController {
         meta: { source: "authService.refreshAccessTokenService" },
       });
 
-    const { accessToken, refreshToken } =
-      await authService.refreshAccessTokenService(incomingRefreshToken, req);
+    // const { accessToken, refreshToken } =
+    //   await authService.refreshAccessTokenService(incomingRefreshToken, req);
 
-    authService.setAuthCookies(res, accessToken, refreshToken);
+    // authService.setAuthCookies(res, accessToken, refreshToken);
 
     return HttpResponse.ok("Access token refreshed successfully");
   }
 
-  static sendOtp = withBodyValidation(authSchemas.otpSchema, this.sendOtpHandler)
-
   @AsyncHandler()
-  private static async sendOtpHandler(req: Request, _res: Response) {
-    const { email } = req.body;
+   static async sendOtp(req: Request, _res: Response) {
+    const { email } = authSchemas.otpSchema.parse(req.body);
 
     const { messageId } = await authService.sendOtpService(email);
 
     return HttpResponse.ok("OTP sent successfully", { messageId });
   }
 
-  static verifyOtp = withBodyValidation(authSchemas.verifyOtpSchema, this.verifyOtpHandler)
-
   @AsyncHandler()
-  private static async verifyOtpHandler(req: Request, _res: Response) {
-    const { email, otp } = req.body;
+  static async verifyOtp(req: Request, _res: Response) {
+    const { email, otp } = authSchemas.verifyOtpSchema.parse(req.body);
 
     const isVerified = await authService.verifyOtpService(email, otp);
 

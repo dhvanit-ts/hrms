@@ -9,11 +9,11 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
-import { useNavigate } from "react-router-dom";
 import EngagementComponent from "./EngagementComponent";
 import PostDropdown from "../actions/PostDropdown";
 import { TPostTopic } from "@/types/postTopics";
 import useProfileStore from "@/store/profileStore";
+import { useRouter } from "next/navigation";
 
 interface PostProps {
   avatar: string,
@@ -37,7 +37,7 @@ interface PostProps {
 
 function Post({ avatar, userVote, avatarFallback, _id, createdAt, college, title, content, upvoteCount, downvoteCount, commentsCount, viewsCount, username, branch, topic, bookmarked, removedPostOnAction }: PostProps) {
   const profile = useProfileStore(state => state.profile)
-  const navigate = useNavigate()
+  const navigate = useRouter().push
   return (
     <Card onClick={() => navigate(`/p/${_id}`)} className="dark:bg-transparent bg-transparent border-none shadow-none rounded-none">
       <CardHeader className="flex-row justify-between space-x-2 p-4">

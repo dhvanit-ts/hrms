@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,13 +12,13 @@ import axios, { AxiosError } from "axios";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { z } from "zod";
 import { TermsForm } from "./TermsForm";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
 import { DialogDescription } from "@radix-ui/react-dialog";
 import { FaX } from "react-icons/fa6";
+import { useParams } from "next/navigation";
 
 const commentSchema = z.object({
   content: z.string().min(3, "Content must be at least 3 characters.").max(2000, "Content must be at most 2000 characters."),

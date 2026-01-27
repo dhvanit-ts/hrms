@@ -1,4 +1,9 @@
 packages:
-  - "web"
-  - "server"
-  - "shared"
+  - web
+  - server
+  - shared
+
+onlyBuiltDependencies:
+  - '@scarf/scarf'
+  - esbuild
+  - sharp

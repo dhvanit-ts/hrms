@@ -182,7 +182,7 @@ function PostDropdown({ type, id, editableData, removePostOnAction, showBookmark
               </DropdownMenuItem>}
             </>
           }
-          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openDialog("DELETE") }} className="hover:!bg-red-400/50 dark:hover:!bg-red-600/40">
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openDialog("DELETE") }} className="hover:bg-red-400/50! dark:hover:bg-red-600/40!">
             <RiDeleteBin6Fill />
             <span>Delete</span>
           </DropdownMenuItem>

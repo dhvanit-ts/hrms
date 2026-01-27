@@ -1,5 +1,5 @@
 import Post from "@/components/general/Post"
-import { env } from "@/conf/env"
+import { env } from "@/config/env"
 import { useErrorHandler } from "@/hooks/useErrorHandler"
 import { IPost } from "@/types/Post"
 import { useCallback, useEffect, useState } from "react"

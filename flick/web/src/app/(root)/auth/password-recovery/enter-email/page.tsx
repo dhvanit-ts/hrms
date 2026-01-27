@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 
 const enterEmailSchema = z.object({
@@ -15,7 +15,7 @@ type EnterEmailFormData = z.infer<typeof enterEmailSchema>
 
 function EnterEmail() {
 
-  const navigate = useNavigate()
+  const navigate = useRouter().push
 
   const {
     register,

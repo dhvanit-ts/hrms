@@ -1,12 +1,12 @@
 import { Toaster } from "sonner"
-import { Outlet, useNavigate } from "react-router-dom"
 import { useEffect } from "react"
 import axios from "axios"
-import { env } from "@/conf/env"
+import { env } from "@/config/env"
+import { useRouter } from "next/navigation"
 
-function RootLayout() {
+function RootLayout({ children }: { children: React.ReactElement }) {
 
-  const navigate = useNavigate()
+  const navigate = useRouter().push
 
   useEffect(() => {
     (async () => {
@@ -20,7 +20,7 @@ function RootLayout() {
 
   return (
     <main className="w-screen h-screen overflow-x-hidden bg-zinc-100 dark:bg-zinc-900">
-      <Outlet />
+      {children}
       <Toaster />
     </main>
   )

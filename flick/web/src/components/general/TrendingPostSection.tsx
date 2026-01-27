@@ -45,7 +45,7 @@ function TrendingPostSection() {
     <div className="py-6 w-full max-w-80">
       <section>
         <h2>Most read</h2>
-        <div className="mt-2 rounded-md min-h-64 border-[1px] border-zinc-300 dark:border-zinc-800 divide-y divide-zinc-300 dark:divide-zinc-800">
+        <div className="mt-2 rounded-md min-h-64 border border-zinc-300 dark:border-zinc-800 divide-y divide-zinc-300 dark:divide-zinc-800">
           {loading
             ? [...Array(4)].map((_, index) => (
               <CardSkeleton key={index} />

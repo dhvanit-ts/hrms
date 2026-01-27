@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { BsDot } from "react-icons/bs"
 import { useEffect, useState } from "react"
 import axios from "axios"
-import { env } from "@/conf/env"
+import { env } from "@/config/env"
 import { IUser } from "@/types/User"
 import { ICollege } from "@/types/College"
 import { IPost } from "@/types/Post"

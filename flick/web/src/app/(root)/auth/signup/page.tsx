@@ -6,7 +6,6 @@ import { useState } from "react"
 import { Loader2 } from "lucide-react"
 import { IoMdEye, IoMdEyeOff } from "react-icons/io"
 import { Button } from "@/components/ui/button"
-import { Link, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import axios from "axios"
 import {
@@ -16,12 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { env } from "@/conf/env"
+import { env } from "@/config/env"
 import FileInput from "@/components/FileInput"
 import { branch } from "@/constants/branch"
 import { FaGoogle } from "react-icons/fa"
 import { handleGoogleOAuthRedirect } from "@/utils/googleOAuthRedirect"
 import { Separator } from "@/components/ui/separator"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 const signInSchema = z.object({
   email: z.string().email("Email is invalid"),
@@ -45,7 +46,7 @@ function SignUpPage() {
   const [isPasswordShowing, setIsPasswordShowing] = useState(false);
   const [isConfirmPasswordShowing, setIsConfirmPasswordShowing] = useState(false);
 
-  const navigate = useNavigate()
+  const navigate = useRouter().push
 
   const {
     register,
@@ -127,14 +128,13 @@ function SignUpPage() {
         <Input
           id="email"
           disabled={isSubmitting}
-          variant="filled"
           type="email"
           placeholder="Enter your email"
           {...register("email")}
           required
           autoFocus
         />
-        {errors.email && <p className="text-red-500 text-sm !mt-1">{errors.email.message}</p>}
+        {errors.email && <p className="text-red-500 text-sm mt-1!">{errors.email.message}</p>}
         <div className="w-full flex relative">
           <Input
             id="password"
@@ -144,7 +144,6 @@ function SignUpPage() {
             type={isPasswordShowing ? "text" : "password"}
             disabled={isSubmitting}
             placeholder="Enter password"
-            variant="filled"
             {...register("password")}
             required
           />
@@ -157,12 +156,11 @@ function SignUpPage() {
             {isPasswordShowing ? <IoMdEyeOff /> : <IoMdEye />}
           </div>
         </div>
-        {errors.password && <p className="text-red-500 text-sm !mt-1">{errors.password.message}</p>}
+        {errors.password && <p className="text-red-500 text-sm mt-1!">{errors.password.message}</p>}
         <div className="w-full flex relative">
           <Input
             id="confirm-password"
             disabled={isSubmitting}
-            variant="filled"
             type={isConfirmPasswordShowing ? "text" : "password"}
             placeholder="Confirm password"
             {...register("confirmPassword")}
@@ -177,7 +175,7 @@ function SignUpPage() {
             {isConfirmPasswordShowing ? <IoMdEyeOff /> : <IoMdEye />}
           </div>
         </div>
-        {errors.confirmPassword && <p className="text-red-500 text-sm !mt-1">{errors.confirmPassword?.message}</p>}
+        {errors.confirmPassword && <p className="text-red-500 text-sm mt-1!">{errors.confirmPassword?.message}</p>}
 
         <Controller
           control={control}
@@ -200,7 +198,7 @@ function SignUpPage() {
             </Select>
           )}
         />
-        {errors.branch && <p className="text-red-500 text-sm !mt-1">{errors.branch.message}</p>}
+        {errors.branch && <p className="text-red-500 text-sm mt-1!">{errors.branch.message}</p>}
         <Button
           type="submit"
           disabled={isSubmitting || (errors?.email && errors.email !== undefined) || (errors?.password && errors.password !== undefined) || (errors?.confirmPassword && errors.confirmPassword !== undefined) || (errors?.branch && errors.branch !== undefined)}
@@ -209,7 +207,7 @@ function SignUpPage() {
           {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Please wait</> : "Create an Account"}
         </Button>
       </form>
-      {errors.root && <p className="text-red-500 text-sm !mt-1">{errors.root?.message}</p>}
+      {errors.root && <p className="text-red-500 text-sm mt-1!">{errors.root?.message}</p>}
       <p className="flex justify-center items-center my-4">
         <Separator className="shrink"/>
         <span className="px-4 text-zinc-500 dark:text-zinc-500 text-sm">Or</span>
@@ -223,7 +221,7 @@ function SignUpPage() {
       <p className={`text-center pt-4 ${isSubmitting && "text-zinc-900/50 dark:text-zinc-100/50"}`}>
         Already have an account?{" "}
         <Link
-          to="/auth/signin"
+          href="/auth/signin"
           className={isSubmitting ? "pointer-events-none cursor-not-allowed text-blue-600/50 dark:text-blue-500/50" : "hover:underline text-blue-600 dark:text-blue-500 cursor-pointer"}
         >
           Signin

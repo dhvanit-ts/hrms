@@ -1,5 +1,4 @@
 import { ReactNode, useState } from "react"
-import { Link, Outlet, useLocation, useSearchParams } from "react-router-dom"
 import { PiCardsThreeFill, PiCardsThreeLight } from "react-icons/pi";
 import { RiGraduationCapFill, RiGraduationCapLine } from "react-icons/ri";
 import { PiFireFill, PiFireLight } from "react-icons/pi";
@@ -13,18 +12,19 @@ import { IoMdArrowDropdown, IoMdArrowDropup } from "react-icons/io";
 import { PostBranches } from "@/types/PostBranchs";
 import { SocketProvider } from "@/socket/SocketContext";
 import TrendingPostSection from "@/components/general/TrendingPostSection";
+import { usePathname, useSearchParams } from "next/navigation";
+import Link from "next/link";
 
-function AppLayout() {
+function AppLayout({ children }: { children: React.ReactElement }) {
 
-  const [searchParams] = useSearchParams();
-  const reset = searchParams.get('reset');
+  const reset = useSearchParams().get('reset');
 
   return (
-    <div className="flex max-w-[80rem] mx-auto w-full h-screen pr-8">
+    <div className="flex max-w-7xl mx-auto w-full h-screen pr-8">
       <SocketProvider>
         <Sidebar />
-        <Outlet />
-        <TrendingPostSection/>
+        {children}
+        <TrendingPostSection />
         {(reset === "true") && <TerminateSessions />}
       </SocketProvider>
     </div>
@@ -42,7 +42,7 @@ function Sidebar() {
     <>
       <div className="hidden md:block min-w-[270px] w-[270px] h-screen py-6 overflow-y-auto no-scrollbar space-y-1 px-4">
         <div className="flex justify-center items-center">
-          <Link to="/">
+          <Link href="/">
             <img className="h-14 w-14 p-2" src={theme === "dark" ? "/logo-b.png" : "/logo-w.png"} alt="logo" />
           </Link>
         </div>
@@ -106,9 +106,9 @@ function Sidebar() {
 }
 
 function Tab({ to, text, activeIcon, passiveIcon }: { to: string, text: string, activeIcon?: ReactNode, passiveIcon?: ReactNode }) {
-  const location = useLocation().pathname
-  return <Link to={to} className={`flex justify-start items-center space-x-3 px-4 ${activeIcon && passiveIcon ? "py-2" : "py-1.5"} rounded-md ${location === to ? "bg-zinc-200/50 dark:bg-zinc-800/40 text-zinc-900 dark:text-zinc-100" : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/40"}`}>
-    {location === to ? (activeIcon || null) : (passiveIcon || null)}
+  const pathname = usePathname()
+  return <Link href={to} className={`flex justify-start items-center space-x-3 px-4 ${activeIcon && passiveIcon ? "py-2" : "py-1.5"} rounded-md ${pathname === to ? "bg-zinc-200/50 dark:bg-zinc-800/40 text-zinc-900 dark:text-zinc-100" : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/40"}`}>
+    {pathname === to ? (activeIcon || null) : (passiveIcon || null)}
     <span>
       {text}
     </span>

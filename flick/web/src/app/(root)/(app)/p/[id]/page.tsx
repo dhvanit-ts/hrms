@@ -2,7 +2,7 @@ import Comment from "@/components/general/Comment";
 import CreateComment from "@/components/general/CreateComment";
 import Post from "@/components/general/Post"
 import SkeletonCard from "@/components/skeletons/PostSkeleton";
-import { env } from "@/conf/env";
+import { env } from "@/config/env";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
 import useCommentStore from "@/store/commentStore";
 import usePostStore from "@/store/postStore";
@@ -11,8 +11,8 @@ import { IPost } from "@/types/Post";
 import { IUser } from "@/types/User";
 import { formatDate, isCollege, isUser } from "@/utils/helpers";
 import axios, { AxiosError } from "axios";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 
 const getAvatarUrl = (user: IUser | string) => isUser(user) && isCollege(user.college) ? user.college.profile : "";
 const getCollegeName = (user: IUser | string) => isUser(user) && isCollege(user.college) ? user.college.name : "Unknown College";
@@ -32,7 +32,7 @@ function PostPage() {
 
   const { id } = useParams();
   const posts = usePostStore(state => state.posts)
-  const navigate = useNavigate();
+  const navigate = useRouter().push;
 
   const incrementView = useCallback(async () => {
     try {

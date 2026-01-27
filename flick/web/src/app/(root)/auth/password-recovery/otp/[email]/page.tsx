@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect, useCallback } from "react";
 import {
   InputOTP,
@@ -7,9 +9,9 @@ import {
 } from "@/components/ui/input-otp";
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { toast } from 'sonner'
-import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { env } from "@/conf/env";
+import { env } from "@/config/env";
+import { useParams, useRouter } from "next/navigation";
 
 const OTP_EXPIRE_TIME = 60;
 const MAX_ATTEMPTS = 5;
@@ -22,7 +24,7 @@ const OtpVerificationPage = ({ onVerifiedRedirect, onFailedRedirect }: { onVerif
   const [isOtpInvalid, setIsOtpInvalid] = useState(false);
 
   const { email } = useParams()
-  const navigate = useNavigate()
+  const navigate = useRouter().push
 
   useEffect(() => {
     if (!email) {

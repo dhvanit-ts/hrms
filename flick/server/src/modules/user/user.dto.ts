@@ -1,6 +1,6 @@
 import { User } from "@/shared/types/User";
 
-export const toUserSafe = (user: User) => ({
+export const toInternalUser = (user: User) => ({
   id: user.id,
   username: user.username,
   email: user.email,
@@ -9,4 +9,4 @@ export const toUserSafe = (user: User) => ({
   updatedAt: user.updatedAt,
 });
 
-export type UserSafe = ReturnType<typeof toUserSafe>;
+export type InternalUser = ReturnType<typeof toInternalUser>;

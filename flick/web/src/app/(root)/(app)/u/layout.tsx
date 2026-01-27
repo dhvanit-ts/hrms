@@ -1,11 +1,11 @@
 import useProfileStore from "@/store/profileStore"
+import { useRouter } from "next/navigation"
 import { useEffect } from "react"
-import { Outlet, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
-function PrivateAppLayout() {
+function PrivateAppLayout({ children }: { children: React.ReactElement }) {
   const profile = useProfileStore(state => state.profile)
-  const navigate = useNavigate()
+  const navigate = useRouter().push
   useEffect(() => {
     if (!profile) {
       toast.info("Please login to access profile")
@@ -14,7 +14,7 @@ function PrivateAppLayout() {
   }, [navigate, profile])
   return (
     <>
-      <Outlet />
+      {children}
     </>
   )
 }

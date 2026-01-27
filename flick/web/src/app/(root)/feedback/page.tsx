@@ -2,12 +2,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { env } from "@/conf/env"
+import { env } from "@/config/env"
 import { zodResolver } from "@hookform/resolvers/zod"
 import axios, { isAxiosError } from "axios"
 import { Loader2 } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { Controller, useForm } from "react-hook-form"
-import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { z } from "zod"
 
@@ -21,7 +21,7 @@ type FeedbackFormData = z.infer<typeof feedbackSchema>
 
 function FeedbackPage() {
 
-  const navigate = useNavigate()
+  const navigate = useRouter().push
 
   const {
     register,
@@ -87,7 +87,6 @@ function FeedbackPage() {
           )}
           <div>
             <Input
-              variant="filled"
               type="text"
               disabled={isSubmitting}
               placeholder="Enter the title"
@@ -99,7 +98,6 @@ function FeedbackPage() {
           </div>
           <div>
             <Textarea
-              variant="filled"
               disabled={isSubmitting}
               placeholder="Enter the Content"
               rows={4}

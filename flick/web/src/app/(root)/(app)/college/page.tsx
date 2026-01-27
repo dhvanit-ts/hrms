@@ -1,6 +1,6 @@
 import Post from "@/components/general/Post"
 import SkeletonCard from "@/components/skeletons/PostSkeleton"
-import { env } from "@/conf/env"
+import { env } from "@/config/env"
 import { useErrorHandler } from "@/hooks/useErrorHandler"
 import usePostStore from "@/store/postStore"
 import useProfileStore from "@/store/profileStore"

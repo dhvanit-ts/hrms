@@ -1,10 +1,11 @@
+"use client"
+
 import { useForm, Controller } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
 import axios from "axios"
 import {
@@ -14,8 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { env } from "@/conf/env"
+import { env } from "@/config/env"
 import { branch } from "@/constants/branch"
+import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
 
 const signInSchema = z.object({
   branch: branch,
@@ -26,9 +29,9 @@ type SignInFormData = z.infer<typeof signInSchema>
 function OAuthSetupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const email = useSearchParams()[0].get("email")
+  const email = useSearchParams().get("email")
 
-  const navigate = useNavigate()
+  const navigate = useRouter().push
 
   const {
     handleSubmit,
@@ -96,7 +99,7 @@ function OAuthSetupPage() {
             </Select>
           )}
         />
-        {errors.branch && <p className="text-red-500 text-sm !mt-1">{errors.branch.message}</p>}
+        {errors.branch && <p className="text-red-500 text-sm mt-1!">{errors.branch.message}</p>}
         <Button
           type="submit"
           disabled={isSubmitting || (errors?.branch && errors.branch !== undefined)}
@@ -105,11 +108,11 @@ function OAuthSetupPage() {
           {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Please wait</> : "Create an Account"}
         </Button>
       </form>
-      {errors.root && <p className="text-red-500 text-sm !mt-1">{errors.root?.message}</p>}
+      {errors.root && <p className="text-red-500 text-sm mt-1!">{errors.root?.message}</p>}
       <p className={`text-center pt-4 ${isSubmitting && "text-zinc-900/50 dark:text-zinc-100/50"}`}>
         Already have an account?{" "}
         <Link
-          to="/auth/signin"
+          href="/auth/signin"
           className={isSubmitting ? "pointer-events-none cursor-not-allowed text-blue-600/50 dark:text-blue-500/50" : "hover:underline text-blue-600 dark:text-blue-500 cursor-pointer"}
         >
           Signin

@@ -1,5 +1,5 @@
 import HttpResponse from "./response";
 import HttpError from "./error";
-import { controllerHandler, AsyncController } from "./controller";
+import { controllerHandler, UseController } from "./controller";
 
-export { HttpResponse, HttpError, AsyncController, controllerHandler };
+export { HttpResponse, HttpError, UseController, controllerHandler };

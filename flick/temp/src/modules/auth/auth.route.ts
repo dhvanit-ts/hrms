@@ -1,6 +1,6 @@
 import { Router } from "express";
 import AuthController from "@/modules/auth/auth.controller";
-import { pipelines } from "@/core/middlewares";
+import { verifyUserJWT } from "@/core/middlewares";
 
 const router = Router();
 
@@ -11,7 +11,7 @@ router.post("/otp/send", AuthController.sendOtp);
 router.post("/otp/verify", AuthController.verifyOtp);
 
 // Protected routes
-router.use(pipelines.requireAuthenticatedUser);
+router.use(verifyUserJWT);
 router.post("/logout", AuthController.logoutUser);
 
 export default router;

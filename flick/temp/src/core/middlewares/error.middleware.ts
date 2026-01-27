@@ -4,8 +4,8 @@ import HttpError from "@/core/http/error";
 import HttpResponse from "@/core/http/response";
 import logger from "@/core/logger";
 
-const errorHandlers = {
-  general: (
+class ErrorMiddlewares {
+  public generalErrorHandler = (
     err: unknown,
     _req: Request,
     res: Response,
@@ -17,13 +17,9 @@ const errorHandlers = {
     let error: HttpError;
 
     if (err instanceof HttpError) {
-      logger.warn("request.failed", {
-        statusCode: err.statusCode,
-        code: err.code,
-      });
       error = err;
     } else {
-      logger.error("request.unhandled_exception", { err });
+      logger.error("Unhandled exception", { err });
 
       error = new HttpError({
         statusCode: 500,
@@ -37,9 +33,6 @@ const errorHandlers = {
         ? error.message
         : fallbackMessage;
 
-    const stack =
-      err instanceof Error ? err.stack : undefined;
-
     HttpResponse.error(
       {
         message,
@@ -47,13 +40,13 @@ const errorHandlers = {
         errors: error.errors,
         code: error.code,
         meta: isDev
-          ? { ...error.meta, stack }
+          ? { ...error.meta, stack: (error as Error).stack }
           : error.meta as Record<string, unknown> | undefined,
       }
     ).send(res);
-  },
+  };
 
-  notFound: (
+  public notFoundErrorHandler = (
     req: Request,
     _res: Response,
     next: NextFunction
@@ -71,7 +64,7 @@ const errorHandlers = {
         { code: "NOT_FOUND" }
       )
     );
-  }
+  };
 }
 
-export default errorHandlers
+export default Object.freeze(new ErrorMiddlewares());

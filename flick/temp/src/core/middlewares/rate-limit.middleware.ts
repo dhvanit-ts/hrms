@@ -1,8 +1,7 @@
-import { limiters, createRateLimiterMiddleware as create } from "@/infra/services/rate-limiter";
+import { limiters } from "@/infra/services/rate-limiter/rl.module";
+import { createRateLimiterMiddleware as create } from "@/infra/services/rate-limiter/rl.create-middleware";
 
-const ensureRatelimit = {
-  auth: create(limiters.auth),
-  api: create(limiters.api),
-}
+const authRateLimiterMiddleware = create(limiters.auth);
+const apiRateLimiterMiddleware = create(limiters.api);
 
-export default ensureRatelimit;
+export default { apiRateLimiterMiddleware, authRateLimiterMiddleware };

@@ -1,25 +1,11 @@
 import winston from "winston";
 import { env } from "@/config/env";
-import { requestContextStore } from "./context";
 
 const isDev = env.NODE_ENV === "development";
-
-const addContext = winston.format((info) => {
-  const store = requestContextStore.getStore();
-
-  if (store) {
-    info.request_id = store.get("request_id");
-    info.ip = store.get("ip");
-    info.user_agent = store.get("user_agent");
-  }
-
-  return info;
-});
 
 const logger = winston.createLogger({
   level: isDev ? "debug" : "info",
   format: winston.format.combine(
-    addContext(),
     winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
     winston.format.errors({ stack: true }),
     isDev
@@ -32,9 +18,6 @@ const logger = winston.createLogger({
         : `[${timestamp}] ${level.toUpperCase()}: ${message}`;
     })
   ),
-  defaultMeta: {
-    service: "auth"
-  },
   transports: [new winston.transports.Console()],
 });
 

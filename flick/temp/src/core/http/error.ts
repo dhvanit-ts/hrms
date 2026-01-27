@@ -1,32 +1,24 @@
-type ErrorCode = Uppercase<string>;
-
 export interface ErrorDetail {
   field?: string;
   message: string;
-  code?: ErrorCode;
+  code?: string;
 }
-
-type Meta = { source: string } & Record<string, unknown>
 
 type HttpErrorParams = {
   statusCode: number;
   message: string;
-  code: ErrorCode;
+  code: string;
   errors?: ErrorDetail[];
-  meta?: Meta;
+  meta?: Record<string, unknown>;
   cause?: unknown;
   isOperational?: boolean;
 };
-
-type HttpErrorOptions = Partial<
-  Omit<HttpErrorParams, "statusCode" | "message">
->;
 
 class HttpError extends Error {
   readonly statusCode: number;
   readonly code: string;
   readonly errors?: ErrorDetail[];
-  readonly meta?: Meta;
+  readonly meta?: Record<string, unknown>;
   readonly isOperational: boolean;
   readonly cause?: unknown;
 
@@ -76,13 +68,13 @@ class HttpError extends Error {
 
   private static create(
     statusCode: number,
-    defaultCode: ErrorCode,
+    code: string,
     message: string,
-    options?: HttpErrorOptions
+    options?: Partial<Omit<HttpErrorParams, "statusCode" | "code" | "message">>
   ) {
     return new HttpError({
       statusCode,
-      code: options.code ?? defaultCode,
+      code,
       message,
       ...options,
     });
@@ -92,35 +84,35 @@ class HttpError extends Error {
 
   static badRequest(
     message = "Bad request",
-    options?: HttpErrorOptions
+    options?: Partial<HttpErrorParams>
   ) {
     return this.create(400, "BAD_REQUEST", message, options);
   }
 
   static unauthorized(
     message = "Unauthorized",
-    options?: HttpErrorOptions
+    options?: Partial<HttpErrorParams>
   ) {
     return this.create(401, "UNAUTHORIZED", message, options);
   }
 
   static forbidden(
     message = "Forbidden",
-    options?: HttpErrorOptions
+    options?: Partial<HttpErrorParams>
   ) {
     return this.create(403, "FORBIDDEN", message, options);
   }
 
   static notFound(
     message = "Resource not found",
-    options?: HttpErrorOptions
+    options?: Partial<HttpErrorParams>
   ) {
     return this.create(404, "NOT_FOUND", message, options);
   }
 
   static internal(
     message = "Internal server error",
-    options?: HttpErrorOptions
+    options?: Partial<HttpErrorParams>
   ) {
     return this.create(500, "INTERNAL_ERROR", message, {
       isOperational: false,

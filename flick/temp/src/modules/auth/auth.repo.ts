@@ -2,8 +2,6 @@ import * as authAdapter from "@/infra/db/adapters/auth.adapter";
 import { DB } from "@/infra/db/types";
 import { withCache } from "@/lib/cached";
 import { UserCacheKeys } from "./auth.cache-keys";
-import logger from "@/core/logger";
-import { User } from "@/shared/types/User";
 
 const AuthRepo = {
   Read: {
@@ -39,32 +37,8 @@ const AuthRepo = {
   },
 
   Write: {
-    create: async (user: User, dbTx?: DB) => {
-      try {
-        return await authAdapter.create(user, dbTx);
-      } catch (err) {
-        logger.error("db.user.create_failed", {
-          operation: "create_user",
-          reason: err instanceof Error ? err.message : "unknown",
-        });
-        throw err;
-      }
-    },
-    updateRefreshToken: async (
-      id: string,
-      refreshToken: string,
-      dbTx?: DB
-    ) => {
-      try {
-        return await authAdapter.updateRefreshToken(id, refreshToken, dbTx);
-      } catch (err) {
-        logger.error("db.user.update_refresh_token_failed", {
-          operation: "create_user",
-          reason: err instanceof Error ? err.message : "unknown",
-        });
-        throw err;
-      }
-    }
+    create: authAdapter.create,
+    updateRefreshToken: authAdapter.updateRefreshToken
   }
 }
 

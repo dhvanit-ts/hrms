@@ -156,10 +156,6 @@ class AuthService {
   async handleGoogleOAuth(code: string, req: Request) {
     return oauthService.handleGoogleOAuth(code, req);
   };
-
-  async handleUserOAuth(email: string, username: string, req: Request) {
-    return oauthService.createUserFromOAuth(email, username, req);
-  };
 }
 
 export default new AuthService();

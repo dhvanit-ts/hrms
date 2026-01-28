@@ -25,26 +25,10 @@ class UserController {
   }
 
   @AsyncHandler()
-  private static async googleCallback(req: Request) {
+  static async googleCallback(req: Request) {
     const { code } = authSchemas.googleCallbackSchema.parse(req.query);
-
-    const { redirectUrl } = await authService.handleGoogleOAuth(code, req);
-
-    return HttpResponse.redirect(redirectUrl)
-  }
-
-  @AsyncHandler()
-  static async handleUserOAuth(req: Request, res: Response) {
-    const { email, username } = authSchemas.userOAuthSchema.parse(req.body);
-
-    const { createdUser, accessToken, refreshToken } =
-      await authService.handleUserOAuth(email, username, req);
-
-    // authService.setAuthCookies(res, accessToken, refreshToken);
-    return HttpResponse.created(
-      "User created successfully!",
-      toInternalUser(createdUser),
-    );
+    await authService.handleGoogleOAuth(code, req);
+    return HttpResponse.redirect("/")
   }
 
   @AsyncHandler()

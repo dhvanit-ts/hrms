@@ -8,7 +8,6 @@ router.post("/register", UserController.registerUser);
 router.post("/initialize", UserController.initializeUser);
 router.post("/auth/finalize", UserController.handleTempToken);
 router.get("/google/callback", UserController.googleCallback);
-router.post("/oauth", UserController.handleUserOAuth);
 
 // Protected routes
 router.use(authenticate);

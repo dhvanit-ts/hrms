@@ -3,11 +3,13 @@ import { env } from "@/config/env";
 import HttpError from "@/core/http/error";
 import HttpResponse from "@/core/http/response";
 import logger from "@/core/logger";
+import { ZodError } from "zod";
+import { handleZodError } from "./zod-error";
 
 const errorHandlers = {
   general: (
     err: unknown,
-    _req: Request,
+    req: Request,
     res: Response,
     _next: NextFunction
   ): void => {
@@ -16,7 +18,9 @@ const errorHandlers = {
 
     let error: HttpError;
 
-    if (err instanceof HttpError) {
+    if (err instanceof ZodError) {
+      error = handleZodError(err, req)
+    } else if (err instanceof HttpError) {
       logger.warn("request.failed", {
         statusCode: err.statusCode,
         code: err.code,

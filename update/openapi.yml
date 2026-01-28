@@ -1,0 +1,859 @@
+openapi: 3.1.0
+info:
+  title: myapp
+  version: 1.0.0
+  description: Production-ready API documentation
+servers:
+  - url: http://localhost:8000
+    description: Development server
+components:
+  schemas:
+    ErrorResponseSchema:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - false
+        message:
+          type: string
+        code:
+          type: string
+        data:
+          type: "null"
+        errors:
+          type:
+            - array
+            - "null"
+          items:
+            $ref: "#/components/schemas/ErrorDetailSchema"
+        meta:
+          type:
+            - object
+            - "null"
+          additionalProperties: {}
+      required:
+        - success
+        - message
+        - data
+    ErrorDetailSchema:
+      type: object
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+      required:
+        - message
+    LoginSchema:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+    OtpSchema:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+      required:
+        - email
+        - username
+    VerifyOtpSchema:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        otp:
+          type: string
+      required:
+        - email
+        - otp
+    RegistrationSchema:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+        - email
+    initializeUserSchema:
+      allOf:
+        - $ref: "#/components/schemas/RegistrationSchema"
+        - type: object
+          properties:
+            username:
+              type: string
+              minLength: 1
+            password:
+              type: string
+              minLength: 6
+          required:
+            - username
+            - password
+    TempTokenSchema:
+      type: object
+      properties:
+        tempToken:
+          type: string
+      required:
+        - tempToken
+    UserOAuthSchema:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+      required:
+        - email
+  parameters: {}
+paths:
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginSchema"
+      responses:
+        "200":
+          description: User logged in successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  message:
+                    type: string
+                  code:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      username:
+                        type: string
+                      email:
+                        type: string
+                      roles:
+                        type: array
+                        items:
+                          type: string
+                      authType:
+                        type: string
+                      createdAt:
+                        type: string
+                      updatedAt:
+                        type: string
+                    required:
+                      - id
+                      - username
+                      - email
+                      - roles
+                      - authType
+                      - createdAt
+                      - updatedAt
+                  errors:
+                    type: "null"
+                  meta:
+                    type: "null"
+                required:
+                  - success
+                  - message
+                  - data
+                  - errors
+                  - meta
+        "400":
+          description: Bad Request - Invalid input or invalid password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+        "404":
+          description: User doesn't exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+  /api/v1/auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh access token
+      parameters:
+        - schema:
+            type: string
+            description: Refresh token cookie
+          required: true
+          description: Refresh token cookie
+          name: refreshToken
+          in: cookie
+      responses:
+        "200":
+          description: Access token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  message:
+                    type: string
+                  code:
+                    type: string
+                  data: {}
+                  errors:
+                    type: "null"
+                  meta:
+                    type: "null"
+                required:
+                  - success
+                  - message
+                  - errors
+                  - meta
+        "401":
+          description: Unauthorized - Missing or invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+  /api/v1/auth/otp/send:
+    post:
+      tags:
+        - Auth
+      summary: Send OTP for password reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OtpSchema"
+      responses:
+        "200":
+          description: OTP sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  message:
+                    type: string
+                  code:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      messageId:
+                        type: string
+                    required:
+                      - messageId
+                  errors:
+                    type: "null"
+                  meta:
+                    type: "null"
+                required:
+                  - success
+                  - message
+                  - data
+                  - errors
+                  - meta
+        "400":
+          description: Bad Request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+  /api/v1/auth/otp/verify:
+    post:
+      tags:
+        - Auth
+      summary: Verify OTP for password reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyOtpSchema"
+      responses:
+        "200":
+          description: OTP verification result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  message:
+                    type: string
+                  code:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      isVerified:
+                        type: boolean
+                    required:
+                      - isVerified
+                  errors:
+                    type: "null"
+                  meta:
+                    type: "null"
+                required:
+                  - success
+                  - message
+                  - data
+                  - errors
+                  - meta
+        "400":
+          description: Bad Request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+  /api/v1/auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout a user (requires authentication)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  message:
+                    type: string
+                  code:
+                    type: string
+                  data: {}
+                  errors:
+                    type: "null"
+                  meta:
+                    type: "null"
+                required:
+                  - success
+                  - message
+                  - errors
+                  - meta
+        "401":
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+  /api/v1/auth/register:
+    post:
+      tags:
+        - User
+      summary: Register a new user (complete registration)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistrationSchema"
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  message:
+                    type: string
+                  code:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      username:
+                        type: string
+                      email:
+                        type: string
+                      roles:
+                        type: array
+                        items:
+                          type: string
+                      createdAt:
+                        type: string
+                      updatedAt:
+                        type: string
+                    required:
+                      - id
+                      - username
+                      - email
+                      - roles
+                      - createdAt
+                      - updatedAt
+                  errors:
+                    type: "null"
+                  meta:
+                    type: "null"
+                required:
+                  - success
+                  - message
+                  - data
+                  - errors
+                  - meta
+        "400":
+          description: Bad Request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+  /api/v1/auth/initialize:
+    post:
+      tags:
+        - User
+      summary: Initialize a new user (first step of registration)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/initializeUserSchema"
+      responses:
+        "201":
+          description: User initialized successfully and OTP sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  message:
+                    type: string
+                  code:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      email:
+                        type: string
+                    required:
+                      - email
+                  errors:
+                    type: "null"
+                  meta:
+                    type: "null"
+                required:
+                  - success
+                  - message
+                  - data
+                  - errors
+                  - meta
+        "400":
+          description: Bad Request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+  /api/v1/auth/finalize:
+    post:
+      tags:
+        - User
+      summary: Finalize user registration using temporary token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TempTokenSchema"
+      responses:
+        "200":
+          description: Token handled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  message:
+                    type: string
+                  code:
+                    type: string
+                  data: {}
+                  errors:
+                    type: "null"
+                  meta:
+                    type: "null"
+                required:
+                  - success
+                  - message
+                  - errors
+                  - meta
+        "400":
+          description: Bad Request - Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+  /api/v1/auth/google/callback:
+    get:
+      tags:
+        - User
+      summary: Google OAuth callback
+      parameters:
+        - schema:
+            type: string
+          required: true
+          name: code
+          in: query
+      responses:
+        "302":
+          description: Redirect to frontend with access token
+        "400":
+          description: Bad Request - Invalid OAuth code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+  /api/v1/auth/oauth:
+    post:
+      tags:
+        - User
+      summary: Handle user OAuth registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserOAuthSchema"
+      responses:
+        "201":
+          description: User created successfully from OAuth
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  message:
+                    type: string
+                  code:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      username:
+                        type: string
+                      email:
+                        type: string
+                      roles:
+                        type: array
+                        items:
+                          type: string
+                      createdAt:
+                        type: string
+                      updatedAt:
+                        type: string
+                    required:
+                      - id
+                      - username
+                      - email
+                      - roles
+                      - createdAt
+                      - updatedAt
+                  errors:
+                    type: "null"
+                  meta:
+                    type: "null"
+                required:
+                  - success
+                  - message
+                  - data
+                  - errors
+                  - meta
+        "400":
+          description: Bad Request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+  /api/v1/auth/me:
+    get:
+      tags:
+        - User
+      summary: Get current authenticated user data
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User data retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  message:
+                    type: string
+                  code:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      username:
+                        type: string
+                      email:
+                        type: string
+                      roles:
+                        type: array
+                        items:
+                          type: string
+                      createdAt:
+                        type: string
+                      updatedAt:
+                        type: string
+                    required:
+                      - id
+                      - username
+                      - email
+                      - roles
+                      - createdAt
+                      - updatedAt
+                  errors:
+                    type: "null"
+                  meta:
+                    type: "null"
+                required:
+                  - success
+                  - message
+                  - data
+                  - errors
+                  - meta
+        "401":
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+  "/api/v1/auth/id/{userId}":
+    get:
+      tags:
+        - User
+      summary: Get user data by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: userId
+          in: path
+      responses:
+        "200":
+          description: User data retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  message:
+                    type: string
+                  code:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      username:
+                        type: string
+                      email:
+                        type: string
+                      roles:
+                        type: array
+                        items:
+                          type: string
+                      createdAt:
+                        type: string
+                      updatedAt:
+                        type: string
+                    required:
+                      - id
+                      - username
+                      - email
+                      - roles
+                      - createdAt
+                      - updatedAt
+                  errors:
+                    type: "null"
+                  meta:
+                    type: "null"
+                required:
+                  - success
+                  - message
+                  - data
+                  - errors
+                  - meta
+        "400":
+          description: Bad Request - Invalid user ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+        "401":
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+        "404":
+          description: User doesn't exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+  "/api/v1/auth/search/{query}":
+    get:
+      tags:
+        - User
+      summary: Search users by query
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+          required: true
+          name: query
+          in: path
+      responses:
+        "200":
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  message:
+                    type: string
+                  code:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        username:
+                          type: string
+                        email:
+                          type: string
+                        roles:
+                          type: array
+                          items:
+                            type: string
+                        createdAt:
+                          type: string
+                        updatedAt:
+                          type: string
+                      required:
+                        - id
+                        - username
+                        - email
+                        - roles
+                        - createdAt
+                        - updatedAt
+                  errors:
+                    type: "null"
+                  meta:
+                    type: "null"
+                required:
+                  - success
+                  - message
+                  - data
+                  - errors
+                  - meta
+        "400":
+          description: Bad Request - Query is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+        "401":
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseSchema"
+webhooks: {}

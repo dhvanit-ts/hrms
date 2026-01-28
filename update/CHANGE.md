@@ -14,3 +14,7 @@
   - core/middlewares/
     - authenticate.middleware.ts
 - docs/openapi/*
+
+---
+
+Also update `README.md` template and replace the port variable with static value 8000

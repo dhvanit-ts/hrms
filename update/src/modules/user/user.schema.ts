@@ -25,4 +25,4 @@ export const InitializeUserSchema = RegistrationSchema.extend({
   password: z
     .string("Password is required")
     .min(6, "Password must be at least 6 characters"),
-}).openapi("initializeUserSchema");
+}).openapi("InitializeUserSchema");

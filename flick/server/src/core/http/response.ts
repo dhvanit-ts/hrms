@@ -1,5 +1,5 @@
 import type { Response } from "express";
-import type { ErrorDetail } from "./error";
+import type { ErrorDetail } from "./types";
 
 class HttpResponse<T = unknown> {
   readonly success: boolean;

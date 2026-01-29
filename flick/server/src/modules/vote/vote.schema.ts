@@ -1,7 +1,8 @@
 import z from "zod"
 
-const voteTypeSchema = z.enum(["upvote", "downvote"])
-const targetTypeSchema = z.enum(["post", "comment"])
+const VoteTypeSchema = z.enum(["upvote", "downvote"])
+const TargetTypeSchema = z.enum(["post", "comment"])
+const UUIDSchema = z.uuid()
 
-export const deleteVoteSchema = z.object({ voteType: voteTypeSchema, targetType: targetTypeSchema })
-export const insertVoteSchema = deleteVoteSchema.extend({ targetId: z.uuid() })
+export const DeleteVoteSchema = z.object({ targetType: TargetTypeSchema, targetId: UUIDSchema })
+export const InsertVoteSchema = DeleteVoteSchema.extend({ targetId: UUIDSchema, targetType: TargetTypeSchema, voteType: VoteTypeSchema })

@@ -1,47 +1,29 @@
 import { Request, Response } from "express";
-import { AsyncHandler } from "@/core/http/controller.js";
+import { Controller } from "@/core/http/controller.js";
 import HttpResponse from "@/core/http/response.js";
 import HttpError from "@/core/http/error.js";
 import ContentReportService from "./content-report.service.js";
 import UserManagementService from "./user-management.service.js";
 import ContentModerationService from "./content-moderation.service.js";
 import { ContentReportInsert } from "@/infra/db/tables/content-report.table.js";
-import { withBodyValidation } from "@/lib/validation.js";
 import * as contentReportSchemas from "./content-report.schema.js";
-import writeAuditLog from "@/lib/record-audit.js";
+import recordAudit from "@/lib/record-audit.js";
+import { AuditAction } from "@/shared/constants/audit/actions.js";
 
-const ALLOWED_STATUSES = ["pending", "resolved", "ignored"];
-
+@Controller()
 class ContentReportController {
-  static createReport = withBodyValidation(contentReportSchemas.createReportSchema, this.createReportHandler)
+  static async createReport(req: Request) {
+    const { type, reason, message, targetId } = contentReportSchemas.CreateReportSchema.parse(req.body);
+    const userId = req.user.id;
 
-  @AsyncHandler()
-  private static async createReportHandler(req: Request) {
-    const { type, reason, message } = req.body;
-    const { targetId } = req.body;
-    const userId = req.user?.id;
+    const isTargetedPost = type === "Post"
 
-    if (!userId) {
-      throw HttpError.unauthorized("User not authenticated");
-    }
-
-    // Validate required fields
-    if (!targetId || !type || !reason || !message) {
-      throw HttpError.badRequest("All fields (targetId, type, reason, message) are required");
-    }
-
-    if (!["Post", "Comment"].includes(type)) {
-      throw HttpError.badRequest("Invalid report type");
-    }
-
-    // Map targetId to postId or commentId based on type
     const reportData: ContentReportInsert = {
       type,
-      postId: type === "Post" ? parseInt(targetId) : undefined,
-      commentId: type === "Comment" ? parseInt(targetId) : undefined,
       reportedBy: userId,
       reason,
       message,
+      ...(isTargetedPost ? { postId: targetId } : { commentId: targetId })
     };
 
     const report = await ContentReportService.createReport(reportData);
@@ -49,23 +31,12 @@ class ContentReportController {
     return HttpResponse.created("Report created successfully", { report });
   }
 
-  @AsyncHandler()
   static async getReports(req: Request) {
-    const page = Math.max(1, Number(req.query.page)) || 1;
-    const limit = Math.max(1, Number(req.query.limit)) || 10;
-    const type = (req.query.type as "Post" | "Comment" | "Both") || "Both";
-
-    const statusQuery = typeof req.query.status === "string" ? req.query.status : "";
-    const requestedStatuses = statusQuery
-      .split(",")
-      .map((s) => s.trim().toLowerCase())
-      .filter((s) => ALLOWED_STATUSES.includes(s));
-
-    const statuses = requestedStatuses.length ? requestedStatuses : ["pending"];
+    const { type, limit, page, status } = contentReportSchemas.GetReportsQuerySchema.parse(req.query)
 
     const result = await ContentReportService.getReportsWithFilters({
       type,
-      statuses,
+      statuses: status,
       page,
       limit
     });
@@ -77,19 +48,17 @@ class ContentReportController {
       {
         data: result.reports,
         pagination: result.pagination,
-        filters: { statuses, type }
+        filters: { status, type }
       }
     );
   }
 
-  @AsyncHandler()
   static async getReportById(req: Request) {
-    const { id } = req.params;
+    const { id } = contentReportSchemas.ReportParamsSchema.parse(req.params);
     const report = await ContentReportService.getReportById(id);
     return HttpResponse.ok("Report fetched successfully", { report });
   }
 
-  @AsyncHandler()
   static async getUserReports(req: Request) {
     const { userId } = req.params;
 
@@ -97,47 +66,40 @@ class ContentReportController {
       throw HttpError.badRequest("Invalid userId");
     }
 
-    const reports = await ContentReportService.getUserReports(parseInt(userId));
+    const reports = await ContentReportService.getUserReports(userId);
     return HttpResponse.ok("User reports fetched successfully", { reports });
   }
 
-  @AsyncHandler()
   static async updateReportStatus(req: Request) {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    if (!ALLOWED_STATUSES.includes(status)) {
-      throw HttpError.badRequest("Invalid status value");
-    }
-
+    const { id } = contentReportSchemas.ReportParamsSchema.parse(req.params);
+    const { status } = contentReportSchemas.UpdateReportStatusSchema.parse(req.body);
+    
     const report = await ContentReportService.updateReportStatus(id, status);
 
-    await writeAuditLog({
-      req,
+    await recordAudit({
       action: "admin:updated:report:status",
-      meta: { reportId: id, status },
+      metadata: { reportId: id, status },
+      entityType: "content-report",
     });
 
     return HttpResponse.ok("Report status updated successfully", { report });
   }
 
-  @AsyncHandler()
   static async deleteReport(req: Request) {
-    const { id } = req.params;
+    const { id } = contentReportSchemas.ReportParamsSchema.parse(req.params);
     const result = await ContentReportService.deleteReport(id);
 
-    await writeAuditLog({
-      req,
+    await recordAudit({
       action: "admin:deleted:report",
-      meta: { reportId: id },
+      metadata: { reportId: id },
+      entityType: "content-report"
     });
 
     return HttpResponse.ok("Report deleted successfully", result);
   }
 
-  @AsyncHandler()
   static async bulkDeleteReports(req: Request) {
-    const { reportIds } = req.body;
+    const { reportIds } = contentReportSchemas.BulkDeleteReportsSchema.parse(req.body);
 
     if (!Array.isArray(reportIds)) {
       throw HttpError.badRequest("Report ids must be an array");
@@ -145,80 +107,76 @@ class ContentReportController {
 
     const result = await ContentReportService.bulkDeleteReports(reportIds);
 
-    await writeAuditLog({
-      req,
+    await recordAudit({
       action: "admin:bulk-deleted:reports",
-      meta: { reportIds, deletedCount: result.deletedCount },
+      metadata: { reportIds, deletedCount: result.deletedCount },
+      entityType: "content-report"
     });
 
     return HttpResponse.ok("Reports deleted successfully", result);
   }
 
-  // Content moderation methods
-  @AsyncHandler()
   static async updateContentStatus(req: Request) {
-    const { targetId } = req.params;
-    const { action, type } = req.body;
-
-    if (!targetId || !/^\d+$/.test(targetId)) {
-      throw HttpError.badRequest(`Invalid ${type} ID`);
-    }
-
-    if (!["Post", "Comment"].includes(type)) {
-      throw HttpError.badRequest("Invalid content type");
-    }
-
-    const validActions = ["ban", "unban", "shadowBan", "shadowUnban"];
-    if (!validActions.includes(action)) {
-      throw HttpError.badRequest("Invalid action");
-    }
+    const { targetId } = contentReportSchemas.ContentParamsSchema.parse(req.params);
+    const { action, type } = contentReportSchemas.UpdateContentStatusSchema.parse(req.body);
 
     const result = await ContentModerationService.moderateContent(targetId, type, action);
 
-    const auditAction = `admin:${action}:content`.toLowerCase();
+    let adminAction: "shadow:banned" | "shadow:unbanned" | "banned" | "unbanned" = null
 
-    await writeAuditLog({
-      req,
+    switch (action) {
+      case "unban":
+        adminAction = "unbanned"
+        break
+      case "shadowBan":
+        adminAction = "shadow:banned"
+        break
+      case "shadowUnban":
+        adminAction = "shadow:unbanned"
+      default:
+        adminAction = "banned"
+    }
+
+    const auditAction: AuditAction = `admin:${adminAction}:content`;
+
+    await recordAudit({
       action: auditAction,
-      meta: { targetId, type, action },
+      metadata: { targetId, type, action },
+      entityType: "content-report"
     });
 
     return HttpResponse.ok(result.message, result);
   }
 
-  // User management methods
-  @AsyncHandler()
   static async blockUser(req: Request) {
-    const { userId } = req.params;
+    const { userId } = contentReportSchemas.UserParamsSchema.parse(req.params);
     const result = await UserManagementService.blockUser(userId);
 
-    await writeAuditLog({
-      req,
+    await recordAudit({
       action: "admin:banned:user",
-      meta: { userId },
+      metadata: { userId },
+      entityType: "content-report"
     });
 
     return HttpResponse.ok(result.message, result);
   }
 
-  @AsyncHandler()
   static async unblockUser(req: Request) {
-    const { userId } = req.params;
+    const { userId } = contentReportSchemas.UserParamsSchema.parse(req.params);
     const result = await UserManagementService.unblockUser(userId);
 
-    await writeAuditLog({
-      req,
+    await recordAudit({
       action: "admin:unbanned:user",
-      meta: { userId },
+      metadata: { userId },
+      entityType: "content-report"
     });
 
     return HttpResponse.ok(result.message, result);
   }
 
-  @AsyncHandler()
   static async suspendUser(req: Request) {
-    const { userId } = req.params;
-    const { ends, reason } = req.body;
+    const { userId } = contentReportSchemas.UserParamsSchema.parse(req.params);
+    const { ends, reason } = contentReportSchemas.SuspendUserSchema.parse(req.body);
 
     if (!ends || !reason) {
       throw HttpError.badRequest("End date and reason are required");
@@ -231,26 +189,23 @@ class ContentReportController {
 
     const result = await UserManagementService.suspendUser(userId, suspensionData);
 
-    await writeAuditLog({
-      req,
+    await recordAudit({
       action: "admin:suspended:user",
-      meta: { userId, ends, reason },
+      metadata: { userId, ends, reason },
+      entityType: "content-report"
     });
 
     return HttpResponse.ok(result.message, result);
   }
 
-  @AsyncHandler()
   static async getSuspensionStatus(req: Request) {
-    const { userId } = req.params;
+    const { userId } = contentReportSchemas.UserParamsSchema.parse(req.params);
     const result = await UserManagementService.getSuspensionStatus(userId);
     return HttpResponse.ok("Suspension status fetched successfully", result);
   }
 
-  @AsyncHandler()
   static async getUsersByQuery(req: Request) {
-    const email = req.query.email as string;
-    const username = req.query.username as string;
+    const { email, username } = contentReportSchemas.GetUsersQuerySchema.parse(req.query);
 
     const result = await UserManagementService.getUsersByQuery({ email, username });
     return HttpResponse.ok("Users fetched successfully", result);

@@ -37,6 +37,8 @@ export const auditActions = [
   "admin:blocked:content",
   "admin:unblocked:content",
   "admin:shadow:banned:content",
+  "admin:banned:content",
+  "admin:unbanned:content",
   "admin:shadow:unbanned:content",
   "admin:updated:content",
   "admin:deleted:report",

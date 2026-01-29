@@ -1,16 +1,13 @@
 import { Request } from "express";
-import { AsyncHandler, HttpResponse } from "@/core/http";
+import { Controller, HttpResponse } from "@/core/http";
 import collegeService from "./college.service";
-import { withBodyValidation, withParamsValidation, withQueryValidation } from "@/lib/validation";
 import * as collegeSchemas from "./college.schema";
 import { validateRequest } from "@/core/middlewares";
 
+@Controller()
 class CollegeController {
-  static createCollege = withBodyValidation(collegeSchemas.createCollegeSchema, this.createCollegeHandler)
-
-  @AsyncHandler()
-  private static async createCollegeHandler(req: Request) {
-    const { name, emailDomain, city, state, profile } = req.body;
+ static async createCollege(req: Request) {
+    const { name, emailDomain, city, state, profile } = collegeSchemas.CreateCollegeSchema.parse(req.body);
 
     const newCollege = await collegeService.createCollege({
       name,
@@ -25,11 +22,8 @@ class CollegeController {
     });
   }
 
-  static getColleges = withQueryValidation(collegeSchemas.collegeFiltersSchema, this.getCollegesHandler)
-
-  @AsyncHandler()
-  private static async getCollegesHandler(req: Request) {
-    const { city, state } = req.query as { city?: string; state?: string };
+ static async getColleges(req: Request) {
+    const { city, state } = collegeSchemas.CollegeFiltersSchema.parse(req.query);
 
     const colleges = await collegeService.getColleges({ city, state });
 
@@ -39,11 +33,8 @@ class CollegeController {
     });
   }
 
-  static getCollegeById = withParamsValidation(collegeSchemas.collegeIdSchema, this.getCollegeByIdHandler)
-
-  @AsyncHandler()
-  private static async getCollegeByIdHandler(req: Request) {
-    const { id } = req.params;
+ static async getCollegeById(req: Request) {
+    const { id } = collegeSchemas.CollegeIdSchema.parse(req.params);
 
     const college = await collegeService.getCollegeById(id);
 
@@ -52,16 +43,9 @@ class CollegeController {
     });
   }
 
-  static updateCollege = [
-    validateRequest(collegeSchemas.collegeIdSchema, "params"),
-    validateRequest(collegeSchemas.updateCollegeSchema),
-    this.updateCollegeHandler
-  ]
-
-  @AsyncHandler()
-  private static async updateCollegeHandler(req: Request) {
-    const { id } = req.params;
-    const updates = req.body;
+ static async updateCollege(req: Request) {
+    const { id } = collegeSchemas.CollegeIdSchema.parse(req.params);
+    const updates = collegeSchemas.UpdateCollegeSchema.parse(req.body);
 
     const updatedCollege = await collegeService.updateCollege(id, updates);
 
@@ -70,11 +54,8 @@ class CollegeController {
     });
   }
 
-  static deleteCollege = withParamsValidation(collegeSchemas.collegeIdSchema, this.deleteCollegeHandler)
-
-  @AsyncHandler()
-  private static async deleteCollegeHandler(req: Request) {
-    const { id } = req.params;
+ static async deleteCollege(req: Request) {
+    const { id } = collegeSchemas.CollegeIdSchema.parse(req.params);
 
     await collegeService.deleteCollege(id);
 

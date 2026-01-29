@@ -4,9 +4,7 @@
 
 - src/
   - lib/better-auth/* (new)
-  - modules/
-    - auth/*
-    - user/*
+  - modules/*
   - core
     - http/*
     - middleware/

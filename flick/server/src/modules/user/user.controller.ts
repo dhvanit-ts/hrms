@@ -2,11 +2,11 @@ import userService from "./user.service";
 import authService from "@/modules/auth/auth.service";
 import type { Request, Response } from "express";
 import { toInternalUser } from "./user.dto";
-import { HttpResponse, HttpError, AsyncHandler } from "@/core/http";
+import { HttpResponse, HttpError, Controller } from "@/core/http";
 import * as authSchemas from "@/modules/user/user.schema";
 
+@Controller()
 class UserController {
-  @AsyncHandler()
   static async getUserById(req: Request) {
     const { userId } = authSchemas.userIdSchema.parse(req.params);
 
@@ -15,7 +15,6 @@ class UserController {
     return HttpResponse.ok("User fetched successfully", toInternalUser(user));
   }
 
-  @AsyncHandler()
   static async searchUsers(req: Request) {
     const { query } = authSchemas.searchQuerySchema.parse(req.params);
 
@@ -24,14 +23,12 @@ class UserController {
     return HttpResponse.ok("Users fetched successfully", users);
   }
 
-  @AsyncHandler()
   static async googleCallback(req: Request) {
     const { code } = authSchemas.googleCallbackSchema.parse(req.query);
     await authService.handleGoogleOAuth(code, req);
     return HttpResponse.redirect("/")
   }
 
-  @AsyncHandler()
   static async handleTempToken(req: Request, res: Response) {
     const { tempToken } = authSchemas.tempTokenSchema.parse(req.body);
 
@@ -49,7 +46,6 @@ class UserController {
     return HttpResponse.ok()
   }
 
-  @AsyncHandler()
   static async initializeUser(req: Request) {
     const { email, username, password } = authSchemas.initializeUserSchema.parse(req.body);
 
@@ -65,7 +61,6 @@ class UserController {
     );
   }
 
-  @AsyncHandler()
   static async registerUser(req: Request, res: Response) {
     const { email } = authSchemas.registrationSchema.parse(req.body);
 
@@ -79,7 +74,6 @@ class UserController {
     );
   }
 
-  @AsyncHandler()
   static async getUserData(req: Request) {
     return HttpResponse.ok("User fetched successfully!", req.user);
   }

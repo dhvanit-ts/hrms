@@ -1,10 +1,10 @@
-import { AsyncHandler, HttpResponse, HttpError } from "@/core/http";
+import { Controller, HttpResponse, HttpError } from "@/core/http";
 import { Request, Response } from "express";
 import authService from "./auth.service";
 import * as authSchemas from "./auth.schema";
 
+@Controller()
 class AuthController {
-  @AsyncHandler()
   static async loginUser(req: Request, res: Response) {
     const { email, password } = authSchemas.loginSchema.parse(req.body);
 
@@ -21,7 +21,6 @@ class AuthController {
     );
   }
 
-  @AsyncHandler()
   static async logoutUser(req: Request, res: Response) {
     if (!req.user?.id)
       throw HttpError.notFound("User doesn't exists", {
@@ -33,7 +32,6 @@ class AuthController {
     return HttpResponse.ok("User logged out successfully");
   }
 
-  @AsyncHandler()
   static async refreshAccessToken(req: Request, res: Response) {
     const incomingRefreshToken =
       req.cookies.refreshToken || req.body.refreshToken;
@@ -51,7 +49,6 @@ class AuthController {
     return HttpResponse.ok("Access token refreshed successfully");
   }
 
-  @AsyncHandler()
    static async sendOtp(req: Request, _res: Response) {
     const { email } = authSchemas.otpSchema.parse(req.body);
 
@@ -60,7 +57,6 @@ class AuthController {
     return HttpResponse.ok("OTP sent successfully", { messageId });
   }
 
-  @AsyncHandler()
   static async verifyOtp(req: Request, _res: Response) {
     const { email, otp } = authSchemas.verifyOtpSchema.parse(req.body);
 

@@ -1,67 +1,99 @@
-export const auditActions = [
-  "user:upvoted:post",
-  "user:upvoted:comment",
-  "user:downvoted:post",
-  "user:downvoted:comment",
-  "user:deleted:vote:on:comment",
-  "user:deleted:vote:on:post",
-  "user:switched:vote:on:comment",
-  "user:switched:vote:on:post",
-  "user:created:post",
-  "user:updated:post",
-  "user:created:comment",
-  "user:updated:comment",
-  "user:deleted:post",
-  "user:deleted:comment",
-  "user:reported:content",
-  "user:accepted:terms",
-  "user:initialized:account",
-  "user:created:account",
-  "auth:otp:verify:success",
-  "auth:otp:verify:failed",
-  "auth:otp:send",
-  "user:logged:in:self",
-  "user:logged:out:self",
-  "user:created:feedback",
-  "user:updated:feedback",
-  "user:deleted:feedback",
-  "user:forgot:password",
-  "user:initialized:forgot-password",
+// -----------------------------
+// 1. Shape enforcement
+// -----------------------------
 
-  "admin:banned:user",
-  "admin:unbanned:user",
-  "admin:suspended:user",
-  "admin:created:college",
-  "admin:deleted:college",
-  "admin:updated:college",
-  "admin:blocked:content",
-  "admin:unblocked:content",
-  "admin:shadow:banned:content",
-  "admin:banned:content",
-  "admin:unbanned:content",
-  "admin:shadow:unbanned:content",
-  "admin:updated:content",
-  "admin:deleted:report",
-  "admin:bulk-deleted:reports",
-  "admin:updated:report:status",
-  "admin:updated:feedback:status",
-  "admin:deleted:feedback",
+type ActionRegistry = {
+  readonly [role: string]: {
+    readonly [domain: string]: readonly string[]
+  }
+}
 
-  "system:created:admin:account",
-  "admin:logged:out:self",
-  "admin:initialized:account",
-  "admin:verified:otp",
-  "admin:removed:authorized:device",
-  "admin:reset:email:otp",
-  "admin:deleted:admin:account",
-  "admin:updated:admin:account",
-  "admin:fetched:all:admin:accounts",
+// -----------------------------
+// 2. Action map (single source of truth)
+// -----------------------------
 
-  "system:logged:error",
-  "system:logged:in",
-  "system:logged:out",
+export const ActionMap = {
+  user: {
+    post: ["upvoted", "downvoted", "created", "updated", "deleted"],
+    comment: ["upvoted", "downvoted", "created", "updated", "deleted"],
+    "vote:on:post": ["deleted", "switched"],
+    "vote:on:comment": ["deleted", "switched"],
+    content: ["reported"],
+    terms: ["accepted"],
+    account: ["initialized", "created"],
+    self: ["logged:in", "logged:out"],
+    feedback: ["created", "updated", "deleted"],
+    password: ["forgot"],
+    "forgot-password": ["initialized"],
+  },
 
-  "other:action",
-] as const
+  auth: {
+    otp: ["verify:success", "verify:failed", "send"],
+  },
 
-export type AuditAction = typeof auditActions[number]
+  admin: {
+    user: ["banned", "unbanned", "suspended"],
+    college: ["created", "updated", "deleted"],
+    content: [
+      "blocked",
+      "unblocked",
+      "shadow:banned",
+      "shadow:unbanned",
+      "banned",
+      "unbanned",
+      "updated",
+    ],
+    report: ["deleted", "updated:status"],
+    reports: ["bulk-deleted"],
+    feedback: ["deleted", "updated:status"],
+    self: ["logged:out"],
+    account: ["initialized", "verified:otp"],
+    "admin:account": ["deleted", "updated"],
+    "admin:accounts": ["fetched:all"],
+    "authorized:device": ["removed"],
+    otp: ["reset:email"],
+  },
+
+  system: {
+    "admin:account": ["created"],
+    log: ["error", "in", "out"],
+  },
+
+  other: {
+    action: ["action"],
+  },
+} as const satisfies ActionRegistry
+
+// -----------------------------
+// 3. Type builder → `${role}:${action}:${domain}`
+// -----------------------------
+
+type BuildActions<T extends ActionRegistry> = {
+  [R in keyof T]: {
+    [D in keyof T[R]]: `${R & string}:${T[R][D][number]}:${D & string}`
+  }[keyof T[R]]
+}[keyof T]
+
+// -----------------------------
+// 4. Final public type
+// -----------------------------
+
+export type AuditAction = BuildActions<typeof ActionMap>
+
+// -----------------------------
+// 5. Optional runtime array (if you need it)
+// -----------------------------
+
+function buildAuditActions<T extends ActionRegistry>(
+  map: T
+): BuildActions<T>[] {
+  return Object.entries(map).flatMap(([role, domains]) =>
+    Object.entries(domains).flatMap(([domain, actions]) =>
+      actions.map(action =>
+        `${role}:${action}:${domain}` as BuildActions<T>
+      )
+    )
+  )
+}
+
+export const auditActions = buildAuditActions(ActionMap)

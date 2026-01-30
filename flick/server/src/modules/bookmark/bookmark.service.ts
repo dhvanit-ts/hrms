@@ -1,6 +1,7 @@
 import { HttpError } from "@/core/http";
 import BookmarkRepo from "./bookmark.repo";
 import logger from "@/core/logger";
+import recordAudit from "@/lib/record-audit";
 
 class BookmarkService {
   async createBookmark(userId: string, postId: string) {

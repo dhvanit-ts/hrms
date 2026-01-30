@@ -107,11 +107,11 @@ class FeedbackService {
         errors: [{ field: "id", message: "Feedback not found" }],
       });
     }
-
+    
     const updatedFeedback = await FeedbackRepo.Write.updateById(id, { status });
 
     await recordAudit({
-      action: "admin:updated:feedback:status",
+      action: "admin:updated:status:feedback",
       entityType: "feedback",
       entityId: updatedFeedback.id,
       before: { status: existing.status },

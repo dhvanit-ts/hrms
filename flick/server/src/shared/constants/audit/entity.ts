@@ -8,7 +8,11 @@ export const auditEntityTypes = [
   "notification",
   "user",
   "auth",
-  "vote"
+  "vote",
+  "system",
+  "device",
+  "otp",
+  "account"
 ] as const
 
 export type AuditEntity = typeof auditEntityTypes[number]

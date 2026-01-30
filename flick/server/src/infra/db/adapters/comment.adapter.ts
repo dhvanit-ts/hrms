@@ -157,11 +157,10 @@ export const countByPostId = async (postId: string, dbTx?: DB) => {
 
 export const create = async (comment: typeof comments.$inferInsert, dbTx?: DB) => {
   const client = dbTx ?? db;
-  const createdComment = await client
+  const [createdComment] = await client
     .insert(comments)
     .values(comment)
     .returning()
-    .then((r) => r?.[0] || null);
 
   return createdComment;
 };
@@ -172,12 +171,11 @@ export const updateById = async (
   dbTx?: DB
 ) => {
   const client = dbTx ?? db;
-  const updatedComment = await client
+  const [updatedComment] = await client
     .update(comments)
     .set({ ...updates, updatedAt: new Date().toISOString() })
     .where(eq(comments.id, id))
     .returning()
-    .then((r) => r?.[0] || null);
 
   return updatedComment;
 };

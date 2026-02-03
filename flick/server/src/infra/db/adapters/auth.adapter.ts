@@ -1,4 +1,4 @@
-import type { User } from "@/shared/types/User";
+import type { UserSelect, UserInsert } from "@/shared/types/User";
 import { eq, or, sql } from "drizzle-orm";
 import db from "@/infra/db/index";
 import { users } from "@/infra/db/tables/user.table";
@@ -34,7 +34,7 @@ export const findByEmail = async (email: string, dbTx?: DB) => {
   return user;
 };
 
-export const create = async (user: User, dbTx?: DB) => {
+export const create = async (user: UserInsert, dbTx?: DB) => {
   const client = dbTx ?? db;
   const createdUser = await client
     .insert(users)
@@ -45,7 +45,7 @@ export const create = async (user: User, dbTx?: DB) => {
   return createdUser;
 };
 
-export const update = async (karmaChange: number, ownerId: string, dbTx?: DB) => {
+export const updateKarma = async (karmaChange: number, ownerId: string, dbTx?: DB) => {
   const client = dbTx ?? db;
   const [updatedUser] = await client
     .update(users)
@@ -54,6 +54,17 @@ export const update = async (karmaChange: number, ownerId: string, dbTx?: DB) =>
     })
     .where(eq(users.id, ownerId))
     .returning({ karma: users.karma });
+
+  return updatedUser;
+};
+
+export const update = async (userId: string, updates: Partial<UserInsert>, dbTx?: DB) => {
+  const client = dbTx ?? db;
+  const [updatedUser] = await client
+    .update(users)
+    .set(updates)
+    .where(eq(users.id, userId))
+    .returning();
 
   return updatedUser;
 };

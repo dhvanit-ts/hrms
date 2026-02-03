@@ -12,9 +12,10 @@ export const users = pgTable("user", {
   authType: AuthTypeEnum("authType").notNull().default("manual"),
   refreshToken: text("refreshToken"),
   roles: RoleEnum("roles").array().notNull().default(["user"]),
-  collegeId: uuid("collegeId").references(() => colleges.id),
-  branch: uuid("branch").references(() => colleges.id),
+  collegeId: uuid("collegeId").references(() => colleges.id).notNull(),
+  branch: uuid("branch").references(() => colleges.id).notNull(),
   karma: integer("karma").default(0),
+  isAcceptedTerms: boolean("is_accepted_terms").notNull().default(false),
 
   isBlocked: boolean("isBlocked").notNull().default(false),
   suspension: jsonb("suspension").notNull().default({

@@ -22,17 +22,12 @@ class AuthController {
   }
 
   static async logoutUser(req: Request, res: Response) {
-    if (!req.user?.id)
-      throw HttpError.notFound("User doesn't exists", {
-        meta: { source: "authService.logoutAuthService" },
-      });
-
     await authService.logoutAuth(req, res, req.user?.id);
 
     return HttpResponse.ok("User logged out successfully");
   }
 
-  static async refreshAccessToken(req: Request, res: Response) {
+  static async refreshAccessToken(req: Request) {
     const incomingRefreshToken =
       req.cookies.refreshToken || req.body.refreshToken;
 
@@ -49,7 +44,7 @@ class AuthController {
     return HttpResponse.ok("Access token refreshed successfully");
   }
 
-   static async sendOtp(req: Request, _res: Response) {
+   static async sendOtp(req: Request) {
     const { email } = authSchemas.otpSchema.parse(req.body);
 
     const { messageId } = await authService.sendOtpService(email);
@@ -57,7 +52,7 @@ class AuthController {
     return HttpResponse.ok("OTP sent successfully", { messageId });
   }
 
-  static async verifyOtp(req: Request, _res: Response) {
+  static async verifyOtp(req: Request) {
     const { email, otp } = authSchemas.verifyOtpSchema.parse(req.body);
 
     const isVerified = await authService.verifyOtpService(email, otp);
@@ -67,6 +62,14 @@ class AuthController {
       { isVerified },
     );
   }
+
+  // TODO: missing APIs
+  // delete account functionality is missing
+  // forget password functionality is missing
+  // reset password functionality is missing
+  // logout all devices (also called terminate all sessions in the old user controller) functionality is missing (removeAuthorizedDevices in old controller)
+  // get all admins
+  // get all users for admin
 }
 
 export default AuthController;

@@ -77,6 +77,14 @@ class UserController {
   static async getUserData(req: Request) {
     return HttpResponse.ok("User fetched successfully!", req.user);
   }
+
+  static async acceptTerms(req: Request) {
+    const userId = req.user.id;
+
+    await userService.acceptTerms(userId);
+
+    return HttpResponse.ok("Terms accepted successfully");
+  }
 }
 
 export default UserController;

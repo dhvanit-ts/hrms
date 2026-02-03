@@ -40,7 +40,7 @@ class VoteService {
       const ownerId = target.postedBy;
       const karmaChange = isUpvoted ? 1 : -1;
 
-      await AuthRepo.Write.update(karmaChange, ownerId, tx);
+      await AuthRepo.Write.updateKarma(karmaChange, ownerId, tx);
 
       logger.info("Vote created successfully", { 
         voteId: createdVote.id, 
@@ -99,7 +99,7 @@ class VoteService {
       const ownerId = target.postedBy;
       const karmaChange = (voteType === "upvote" ? 1 : -1) * 2;
 
-      await AuthRepo.Write.update(karmaChange, ownerId, tx)
+      await AuthRepo.Write.updateKarma(karmaChange, ownerId, tx)
 
       logger.info("Vote patched successfully", { 
         voteId: updatedVote.id, 
@@ -155,7 +155,7 @@ class VoteService {
       const ownerId = target.postedBy;
       const karmaChange = deletedVote.voteType === "upvote" ? -1 : 1;
 
-      await AuthRepo.Write.update(karmaChange, ownerId, tx)
+      await AuthRepo.Write.updateKarma(karmaChange, ownerId, tx)
 
       logger.info("Vote deleted successfully", { 
         voteId: deletedVote.id, 

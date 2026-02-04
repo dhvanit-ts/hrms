@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import { errorHandlers } from "@/core/middlewares";
 import { registerRoutes } from "@/routes/index";
 import applySecurity from "./config/security";
+import { injectRequestContext, registerRequestLogging } from "./core/middlewares";
 
 const createApp = () => {
   const app = express();
@@ -15,6 +16,9 @@ const createApp = () => {
   app.use(express.urlencoded({ extended: true, limit: "16kb" }));
   app.use(express.static("public"));
   app.use(cookieParser());
+
+  app.use(injectRequestContext)
+  app.use(registerRequestLogging)
 
   applySecurity(app);
   registerRoutes(app);

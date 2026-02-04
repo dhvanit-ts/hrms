@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import crypto from "node:crypto";
 
-export function requestContext(
+export function injectRequestContext(
   req: Request,
   _res: Response,
   next: NextFunction
